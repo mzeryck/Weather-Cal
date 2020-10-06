@@ -13,51 +13,51 @@ const lockLocation = true
 // Set to imperial for Fahrenheit, or metric for Celsius
 const units = "imperial"
 
+// The size of the widget preview in the app.
+const widgetPreview = "large"
+
+// Set to true for an image background, false for no image.
+const imageBackground = true
+
+// Set to true and run the script once to update the image manually.
+const forceImageUpdate = false
+
 /*
  * LAYOUT
  * Decide what elements to show on the widget.
  * ===========================================
  */
 
-// WIDTH: Choose a value, or set to 0 for an automatic width.
-// ALIGN: Align elements to the left, right, or center.
-// ITEMS: Can be date, greeting, events, currentWeather, or futureWeather.
+// Set the width of the column, or set to 0 for an automatic width.
+
+// You can add items to the column: 
+// date, greeting, events, current, future, text("Your text here")
+// You can also add a left, center, or right to the list. Everything after it will be aligned that way.
+
+// Make sure to always put a comma after each item.
 
 const columns = [{
   
   // Settings for the left column.
   width: 0,
-  align: left,
-  topItems: [date, events],
-  bottomItems: []
-  
-}, {
+  items: [
+    
+    left,
+    date,
+    events,
+    
+end]}, {
 
   // Settings for the right column.
   width: 100,
-  align: left,
-  topItems: [currentWeather],
-  bottomItems: [futureWeather]
+  items: [
+    
+    left,
+    current,
+    space,
+    future,
   
-}]
-
-/*
- * BACKGROUND
- * Format the background of the widget.
- * ====================================
- */  
-
-// Uses an image for the background.
-const imageBackground = true
-
-// Image source can be Bing, Unsplash, Windows, or empty ("") for your own image.
-const imageSource = ""
-
-// Enter Unsplash search terms separated by commas.
-const imageTerms = "wallpaper"
-
-// Set to true and run the script once to update the image manually.
-const forceImageUpdate = false
+end]}]
 
 /*
  * FORMATTING
@@ -67,6 +67,9 @@ const forceImageUpdate = false
 
 // How many events to show.
 const numberOfEvents = 3
+
+// Show today's high and low temperatures.
+const showHighLow = true
 
 // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
 const tomorrowShownAtHour = 20
@@ -99,11 +102,10 @@ const textFormat = {
   
   largeTemp:   { size: 34, color: "", font: "light" },
   smallTemp:   { size: 14, color: "", font: "" },
-  tinyTemp:    { size: 12, color: "", font: "" } 
+  tinyTemp:    { size: 12, color: "", font: "" },
+  
+  customText:  { size: 14, color: "", font: "" } 
 }
-
-// The size of the widget preview in the app.
-const widgetPreview = "medium"
 
 /*
  * WIDGET CODE
@@ -205,26 +207,23 @@ let mainStack = widget.addStack()
 mainStack.layoutHorizontally()
 mainStack.setPadding(0, 0, 0, 0)
 
-// Set up our columns.
-for (const column of columns) {
+// Set up alignment
+var currentAlignment = left
 
+// Set up our columns.
+for (var x = 0; x < columns.length; x++) {
+
+  let column = columns[x]
   let columnStack = mainStack.addStack()
   columnStack.layoutVertically()
-  columnStack.setPadding(0, 5, 0, 0)
+  
+  // Only add padding on the first or last column.
+  columnStack.setPadding(0, x == 0 ? 5 : 0, 0, x == columns.length-1 ? 5 : 0)
   columnStack.size = new Size(column.width,0)
   
-  console.log(column)
-  
-  // Add the items to the top of the column.
-  for (var i = 0; i < column.topItems.length; i++) {
-    column.topItems[i](columnStack, column.align)
-  }
-  
-  columnStack.addSpacer()
-  
-  // Add the items to the bottom of the column.
-  for (var i = 0; i < column.bottomItems.length; i++) {
-    column.bottomItems[i](columnStack, column.align)
+  // Add the items to the column.
+  for (var i = 0; i < column.items.length; i++) {
+    column.items[i](columnStack)
   }
 }
 
@@ -240,33 +239,26 @@ if (imageBackground) {
   const path = files.joinPath(files.documentsDirectory(), "weather-cal-image")
   const exists = files.fileExists(path)
   const createdToday = exists ? sameDay(files.modificationDate(path),currentDate) : false
-  const userProvided = (imageSource == "")
   
-  // If it exists, updates aren't being forced, and it's either user provided or created today, use the cache.
-  if (exists && !forceImageUpdate && (userProvided || createdToday)) { 
+  // If it exists and updates aren't being forced, use the cache.
+  if (exists && !forceImageUpdate) { 
     widget.backgroundImage = files.readImage(path)
   
-  // If it's user-provided but missing or forced to update...
-  } else if (userProvided && (!exists || forceImageUpdate)) { 
+  // If it's missing or forced to update...
+  } else if (!exists || forceImageUpdate) { 
     
-    // ... just use a gray background.
+    // ... just use a gray background if we're in the widget.
     if (config.runsInWidget) { 
       widget.backgroundColor = Color.gray() 
     
-    // If we're running in app, prompt the user for the image.
+    // But if we're running in app, prompt the user for the image.
     } else {
       const img = await Photos.fromLibrary()
       widget.backgroundImage = img
       files.writeImage(path, img)
     }
-    
-  // Otherwise, download the image from the source.
-  } else {
-    let img = await provideImage()
-    files.writeImage(path,img)
-    widget.backgroundImage = img
   }
-  
+    
 // If it's not an image background, show the gradient.
 } else {
   let gradient = new LinearGradient()
@@ -391,32 +383,6 @@ function provideSymbol(cond,night) {
   return SFSymbol.named(symbols[conditionDigit]()).image
 }
 
-// Provide an external image based on the source.
-async function provideImage() {
-    
-    if (imageSource == "Bing") {
-      const url = "http://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=en-US"
-      const req = new Request(url)
-      const json = await req.loadJSON()
-      const imgURL = "http://bing.com" + json.images[0].url
-      const img = await new Request(imgURL).loadImage()
-      return img
-        
-    } else if (imageSource == "Unsplash") {
-      const url = "https://source.unsplash.com/featured/1137x1137/?"+imageTerms
-      const img = await new Request(url).loadImage()
-      return img
-        
-    } else if (imageSource == "Windows") {
-      const msURL = "https://arc.msn.com/v3/Delivery/Placement?pid=338387&fmt=json&cfmt=poly&sft=jpeg&ctry=us&pl=en-US&cdm=1"
-      const msData = await new Request(msURL).loadJSON()
-      const imgData = JSON.parse(msData.batchrsp.items[0].item)
-      const imgURL = imgData.ad.image_fullscreen_001_landscape.u
-      const img = await new Request(imgURL).loadImage()
-      return img
-    }
-}
-
 // Provide a font based on the input.
 function provideFont(fontName, fontSize) {
   const fontGenerator = {
@@ -476,8 +442,8 @@ function sameDay(d1, d2) {
 }
 
 /*
- * DRAWING
- * =======
+ * DRAWING FUNCTIONS
+ * =================
  */
 
 // Draw the vertical line in the tomorrow view.
@@ -551,34 +517,34 @@ function drawTempBar() {
  */
 
 // Create an aligned stack to add content to.
-function align(column, alignment) {
+function align(column) {
   
   // Add the containing stack to the column.
   let alignmentStack = column.addStack()
   alignmentStack.layoutHorizontally()
   
   // Get the correct stack from the alignment function.
-  let returnStack = alignment(alignmentStack)
+  let returnStack = currentAlignment(alignmentStack)
   returnStack.layoutVertically()
   return returnStack
 }
 
 // Create a right-aligned stack.
-function right(alignmentStack) {
+function alignRight(alignmentStack) {
   alignmentStack.addSpacer()
   let returnStack = alignmentStack.addStack()
   return returnStack
 }
 
 // Create a left-aligned stack.
-function left(alignmentStack) {
+function alignLeft(alignmentStack) {
   let returnStack = alignmentStack.addStack()
   alignmentStack.addSpacer()
   return returnStack
 }
 
 // Create a center-aligned stack.
-function center(alignmentStack) {
+function alignCenter(alignmentStack) {
   alignmentStack.addSpacer()
   let returnStack = alignmentStack.addStack()
   alignmentStack.addSpacer()
@@ -586,14 +552,14 @@ function center(alignmentStack) {
 }
 
 // Display the date on the widget.
-function date(column, alignment) {
+function date(column) {
 
   // Set up the date formatter.
   let df = new DateFormatter()
   
   // Show small if it's hard coded, or if it's dynamic and events are visible.
   if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
-    let dateStack = align(column, alignment)
+    let dateStack = align(column)
     dateStack.setPadding(10, 10, 10, 10)
 
     df.dateFormat = smallDateFormat
@@ -602,13 +568,13 @@ function date(column, alignment) {
     
   // Otherwise, show the large date.
   } else {
-    let dateOneStack = align(column, alignment)
+    let dateOneStack = align(column)
     df.dateFormat = largeDateLineOne
     let dateOne = dateOneStack.addText(df.string(currentDate))
     formatText(dateOne, textFormat.largeDate1)
     dateOneStack.setPadding(10, 10, 0, 10)
     
-    let dateTwoStack = align(column, alignment)
+    let dateTwoStack = align(column)
     df.dateFormat = largeDateLineTwo
     let dateTwo = dateTwoStack.addText(df.string(currentDate))
     formatText(dateTwo, textFormat.largeDate2)
@@ -616,7 +582,7 @@ function date(column, alignment) {
   }
 }
 
-function greeting(column, alignment) {
+function greeting(column) {
 
   // This function makes a greeting based on the time of day.
   function makeGreeting() {
@@ -629,14 +595,14 @@ function greeting(column, alignment) {
   }
   
   // Set up the greeting.
-  let greetingStack = align(column, alignment)
+  let greetingStack = align(column)
   let greeting = greetingStack.addText(makeGreeting())
   formatText(greeting, textFormat.greeting)
   greetingStack.setPadding(10, 10, 10, 10)
 }
 
 // Display events on the widget.
-function events(column, alignment) {
+function events(column) {
   
   // If no events should be displayed, just exit this function
   if (numberOfEvents == 0) { return }
@@ -646,10 +612,10 @@ function events(column, alignment) {
     const event = futureEvents[i]
     if (!event) { break }
     
-    const titleStack = align(column, alignment)
+    const titleStack = align(column)
     const title = titleStack.addText(event.title)
     formatText(title, textFormat.eventTitle)
-    titleStack.setPadding(i==0 ? 0 : 5, 10, 0, 10)
+    titleStack.setPadding(i==0 ? 10 : 5, 10, 0, 10)
     
     // If there are too many events, limit the line height.
     if (futureEvents.length >= 3) { title.lineLimit = 1 }
@@ -663,30 +629,33 @@ function events(column, alignment) {
     df.useShortTimeStyle()
 
     const timeText = df.string(event.startDate)
-    const timeStack = align(column, alignment)
+    const timeStack = align(column)
     const time = timeStack.addText(timeText)
     formatText(time, textFormat.eventTime)
-    timeStack.setPadding(0, 10, 0, 10)
+    timeStack.setPadding(0, 10, i==numberOfEvents-1 ? 10 : 0, 10)
   }
 }
 
 // Display the current weather.
-function currentWeather(column, alignment) {
+function current(column) {
 
   // Show the current condition symbol.
-  let mainConditionStack = align(column, alignment)
+  let mainConditionStack = align(column)
   let mainCondition = mainConditionStack.addImage(provideSymbol(currentCondition,isNight(currentDate)))
   mainCondition.imageSize = new Size(22,22)
   mainConditionStack.setPadding(10, 10, 0, 10)
 
   // Show the current temperature.
-  let tempStack = align(column, alignment)
+  let tempStack = align(column)
   let temp = tempStack.addText(Math.round(currentTemp) + "°")
   tempStack.setPadding(0, 10, 0, 10)
   formatText(temp, textFormat.largeTemp)
+  
+  // If we're not showing the high and low, end it here.
+  if (!showHighLow) { return }
 
   // Show the temp bar and high/low values.
-  let tempBarStack = align(column, alignment)
+  let tempBarStack = align(column)
   tempBarStack.layoutVertically()
   tempBarStack.setPadding(0, 10, 5, 10)
   
@@ -710,20 +679,20 @@ function currentWeather(column, alignment) {
 }
 
 // Display upcoming weather.
-function futureWeather(column, alignment) {
+function future(column) {
 
   // Determine if we should show the next hour.
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
   
   // Set the label value.
   const subLabelText = showNextHour ? "Next hour" : "Tomorrow"
-  let subLabelStack = align(column, alignment)
+  let subLabelStack = align(column)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
   subLabelStack.setPadding(0, 10, 2, 10)
   
   // Set up the sub condition stack.
-  let subConditionStack = align(column, alignment)
+  let subConditionStack = align(column)
   subConditionStack.layoutHorizontally()
   subConditionStack.centerAlignContent()
   subConditionStack.setPadding(0, 10, 10, 10)
@@ -763,3 +732,38 @@ function futureWeather(column, alignment) {
     formatText(tomorrowLowText, textFormat.tinyTemp)
   }
 }
+
+// Return a text-creation function.
+function text(inputText) {
+  
+  function displayText(column) {
+    let textStack = align(column)
+    textStack.setPadding(10, 10, 10, 10)
+    
+    let textDisplay = textStack.addText(inputText)
+    formatText(textDisplay, textFormat.customText)
+  }
+  return displayText
+}
+
+/*
+ * MINI FUNCTIONS
+ * ==============
+ */
+
+// This function adds a space.
+function space(column) { column.addSpacer() }
+
+// Change the current alignment to right.
+function right(x) { currentAlignment = alignRight }
+
+// Change the current alignment to left.
+function left(x) { currentAlignment = alignLeft }
+
+// Change the current alignment to center.
+function center(x) { currentAlignment = alignCenter }
+
+// This function doesn't need to do anything.
+function end(x) { return }
+
+Script.complete()
