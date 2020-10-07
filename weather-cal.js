@@ -8,7 +8,7 @@
  */
 
 // Get a free API key here: openweathermap.org/appid
-const apiKey = "e1a5eb570ba50e14e59647a6bc2f8f10"
+const apiKey = ""
 
 // Set to true for fixed location, false to update location as you move around
 const lockLocation = true
