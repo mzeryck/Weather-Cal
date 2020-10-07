@@ -1,3 +1,6 @@
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: orange; icon-glyph: magic;
 /*
  * SETUP
  * Use this section to set up the widget.
@@ -5,13 +8,13 @@
  */
 
 // Get a free API key here: openweathermap.org/appid
-const apiKey = ""
+const apiKey = "e1a5eb570ba50e14e59647a6bc2f8f10"
 
 // Set to true for fixed location, false to update location as you move around
 const lockLocation = true
 
 // Set to imperial for Fahrenheit, or metric for Celsius
-const units = "imperial"
+const units = "metric"
 
 // The size of the widget preview in the app.
 const widgetPreview = "large"
@@ -21,6 +24,21 @@ const imageBackground = true
 
 // Set to true and run the script once to update the image manually.
 const forceImageUpdate = false
+
+// Set locale and locale strings
+const locale = "en"
+
+const localeString = {
+  
+    "goodnightStr" : function() { return "Good night." },
+    "goodmorningStr" : function() { return "Good morning." },
+    "goodafternoonStr" : function() { return "Good afternoon." },
+    "goodeveningStr" : function() { return "Good evening." },
+    "nexthourStr" : function() { return "Next hour" },
+    "tomorrowStr" : function() { return "Tomorrow" }
+     
+}
+
 
 /*
  * LAYOUT
@@ -43,6 +61,7 @@ const columns = [{
   items: [
     
     left,
+    greeting,
     date,
     events,
     
@@ -153,7 +172,7 @@ if (cacheExists && (currentDate.getTime() - cacheDate.getTime()) < 60000) {
 
 // Otherwise, use the API to get new weather data.
 } else {
-  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=en&appid=" + apiKey
+  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=" + locale + "&appid=" + apiKey
   data = await new Request(weatherReq).loadJSON()
   files.writeString(cachePath, JSON.stringify(data))
 }
@@ -556,7 +575,7 @@ function date(column) {
 
   // Set up the date formatter.
   let df = new DateFormatter()
-  
+  df.locale = locale
   // Show small if it's hard coded, or if it's dynamic and events are visible.
   if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
     let dateStack = align(column)
@@ -587,11 +606,11 @@ function greeting(column) {
   // This function makes a greeting based on the time of day.
   function makeGreeting() {
     const hour = currentDate.getHours()
-    if (hour    < 5)  { return "Good night." }
-    if (hour    < 12) { return "Good morning." }
-    if (hour-12 < 5)  { return "Good afternoon." }
-    if (hour-12 < 10) { return "Good evening." }
-    return "Good night."
+    if (hour    < 5)  { return localeString.goodnightStr()}
+    if (hour    < 12) { return localeString.goodmorningStr()}
+    if (hour-12 < 5)  { return localeString.goodafternoonStr()}
+    if (hour-12 < 10) { return localeString.goodeveningStr()}
+    return localeString.goodnightStr()
   }
   
   // Set up the greeting.
@@ -685,7 +704,7 @@ function future(column) {
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
   
   // Set the label value.
-  const subLabelText = showNextHour ? "Next hour" : "Tomorrow"
+  const subLabelText = showNextHour ? localeString.nexthourStr() : localeString.tomorrowStr()
   let subLabelStack = align(column)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
