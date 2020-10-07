@@ -1,6 +1,3 @@
-// Variables used by Scriptable.
-// These must be at the very top of the file. Do not edit.
-// icon-color: pink; icon-glyph: magic;
 /*
  * SETUP
  * Use this section to set up the widget.
@@ -14,7 +11,7 @@ const apiKey = ""
 const lockLocation = true
 
 // Set to imperial for Fahrenheit, or metric for Celsius
-const units = "metric"
+const units = "imperial"
 
 // The size of the widget preview in the app.
 const widgetPreview = "large"
@@ -26,17 +23,17 @@ const imageBackground = true
 const forceImageUpdate = false
 
 // Set locale and locale strings
-const locale = "pt"
+const locale = "en"
 
 const localeString = {
   
-    "goodnightStr" : function() { return "Boa noite." },
-    "goodmorningStr" : function() { return "Bom dia." },
-    "goodafternoonStr" : function() { return "Boa tarde." },
-    "goodeveningStr" : function() { return "Boa tarde." },
-    "nexthourStr" : function() { return "Próxima hora" },
-    "tomorrowStr" : function() { return "Amanhã" },
-    "noEventMessage" : function() {return "Aproveite o resto do dia." }
+    "goodnightStr" : function() { return "Good night." },
+    "goodmorningStr" : function() { return "Good morning." },
+    "goodafternoonStr" : function() { return "Good afternoon." },
+    "goodeveningStr" : function() { return "Good evening." },
+    "nexthourStr" : function() { return "Next hour" },
+    "tomorrowStr" : function() { return "Tomorrow" },
+    "noEventMessage" : function() {return "Enjoy the rest of your day." }
      
 }
 
