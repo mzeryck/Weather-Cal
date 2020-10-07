@@ -65,14 +65,35 @@ end]}]
  * =====================================
  */  
 
+// EVENTS
+// ======
+
 // How many events to show.
 const numberOfEvents = 3
+
+// Show all-day events.
+const showAllDay = true
+
+// Show tomorrow's events.
+const showTomorrow = true
+
+// Can be blank "" or set to "duration" or "time" to display how long an event is.
+const showEventLength = "duration"
+
+// Show a message when there are no events displayed.
+const noEventMessage = "Enjoy the rest of your day."
+
+// WEATHER
+// =======
 
 // Show today's high and low temperatures.
 const showHighLow = true
 
 // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
 const tomorrowShownAtHour = 20
+
+// DATE
+// ====
 
 // If set to true, date will become smaller when events are displayed.
 const dynamicDateSize = true
@@ -115,7 +136,8 @@ const textFormat = {
 
 // Set up the date and event information.
 const currentDate = new Date()
-const allEvents = await CalendarEvent.today([])
+const todayEvents = await CalendarEvent.today([])
+const tomorrowEvents = await CalendarEvent.tomorrow([])
 const futureEvents = enumerateEvents()
 const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
 
@@ -419,13 +441,55 @@ function formatText(textItem, format) {
 
 // Find future events that aren't all day and aren't canceled
 function enumerateEvents() {
-  let futureEvents = []
-  for (const event of allEvents) {
-    if (event.startDate.getTime() > currentDate.getTime() && !event.isAllDay && !event.title.startsWith("Canceled:")) {
-      futureEvents.push(event)
+
+  // Function to determine if an event should be shown.
+  function shouldShowEvent(event) {
+
+    // Hack to remove canceled Office 365 events.
+    if (event.title.startsWith("Canceled:")) { return false }
+
+    // If it's an all-day event, only show if the setting is active.
+    if (event.isAllDay) { return showAllDay }
+
+    // Otherwise, return the event if it's in the future.
+    return (event.startDate.getTime() > currentDate.getTime())
+  }
+  
+  // Determine which events to show, and how many.
+  let shownEvents = 0
+  let returnedEvents = []
+  
+  for (const event of todayEvents) {
+    if (shownEvents == numberOfEvents) { break }
+    if (shouldShowEvent(event)) {
+      returnedEvents.push(event)
+      shownEvents++
     }
   }
-  return futureEvents
+
+  // If there's room and we need to, show tomorrow's events.
+  let multipleTomorrowEvents = false
+  if (showTomorrow && shownEvents < numberOfEvents) {
+
+    for (const event of tomorrowEvents) {
+      if (shownEvents == numberOfEvents) { break }
+      if (shouldShowEvent(event)) {
+      
+        // Add the tomorrow label prior to the first tomorrow event.
+        if (!multipleTomorrowEvents) { 
+          
+          // The tomorrow label is pretending to be an event.
+          returnedEvents.push({ title: "TOMORROW", isAllDay: true, isLabel: true })
+          multipleTomorrowEvents = true
+        }
+        
+        // Show the tomorrow event and increment the counter.
+        returnedEvents.push(event)
+        shownEvents++
+      }
+    }
+  }
+  return returnedEvents
 }
 
 // Determines if the provided date is at night.
@@ -603,50 +667,94 @@ function greeting(column) {
 
 // Display events on the widget.
 function events(column) {
+
+  // If nothing should be displayed, just return.
+  if (!eventsAreVisible && !noEventMessage.length) { return }
   
-  // If no events should be displayed, just exit this function
-  if (numberOfEvents == 0) { return }
+  // Set up the event stack.
+  let eventStack = column.addStack()
+  eventStack.layoutVertically()
+  const todaySeconds = Math.floor(currentDate.getTime() / 1000) - 978307200
+  eventStack.url = 'calshow:' + todaySeconds
   
-  for (let i = 0; i < numberOfEvents; i++) {
-    // Determine if the event exists, otherwise end.
-    const event = futureEvents[i]
-    if (!event) { break }
+  // If there are no events, show the message and return.
+  if (!eventsAreVisible) {
+    let message = eventStack.addText(noEventMessage)
+    formatText(message, textFormat.greeting)
+    eventStack.setPadding(10, 10, 10, 10)
+    return
+  }
+  
+  // If we're not showing the message, don't pad the event stack.
+  eventStack.setPadding(0, 0, 0, 0)
+  
+  var currentStack = eventStack
+  
+  // Add each event to the stack.
+  for (let i = 0; i < futureEvents.length; i++) {
     
-    const titleStack = align(column)
+    const event = futureEvents[i]
+    
+    // If it's the tomorrow label, change to the tomorrow stack.
+    if (event.isLabel) {
+      let tomorrowStack = column.addStack()
+      tomorrowStack.layoutVertically()
+      const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
+      tomorrowStack.url = 'calshow:' + tomorrowSeconds
+      currentStack = tomorrowStack
+    }
+    
+    const titleStack = align(currentStack)
     const title = titleStack.addText(event.title)
     formatText(title, textFormat.eventTitle)
-    titleStack.setPadding(i==0 ? 10 : 5, 10, 0, 10)
-    
+    titleStack.setPadding(i==0 ? 10 : 5, 10, event.isAllDay ? 5 : 0, 10)
+  
     // If there are too many events, limit the line height.
     if (futureEvents.length >= 3) { title.lineLimit = 1 }
 
     // If it's an all-day event, we don't need a time.
-    if (event.isAllDay) { return }
-
+    if (event.isAllDay) { continue }
+    
     // Format the time information.
     let df = new DateFormatter()
     df.useNoDateStyle()
     df.useShortTimeStyle()
+    let timeText = df.string(event.startDate)
+    
+    // If we show the length as time, add an en dash and the time.
+    if (showEventLength == "time") { 
+      timeText += "–" + df.string(event.endDate) 
+      
+    // If we should it as a duration, add the minutes.
+    } else if (showEventLength == "duration") {
+      const duration = (event.endDate.getTime() - event.startDate.getTime()) / (1000*60)
+      timeText += " \u2022 " + Math.round(duration) + "m"
+    }
 
-    const timeText = df.string(event.startDate)
-    const timeStack = align(column)
+    const timeStack = align(currentStack)
     const time = timeStack.addText(timeText)
     formatText(time, textFormat.eventTime)
-    timeStack.setPadding(0, 10, i==numberOfEvents-1 ? 10 : 0, 10)
+    timeStack.setPadding(0, 10, i==futureEvents.length-1 ? 10 : 5, 10)
   }
 }
 
 // Display the current weather.
 function current(column) {
 
+  // Set up the current weather stack.
+  let currentWeatherStack = column.addStack()
+  currentWeatherStack.layoutVertically()
+  currentWeatherStack.setPadding(0, 0, 0, 0)
+  currentWeatherStack.url = "https://weather.com/weather/today/l/" + latitude + "," + longitude
+
   // Show the current condition symbol.
-  let mainConditionStack = align(column)
+  let mainConditionStack = align(currentWeatherStack)
   let mainCondition = mainConditionStack.addImage(provideSymbol(currentCondition,isNight(currentDate)))
   mainCondition.imageSize = new Size(22,22)
   mainConditionStack.setPadding(10, 10, 0, 10)
 
   // Show the current temperature.
-  let tempStack = align(column)
+  let tempStack = align(currentWeatherStack)
   let temp = tempStack.addText(Math.round(currentTemp) + "°")
   tempStack.setPadding(0, 10, 0, 10)
   formatText(temp, textFormat.largeTemp)
@@ -655,7 +763,7 @@ function current(column) {
   if (!showHighLow) { return }
 
   // Show the temp bar and high/low values.
-  let tempBarStack = align(column)
+  let tempBarStack = align(currentWeatherStack)
   tempBarStack.layoutVertically()
   tempBarStack.setPadding(0, 10, 5, 10)
   
@@ -681,18 +789,24 @@ function current(column) {
 // Display upcoming weather.
 function future(column) {
 
+  // Set up the future weather stack.
+  let futureWeatherStack = column.addStack()
+  futureWeatherStack.layoutVertically()
+  futureWeatherStack.setPadding(0, 0, 0, 0)
+  futureWeatherStack.url = "https://weather.com/weather/tenday/l/" + latitude + "," + longitude
+
   // Determine if we should show the next hour.
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
   
   // Set the label value.
   const subLabelText = showNextHour ? "Next hour" : "Tomorrow"
-  let subLabelStack = align(column)
+  let subLabelStack = align(futureWeatherStack)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
   subLabelStack.setPadding(0, 10, 2, 10)
   
   // Set up the sub condition stack.
-  let subConditionStack = align(column)
+  let subConditionStack = align(futureWeatherStack)
   subConditionStack.layoutHorizontally()
   subConditionStack.centerAlignContent()
   subConditionStack.setPadding(0, 10, 10, 10)
