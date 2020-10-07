@@ -14,7 +14,7 @@ const apiKey = ""
 const lockLocation = true
 
 // Set to imperial for Fahrenheit, or metric for Celsius
-const units = "metric"
+const units = "imperial"
 
 // The size of the widget preview in the app.
 const widgetPreview = "large"
