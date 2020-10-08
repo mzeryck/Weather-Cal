@@ -22,18 +22,25 @@ const imageBackground = true
 // Set to true and run the script once to update the image manually.
 const forceImageUpdate = false
 
-// Set locale and locale strings
+// Set the two-letter locale code for the date and weather formatting.
 const locale = "en"
 
-const localeString = {
+// You can change the language or wording of any other text in the widget.
+const localizedText = {
   
-    "goodnightStr" : function() { return "Good night." },
-    "goodmorningStr" : function() { return "Good morning." },
-    "goodafternoonStr" : function() { return "Good afternoon." },
-    "goodeveningStr" : function() { return "Good evening." },
-    "nexthourStr" : function() { return "Next hour" },
-    "tomorrowStr" : function() { return "Tomorrow" },
-    "noEventMessage" : function() {return "Enjoy the rest of your day." }
+  // The text shown if you add a greeting item to the layout.
+  nightGreeting: "Good night."
+  ,morningGreeting: "Good morning."
+  ,afternoonGreeting: "Good afternoon."
+  ,eveningGreeting: "Good evening."
+  
+  // The text shown if you add a future weather item to the layout, or tomorrow's events.
+  ,nextHourLabel: "Next hour"
+  ,tomorrowLabel: "Tomorrow"
+
+  // The text shown in an events item when no events remain.
+  // Change to blank "" if you don't want to show a message.
+  ,noEventMessage: "Enjoy the rest of your day."
      
 }
 
@@ -494,7 +501,7 @@ function enumerateEvents() {
         if (!multipleTomorrowEvents) { 
           
           // The tomorrow label is pretending to be an event.
-          returnedEvents.push({ title: localeString.tomorrowStr().toUpperCase(), isAllDay: true, isLabel: true })
+          returnedEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isAllDay: true, isLabel: true })
           multipleTomorrowEvents = true
         }
         
@@ -633,9 +640,8 @@ function alignCenter(alignmentStack) {
 // Display the date on the widget.
 function date(column) {
 
-  // Set up the date formatter.
+  // Set up the date formatter and set its locale.
   let df = new DateFormatter()
-  
   df.locale = locale
   
   // Show small if it's hard coded, or if it's dynamic and events are visible.
@@ -668,11 +674,11 @@ function greeting(column) {
   // This function makes a greeting based on the time of day.
   function makeGreeting() {
     const hour = currentDate.getHours()
-    if (hour    < 5)  { return localeString.goodnightStr()}
-    if (hour    < 12) { return localeString.goodmorningStr() }
-    if (hour-12 < 5)  { return localeString.goodafternoonStr() }
-    if (hour-12 < 10) { return localeString.goodeveningStr() }
-    return localeString.goodnightStr()
+    if (hour    < 5)  { return localizedText.nightGreeting }
+    if (hour    < 12) { return localizedText.morningGreeting }
+    if (hour-12 < 5)  { return localizedText.afternoonGreeting }
+    if (hour-12 < 10) { return localizedText.eveningGreeting }
+    return localizedText.nightGreeting
   }
   
   // Set up the greeting.
@@ -686,7 +692,7 @@ function greeting(column) {
 function events(column) {
 
   // If nothing should be displayed, just return.
-  if (!eventsAreVisible && !localeString.noEventMessage().length) { return }
+  if (!eventsAreVisible && !localizedText.noEventMessage.length) { return }
   
   // Set up the event stack.
   let eventStack = column.addStack()
@@ -696,7 +702,7 @@ function events(column) {
   
   // If there are no events, show the message and return.
   if (!eventsAreVisible) {
-    let message = eventStack.addText(localeString.noEventMessage())
+    let message = eventStack.addText(localizedText.noEventMessage)
     formatText(message, textFormat.greeting)
     eventStack.setPadding(10, 10, 10, 10)
     return
@@ -816,7 +822,7 @@ function future(column) {
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
   
   // Set the label value.
-  const subLabelText = showNextHour ? localeString.nexthourStr() : localeString.tomorrowStr()
+  const subLabelText = showNextHour ? localizedText.nextHourLabel : localizedText.tomorrowLabel
   let subLabelStack = align(futureWeatherStack)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
