@@ -22,6 +22,12 @@ const imageBackground = true
 // Set to true and run the script once to update the image manually.
 const forceImageUpdate = false
 
+// Set which calendars for which to show events.
+// Empty array means all calendars.
+// Example:
+// const selectCalendars = ["Main", "Work", "Birthdays"]
+const selectCalendars = [] // Default: All calendars
+
 // Set the two-letter locale code for the date and weather formatting.
 const locale = "en"
 
@@ -43,7 +49,6 @@ const localizedText = {
   ,noEventMessage: "Enjoy the rest of your day."
      
 }
-
 
 /*
  * LAYOUT
@@ -158,8 +163,10 @@ const textFormat = {
 
 // Set up the date and event information.
 const currentDate = new Date()
-const todayEvents = await CalendarEvent.today([])
-const tomorrowEvents = await CalendarEvent.tomorrow([])
+const todayEventsAll = await CalendarEvent.today([])
+const tomorrowEventsAll = await CalendarEvent.tomorrow([])
+const todayEvents = selectCalendars ? todayEventsAll.filter(inSelectCalendars) : todayEventsAll
+const tomorrowEvents = selectCalendars ? tomorrowEventsAll.filter(inSelectCalendars) : tomorrowEventsAll
 const futureEvents = enumerateEvents()
 const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
 
@@ -525,6 +532,11 @@ function sameDay(d1, d2) {
   return d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
+}
+
+// Determines if an event is on a selected calendar
+function inSelectCalendars(event) {
+  return selectCalendars.includes(event.calendar.title)
 }
 
 /*
