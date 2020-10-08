@@ -22,6 +22,22 @@ const imageBackground = true
 // Set to true and run the script once to update the image manually.
 const forceImageUpdate = false
 
+// Set locale and locale strings
+const locale = "en"
+
+const localeString = {
+  
+    "goodnightStr" : function() { return "Good night." },
+    "goodmorningStr" : function() { return "Good morning." },
+    "goodafternoonStr" : function() { return "Good afternoon." },
+    "goodeveningStr" : function() { return "Good evening." },
+    "nexthourStr" : function() { return "Next hour" },
+    "tomorrowStr" : function() { return "Tomorrow" },
+    "noEventMessage" : function() {return "Enjoy the rest of your day." }
+     
+}
+
+
 /*
  * LAYOUT
  * Decide what elements to show on the widget.
@@ -43,6 +59,7 @@ const columns = [{
   items: [
     
     left,
+    greeting,
     date,
     events,
     
@@ -80,8 +97,6 @@ const showTomorrow = true
 // Can be blank "" or set to "duration" or "time" to display how long an event is.
 const showEventLength = "duration"
 
-// Show a message when there are no events displayed.
-const noEventMessage = "Enjoy the rest of your day."
 
 // WEATHER
 // =======
@@ -175,7 +190,7 @@ if (cacheExists && (currentDate.getTime() - cacheDate.getTime()) < 60000) {
 
 // Otherwise, use the API to get new weather data.
 } else {
-  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=en&appid=" + apiKey
+  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=" + locale + "&appid=" + apiKey
   data = await new Request(weatherReq).loadJSON()
   files.writeString(cachePath, JSON.stringify(data))
 }
@@ -479,7 +494,7 @@ function enumerateEvents() {
         if (!multipleTomorrowEvents) { 
           
           // The tomorrow label is pretending to be an event.
-          returnedEvents.push({ title: "TOMORROW", isAllDay: true, isLabel: true })
+          returnedEvents.push({ title: localeString.tomorrowStr().toUpperCase(), isAllDay: true, isLabel: true })
           multipleTomorrowEvents = true
         }
         
@@ -621,6 +636,8 @@ function date(column) {
   // Set up the date formatter.
   let df = new DateFormatter()
   
+  df.locale = locale
+  
   // Show small if it's hard coded, or if it's dynamic and events are visible.
   if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
     let dateStack = align(column)
@@ -651,11 +668,11 @@ function greeting(column) {
   // This function makes a greeting based on the time of day.
   function makeGreeting() {
     const hour = currentDate.getHours()
-    if (hour    < 5)  { return "Good night." }
-    if (hour    < 12) { return "Good morning." }
-    if (hour-12 < 5)  { return "Good afternoon." }
-    if (hour-12 < 10) { return "Good evening." }
-    return "Good night."
+    if (hour    < 5)  { return localeString.goodnightStr()}
+    if (hour    < 12) { return localeString.goodmorningStr() }
+    if (hour-12 < 5)  { return localeString.goodafternoonStr() }
+    if (hour-12 < 10) { return localeString.goodeveningStr() }
+    return localeString.goodnightStr()
   }
   
   // Set up the greeting.
@@ -669,7 +686,7 @@ function greeting(column) {
 function events(column) {
 
   // If nothing should be displayed, just return.
-  if (!eventsAreVisible && !noEventMessage.length) { return }
+  if (!eventsAreVisible && !localeString.noEventMessage().length) { return }
   
   // Set up the event stack.
   let eventStack = column.addStack()
@@ -679,7 +696,7 @@ function events(column) {
   
   // If there are no events, show the message and return.
   if (!eventsAreVisible) {
-    let message = eventStack.addText(noEventMessage)
+    let message = eventStack.addText(localeString.noEventMessage())
     formatText(message, textFormat.greeting)
     eventStack.setPadding(10, 10, 10, 10)
     return
@@ -799,7 +816,7 @@ function future(column) {
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
   
   // Set the label value.
-  const subLabelText = showNextHour ? "Next hour" : "Tomorrow"
+  const subLabelText = showNextHour ? localeString.nexthourStr() : localeString.tomorrowStr()
   let subLabelStack = align(futureWeatherStack)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
