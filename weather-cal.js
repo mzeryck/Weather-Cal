@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: purple; icon-glyph: magic;
+// icon-color: blue; icon-glyph: magic;
 /*
  * SETUP
  * Use this section to set up the widget.
@@ -25,6 +25,43 @@ const imageBackground = true
 // Set to true and run the script once to update the image manually.
 const forceImageUpdate = false
 
+// Set which calendars for which to show events.
+// Empty array means all calendars.
+// Example:
+// const selectCalendars = ["Main", "Work", "Birthdays"]
+const selectCalendars = [] // Default: All calendars
+
+// Set the two-letter locale code for the date and weather formatting.
+const locale = "en"
+
+// An array of messages, add your own if you want
+const messages = ["Netflix and Chill?", "Browse through reddit?", "FaceTime someone?", "Commit a few crimes?", "Call your ex?", "but remember to hide the body.", "just sleep.", "enjoy you day!"]
+
+// Getting a random from the array above
+const randomMessage = messages[Math.floor(Math.random()* messages.length)]
+
+// Show a message when there are no events displayed.
+const noMessage = "Nothing More, "
+
+// You can change the language or wording of any other text in the widget.
+const localizedText = {
+
+  // The text shown if you add a greeting item to the layout.
+  nightGreeting: "Good night."
+  ,morningGreeting: "Good morning."
+  ,afternoonGreeting: "Good afternoon."
+  ,eveningGreeting: "Good evening."
+
+  // The text shown if you add a future weather item to the layout, or tomorrow's events.
+  ,nextHourLabel: "Next hour"
+  ,tomorrowLabel: "Tomorrow"
+
+  // The text shown in an events item when no events remain.
+  // Change to blank "" if you don't want to show a message.
+  ,noEventMessage: noMessage.concat(randomMessage)
+     
+}
+
 /*
  * LAYOUT
  * Decide what elements to show on the widget.
@@ -46,13 +83,14 @@ const columns = [{
   items: [
 
     left,
+    greeting,
     date,
     events,
 
 end]}, {
 
   // Settings for the right column.
-  width: 97,
+  width: 100,
   items: [
 
     left,
@@ -83,15 +121,6 @@ const showTomorrow = true
 // Can be blank "" or set to "duration" or "time" to display how long an event is.
 const showEventLength = "duration"
 
-// An array of messages, add your own if you want
-const messages = ["Netflix and Chill?", "Browse through reddit?", "FaceTime someone?", "Commit a few crimes?", "Call your ex?", "but remember to hide the body.", "just sleep.", "enjoy you day!"]
-
-// Getting a random from the array above
-const randomMessage = messages[Math.floor(Math.random()* messages.length)]
-
-// Show a message when there are no events displayed.
-const noMessage = "Nothing More today, "
-const noEventMessage = noMessage.concat(randomMessage)
 
 // WEATHER
 // =======
@@ -100,7 +129,7 @@ const noEventMessage = noMessage.concat(randomMessage)
 const showHighLow = true
 
 // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
-const tomorrowShownAtHour = 24
+const tomorrowShownAtHour = 20
 
 // DATE
 // ====
@@ -120,18 +149,18 @@ const largeDateLineTwo = "MMMM d"
 const textFormat = {
 
   // Set the default font and color.
-  defaultText: { size: 14, color: "98999a", font: "regular" },
+  defaultText: { size: 14, color: "ffffff", font: "regular" },
 
   // Any blank values will use the default.
-  smallDate:   { size: 17, color: "ffffff", font: "semibold" },
+  smallDate:   { size: 17, color: "", font: "semibold" },
   largeDate1:  { size: 30, color: "", font: "light" },
   largeDate2:  { size: 30, color: "", font: "light" },
 
-  greeting:    { size: 30, color: "", font: "bold" },
+  greeting:    { size: 30, color: "", font: "semibold" },
   eventTitle:  { size: 14, color: "", font: "semibold" },
   eventTime:   { size: 14, color: "ffffffcc", font: "" },
 
-  largeTemp:   { size: 40, color: "", font: "light" },
+  largeTemp:   { size: 34, color: "", font: "light" },
   smallTemp:   { size: 14, color: "", font: "" },
   tinyTemp:    { size: 12, color: "", font: "" },
 
@@ -146,8 +175,10 @@ const textFormat = {
 
 // Set up the date and event information.
 const currentDate = new Date()
-const todayEvents = await CalendarEvent.today([])
-const tomorrowEvents = await CalendarEvent.tomorrow([])
+const todayEventsAll = await CalendarEvent.today([])
+const tomorrowEventsAll = await CalendarEvent.tomorrow([])
+const todayEvents = selectCalendars ? todayEventsAll.filter(inSelectCalendars) : todayEventsAll
+const tomorrowEvents = selectCalendars ? tomorrowEventsAll.filter(inSelectCalendars) : tomorrowEventsAll
 const futureEvents = enumerateEvents()
 const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
 
@@ -185,7 +216,7 @@ if (cacheExists && (currentDate.getTime() - cacheDate.getTime()) < 60000) {
 
 // Otherwise, use the API to get new weather data.
 } else {
-  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=en&appid=" + apiKey
+  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=" + locale + "&appid=" + apiKey
   data = await new Request(weatherReq).loadJSON()
   files.writeString(cachePath, JSON.stringify(data))
 }
@@ -489,7 +520,7 @@ function enumerateEvents() {
         if (!multipleTomorrowEvents) {
 
           // The tomorrow label is pretending to be an event.
-          returnedEvents.push({ title: "TOMORROW", isAllDay: true, isLabel: true })
+          returnedEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isAllDay: true, isLabel: true })
           multipleTomorrowEvents = true
         }
 
@@ -513,6 +544,11 @@ function sameDay(d1, d2) {
   return d1.getFullYear() === d2.getFullYear() &&
     d1.getMonth() === d2.getMonth() &&
     d1.getDate() === d2.getDate()
+}
+
+// Determines if an event is on a selected calendar
+function inSelectCalendars(event) {
+  return selectCalendars.includes(event.calendar.title)
 }
 
 /*
@@ -628,8 +664,9 @@ function alignCenter(alignmentStack) {
 // Display the date on the widget.
 function date(column) {
 
-  // Set up the date formatter.
+  // Set up the date formatter and set its locale.
   let df = new DateFormatter()
+  df.locale = locale
 
   // Show small if it's hard coded, or if it's dynamic and events are visible.
   if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
@@ -661,11 +698,11 @@ function greeting(column) {
   // This function makes a greeting based on the time of day.
   function makeGreeting() {
     const hour = currentDate.getHours()
-    if (hour    < 5)  { return "Good night." }
-    if (hour    < 12) { return "Good morning." }
-    if (hour-12 < 5)  { return "Good afternoon." }
-    if (hour-12 < 10) { return "Good evening." }
-    return "Good night."
+    if (hour    < 5)  { return localizedText.nightGreeting }
+    if (hour    < 12) { return localizedText.morningGreeting }
+    if (hour-12 < 5)  { return localizedText.afternoonGreeting }
+    if (hour-12 < 10) { return localizedText.eveningGreeting }
+    return localizedText.nightGreeting
   }
 
   // Set up the greeting.
@@ -679,7 +716,7 @@ function greeting(column) {
 function events(column) {
 
   // If nothing should be displayed, just return.
-  if (!eventsAreVisible && !noEventMessage.length) { return }
+  if (!eventsAreVisible && !localizedText.noEventMessage.length) { return }
 
   // Set up the event stack.
   let eventStack = column.addStack()
@@ -689,7 +726,7 @@ function events(column) {
 
   // If there are no events, show the message and return.
   if (!eventsAreVisible) {
-    let message = eventStack.addText(noEventMessage)
+    let message = eventStack.addText(localizedText.noEventMessage)
     formatText(message, textFormat.greeting)
     eventStack.setPadding(10, 10, 10, 10)
     return
@@ -809,7 +846,7 @@ function future(column) {
   const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
 
   // Set the label value.
-  const subLabelText = showNextHour ? "Next hour" : "Tomorrow"
+  const subLabelText = showNextHour ? localizedText.nextHourLabel : localizedText.tomorrowLabel
   let subLabelStack = align(futureWeatherStack)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
