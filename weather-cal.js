@@ -19,14 +19,8 @@ const widgetPreview = "large"
 // Set to true for an image background, false for no image.
 const imageBackground = true
 
-// Set to true and run the script once to update the image manually.
+// Set to true to reset the widget's background image.
 const forceImageUpdate = false
-
-// Set which calendars for which to show events.
-// Empty array means all calendars.
-// Example:
-// const selectCalendars = ["Main", "Work", "Birthdays"]
-const selectCalendars = [] // Default: All calendars
 
 // Set the two-letter locale code for the date and weather formatting.
 const locale = "en"
@@ -47,7 +41,7 @@ const localizedText = {
   // The text shown in an events item when no events remain.
   // Change to blank "" if you don't want to show a message.
   ,noEventMessage: "Enjoy the rest of your day."
-     
+     
 }
 
 /*
@@ -89,7 +83,7 @@ end]}, {
 end]}]
 
 /*
- * FORMATTING
+ * ELEMENTS
  * Choose how each element is displayed.
  * =====================================
  */  
@@ -108,6 +102,12 @@ const showTomorrow = true
 
 // Can be blank "" or set to "duration" or "time" to display how long an event is.
 const showEventLength = "duration"
+
+// Set which calendars for which to show events. Empty [] means all calendars.
+const selectCalendars = []
+
+// Leave blank "" for no color, or specify shape (circle, rectangle) and/or side (left, right).
+const showCalendarColor = "rectangle left"
 
 
 // WEATHER
@@ -133,6 +133,15 @@ const smallDateFormat = "EEEE, MMMM d"
 const largeDateLineOne = "EEEE,"
 const largeDateLineTwo = "MMMM d"
 
+/*
+ * FORMATTING
+ * Adjust the formatting of the widget.
+ * ====================================
+ */  
+ 
+// Set the padding around each element. Default is 10.
+const padding = 10
+
 // In this section, set the font, size, and color. Use iosfonts.com to find fonts to use. If you want to use the default iOS font, set the font name to one of the following: ultralight, light, regular, medium, semibold, bold, heavy, black, or italic.
 const textFormat = {
   
@@ -145,6 +154,7 @@ const textFormat = {
   largeDate2:  { size: 30, color: "", font: "light" },
   
   greeting:    { size: 30, color: "", font: "semibold" },
+  eventLabel:  { size: 14, color: "", font: "semibold" },
   eventTitle:  { size: 14, color: "", font: "semibold" },
   eventTime:   { size: 14, color: "ffffffcc", font: "" },
   
@@ -163,10 +173,9 @@ const textFormat = {
 
 // Set up the date and event information.
 const currentDate = new Date()
-const todayEventsAll = await CalendarEvent.today([])
-const tomorrowEventsAll = await CalendarEvent.tomorrow([])
-const todayEvents = selectCalendars ? todayEventsAll.filter(inSelectCalendars) : todayEventsAll
-const tomorrowEvents = selectCalendars ? tomorrowEventsAll.filter(inSelectCalendars) : tomorrowEventsAll
+const todayEvents = await CalendarEvent.today([])
+const tomorrowEvents = await CalendarEvent.tomorrow([])
+const eventsAreFiltered = selectCalendars.length
 const futureEvents = enumerateEvents()
 const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
 
@@ -269,7 +278,7 @@ for (var x = 0; x < columns.length; x++) {
   columnStack.layoutVertically()
   
   // Only add padding on the first or last column.
-  columnStack.setPadding(0, x == 0 ? 5 : 0, 0, x == columns.length-1 ? 5 : 0)
+  columnStack.setPadding(0, x == 0 ? padding/2 : 0, 0, x == columns.length-1 ? padding/2 : 0)
   columnStack.size = new Size(column.width,0)
   
   // Add the items to the column.
@@ -289,25 +298,20 @@ if (imageBackground) {
   // Determine if our image exists and when it was saved.
   const path = files.joinPath(files.documentsDirectory(), "weather-cal-image")
   const exists = files.fileExists(path)
-  const createdToday = exists ? sameDay(files.modificationDate(path),currentDate) : false
   
-  // If it exists and updates aren't being forced, use the cache.
-  if (exists && !forceImageUpdate) { 
+  // If it exists and an update isn't forced, use the cache.
+  if (exists && (config.runsInWidget || !forceImageUpdate)) {
     widget.backgroundImage = files.readImage(path)
   
-  // If it's missing or forced to update...
-  } else if (!exists || forceImageUpdate) { 
-    
-    // ... just use a gray background if we're in the widget.
-    if (config.runsInWidget) { 
+  // If it's missing when running in the widget, use a gray background.
+  } else if (!exists && config.runsInWidget) {
       widget.backgroundColor = Color.gray() 
     
-    // But if we're running in app, prompt the user for the image.
-    } else {
+  // But if we're running in app, prompt the user for the image.
+  } else {
       const img = await Photos.fromLibrary()
       widget.backgroundImage = img
       files.writeImage(path, img)
-    }
   }
     
 // If it's not an image background, show the gradient.
@@ -321,6 +325,7 @@ if (imageBackground) {
   widget.backgroundGradient = gradient
 }
 
+// Finish the widget and show a preview.
 Script.setWidget(widget)
 if (widgetPreview == "small") { widget.presentSmall() }
 else if (widgetPreview == "medium") { widget.presentMedium() }
@@ -473,6 +478,9 @@ function enumerateEvents() {
 
   // Function to determine if an event should be shown.
   function shouldShowEvent(event) {
+  
+    // If events are filtered and the calendar isn't in the selected calendars, return false.
+    if (eventsAreFiltered && !selectCalendars.includes(event.calendar.title)) { return false }
 
     // Hack to remove canceled Office 365 events.
     if (event.title.startsWith("Canceled:")) { return false }
@@ -508,7 +516,7 @@ function enumerateEvents() {
         if (!multipleTomorrowEvents) { 
           
           // The tomorrow label is pretending to be an event.
-          returnedEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isAllDay: true, isLabel: true })
+          returnedEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isLabel: true })
           multipleTomorrowEvents = true
         }
         
@@ -534,9 +542,19 @@ function sameDay(d1, d2) {
     d1.getDate() === d2.getDate()
 }
 
-// Determines if an event is on a selected calendar
-function inSelectCalendars(event) {
-  return selectCalendars.includes(event.calendar.title)
+// Provide a text symbol with the specified shape.
+function provideTextSymbol(shape) {
+
+  // Rectangle character.
+  if (shape.startsWith("rect")) {
+    return "\u2759"
+  }
+  // Circle character.
+  if (shape == "circle") {
+    return "\u2B24"
+  }
+  // Default to the rectangle.
+  return "\u2759" 
 }
 
 /*
@@ -545,21 +563,20 @@ function inSelectCalendars(event) {
  */
 
 // Draw the vertical line in the tomorrow view.
-function drawVerticalLine() {
+function drawVerticalLine(color, height) {
   
-  const w = 2
-  const h = 20
+  const width = 2
   
   let draw = new DrawContext()
   draw.opaque = false
   draw.respectScreenScale = true
-  draw.size = new Size(w,h)
+  draw.size = new Size(width,height)
   
   let barPath = new Path()
-  const barHeight = h
-  barPath.addRoundedRect(new Rect(0, 0, w, h), w/2, w/2)
+  const barHeight = height
+  barPath.addRoundedRect(new Rect(0, 0, height, height), width/2, width/2)
   draw.addPath(barPath)
-  draw.setFillColor(new Color("ffffff", 0.5))
+  draw.setFillColor(color)
   draw.fillPath()
   
   return draw.getImage()
@@ -659,7 +676,7 @@ function date(column) {
   // Show small if it's hard coded, or if it's dynamic and events are visible.
   if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
     let dateStack = align(column)
-    dateStack.setPadding(10, 10, 10, 10)
+    dateStack.setPadding(padding, padding, padding, padding)
 
     df.dateFormat = smallDateFormat
     let dateText = dateStack.addText(df.string(currentDate))
@@ -671,13 +688,13 @@ function date(column) {
     df.dateFormat = largeDateLineOne
     let dateOne = dateOneStack.addText(df.string(currentDate))
     formatText(dateOne, textFormat.largeDate1)
-    dateOneStack.setPadding(10, 10, 0, 10)
+    dateOneStack.setPadding(padding, padding, 0, padding)
     
     let dateTwoStack = align(column)
     df.dateFormat = largeDateLineTwo
     let dateTwo = dateTwoStack.addText(df.string(currentDate))
     formatText(dateTwo, textFormat.largeDate2)
-    dateTwoStack.setPadding(0, 10, 10, 10)
+    dateTwoStack.setPadding(0, padding, padding, 10)
   }
 }
 
@@ -697,7 +714,7 @@ function greeting(column) {
   let greetingStack = align(column)
   let greeting = greetingStack.addText(makeGreeting())
   formatText(greeting, textFormat.greeting)
-  greetingStack.setPadding(10, 10, 10, 10)
+  greetingStack.setPadding(padding, padding, padding, padding)
 }
 
 // Display events on the widget.
@@ -716,7 +733,7 @@ function events(column) {
   if (!eventsAreVisible) {
     let message = eventStack.addText(localizedText.noEventMessage)
     formatText(message, textFormat.greeting)
-    eventStack.setPadding(10, 10, 10, 10)
+    eventStack.setPadding(padding, padding, padding, padding)
     return
   }
   
@@ -729,6 +746,7 @@ function events(column) {
   for (let i = 0; i < futureEvents.length; i++) {
     
     const event = futureEvents[i]
+    const bottomPadding = (padding-10 < 0) ? 0 : padding-10
     
     // If it's the tomorrow label, change to the tomorrow stack.
     if (event.isLabel) {
@@ -737,12 +755,36 @@ function events(column) {
       const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
       tomorrowStack.url = 'calshow:' + tomorrowSeconds
       currentStack = tomorrowStack
+      
+      // Mimic the formatting of an event title, mostly.
+      const eventLabelStack = align(currentStack)
+      const eventLabel = eventLabelStack.addText(event.title)
+      formatText(eventLabel, textFormat.eventLabel)
+      eventLabelStack.setPadding(i==0 ? padding : padding/2, padding, padding/2, padding)
+      continue
     }
     
     const titleStack = align(currentStack)
-    const title = titleStack.addText(event.title)
+    titleStack.layoutHorizontally()
+    const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
+    
+    // If we're showing a color, and it's not shown on the right, show it.
+    if (showCalendarColor && !showCalendarColor.includes("right")) {
+      let colorItem = titleStack.addText(provideTextSymbol(colorShape) + " ")
+      formatText(colorItem, textFormat.eventTitle)
+      colorItem.textColor = event.calendar.color
+    }
+
+    const title = titleStack.addText(event.title.trim())
     formatText(title, textFormat.eventTitle)
-    titleStack.setPadding(i==0 ? 10 : 5, 10, event.isAllDay ? 5 : 0, 10)
+    titleStack.setPadding(i==0 ? padding : padding/2, padding, event.isAllDay ? padding/2 : padding/10, padding)
+    
+    // If we're showing a color on the right, show it.
+    if (showCalendarColor && showCalendarColor.includes("right")) {
+      let colorItem = titleStack.addText(" " + provideTextSymbol(colorShape))
+      formatText(colorItem, textFormat.eventTitle)
+      colorItem.textColor = event.calendar.color
+    }
   
     // If there are too many events, limit the line height.
     if (futureEvents.length >= 3) { title.lineLimit = 1 }
@@ -769,7 +811,7 @@ function events(column) {
     const timeStack = align(currentStack)
     const time = timeStack.addText(timeText)
     formatText(time, textFormat.eventTime)
-    timeStack.setPadding(0, 10, i==futureEvents.length-1 ? 10 : 5, 10)
+    timeStack.setPadding(0, padding, i==futureEvents.length-1 ? padding : padding/2, padding)
   }
 }
 
@@ -786,12 +828,12 @@ function current(column) {
   let mainConditionStack = align(currentWeatherStack)
   let mainCondition = mainConditionStack.addImage(provideSymbol(currentCondition,isNight(currentDate)))
   mainCondition.imageSize = new Size(22,22)
-  mainConditionStack.setPadding(10, 10, 0, 10)
+  mainConditionStack.setPadding(padding, padding, 0, padding)
 
   // Show the current temperature.
   let tempStack = align(currentWeatherStack)
   let temp = tempStack.addText(Math.round(currentTemp) + "°")
-  tempStack.setPadding(0, 10, 0, 10)
+  tempStack.setPadding(0, padding, 0, padding)
   formatText(temp, textFormat.largeTemp)
   
   // If we're not showing the high and low, end it here.
@@ -800,7 +842,7 @@ function current(column) {
   // Show the temp bar and high/low values.
   let tempBarStack = align(currentWeatherStack)
   tempBarStack.layoutVertically()
-  tempBarStack.setPadding(0, 10, 5, 10)
+  tempBarStack.setPadding(0, padding, padding/2, padding)
   
   let tempBar = drawTempBar()
   let tempBarImage = tempBarStack.addImage(tempBar)
@@ -838,13 +880,13 @@ function future(column) {
   let subLabelStack = align(futureWeatherStack)
   let subLabel = subLabelStack.addText(subLabelText)
   formatText(subLabel, textFormat.smallTemp)
-  subLabelStack.setPadding(0, 10, 2, 10)
+  subLabelStack.setPadding(0, padding, padding/4, padding)
   
   // Set up the sub condition stack.
   let subConditionStack = align(futureWeatherStack)
   subConditionStack.layoutHorizontally()
   subConditionStack.centerAlignContent()
-  subConditionStack.setPadding(0, 10, 10, 10)
+  subConditionStack.setPadding(0, padding, padding, padding)
   
   // Determine what condition to show.
   var nightCondition
@@ -867,7 +909,7 @@ function future(column) {
     formatText(subTemp, textFormat.smallTemp)
     
   } else {
-    let tomorrowLine = subConditionStack.addImage(drawVerticalLine())
+    let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color("ffffff", 0.5), 20))
     tomorrowLine.imageSize = new Size(3,28)
     subConditionStack.addSpacer(5)
     let tomorrowStack = subConditionStack.addStack()
@@ -887,7 +929,7 @@ function text(inputText) {
   
   function displayText(column) {
     let textStack = align(column)
-    textStack.setPadding(10, 10, 10, 10)
+    textStack.setPadding(padding, padding, padding, padding)
     
     let textDisplay = textStack.addText(inputText)
     formatText(textDisplay, textFormat.customText)
