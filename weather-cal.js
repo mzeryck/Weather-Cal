@@ -1,3 +1,6 @@
+// Variables used by Scriptable.
+// These must be at the very top of the file. Do not edit.
+// icon-color: red; icon-glyph: magic;
 /*
  * SETUP
  * Use this section to set up the widget.
@@ -11,7 +14,7 @@ const apiKey = ""
 const lockLocation = true
 
 // Set to imperial for Fahrenheit, or metric for Celsius
-const units = "imperial"
+const units = "metric"
 
 // The size of the widget preview in the app.
 const widgetPreview = "large"
@@ -47,7 +50,7 @@ const localizedText = {
   // The text shown in an events item when no events remain.
   // Change to blank "" if you don't want to show a message.
   ,noEventMessage: "Enjoy the rest of your day."
-     
+     
 }
 
 /*
@@ -161,12 +164,13 @@ const textFormat = {
  * =====================================
  */
 
+
 // Set up the date and event information.
 const currentDate = new Date()
 const todayEventsAll = await CalendarEvent.today([])
 const tomorrowEventsAll = await CalendarEvent.tomorrow([])
-const todayEvents = selectCalendars ? todayEventsAll.filter(inSelectCalendars) : todayEventsAll
-const tomorrowEvents = selectCalendars ? tomorrowEventsAll.filter(inSelectCalendars) : tomorrowEventsAll
+const todayEvents = selectCalendars.lenght>0 ? todayEventsAll.filter(inSelectCalendars) : todayEventsAll
+const tomorrowEvents = selectCalendars.lenght>0 ? tomorrowEventsAll.filter(inSelectCalendars) : tomorrowEventsAll
 const futureEvents = enumerateEvents()
 const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
 
