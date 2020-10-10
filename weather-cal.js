@@ -4,14 +4,14 @@
  * ======================================
  */
 
-// Get a free API key here: openweathermap.org/appid
+// To use weather, get a free API key at openweathermap.org/appid and paste it in between the quotation marks.
 const apiKey = ""
+
+// Set the locale code. Leave blank "" to match the device's locale. You can change the hard-coded text strings in the TEXT section below.
+let locale = "en"
 
 // Set to true for fixed location, false to update location as you move around
 const lockLocation = true
-
-// Set to imperial for Fahrenheit, or metric for Celsius
-const units = "imperial"
 
 // The size of the widget preview in the app.
 const widgetPreview = "large"
@@ -22,32 +22,13 @@ const imageBackground = true
 // Set to true to reset the widget's background image.
 const forceImageUpdate = false
 
-// Set the two-letter locale code for the date and weather formatting.
-const locale = "en"
-
-// You can change the language or wording of any other text in the widget.
-const localizedText = {
-  
-  // The text shown if you add a greeting item to the layout.
-  nightGreeting: "Good night."
-  ,morningGreeting: "Good morning."
-  ,afternoonGreeting: "Good afternoon."
-  ,eveningGreeting: "Good evening."
-  
-  // The text shown if you add a future weather item to the layout, or tomorrow's events.
-  ,nextHourLabel: "Next hour"
-  ,tomorrowLabel: "Tomorrow"
-
-  // The text shown in an events item when no events remain.
-  // Change to blank "" if you don't want to show a message.
-  ,noEventMessage: "Enjoy the rest of your day."
-     
-}
+// Set the padding around each item. Default is 10.
+const padding = 10
 
 /*
  * LAYOUT
- * Decide what elements to show on the widget.
- * ===========================================
+ * Decide what items to show on the widget.
+ * ========================================
  */
 
 // Set the width of the column, or set to 0 for an automatic width.
@@ -83,66 +64,94 @@ end]}, {
 end]}]
 
 /*
- * ELEMENTS
- * Choose how each element is displayed.
- * =====================================
+ * ITEM SETTINGS
+ * Choose how each item is displayed.
+ * ==================================
  */  
+ 
+// DATE
+// ====
+const dateSettings = {
+
+  // If set to true, date will become smaller when events are displayed.
+  dynamicDateSize: true
+
+  // If the date is not dynamic, should it be large or small?
+  ,staticDateSize: "large"
+
+  // Determine the date format for each date type. See docs.scriptable.app/dateformatter
+  ,smallDateFormat: "EEEE, MMMM d"
+  ,largeDateLineOne: "EEEE,"
+  ,largeDateLineTwo: "MMMM d"
+}
 
 // EVENTS
 // ======
+const eventSettings = {
 
-// How many events to show.
-const numberOfEvents = 3
+  // How many events to show.
+  numberOfEvents: 3
 
-// Show all-day events.
-const showAllDay = true
+  // Show all-day events.
+  ,showAllDay: true
 
-// Show tomorrow's events.
-const showTomorrow = true
+  // Show tomorrow's events.
+  ,showTomorrow: true
 
-// Can be blank "" or set to "duration" or "time" to display how long an event is.
-const showEventLength = "duration"
+  // Can be blank "" or set to "duration" or "time" to display how long an event is.
+  ,showEventLength: "duration"
 
-// Set which calendars for which to show events. Empty [] means all calendars.
-const selectCalendars = []
+  // Set which calendars for which to show events. Empty [] means all calendars.
+  ,selectCalendars: []
 
-// Leave blank "" for no color, or specify shape (circle, rectangle) and/or side (left, right).
-const showCalendarColor = "rectangle left"
-
+  // Leave blank "" for no color, or specify shape (circle, rectangle) and/or side (left, right).
+  ,showCalendarColor: "rectangle left"
+}
 
 // WEATHER
 // =======
+const weatherSettings = {
 
-// Show today's high and low temperatures.
-const showHighLow = true
+  // Set to imperial for Fahrenheit, or metric for Celsius
+  units: "imperial"
 
-// Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
-const tomorrowShownAtHour = 20
+  // Show today's high and low temperatures.
+  ,showHighLow: true
 
-// DATE
-// ====
-
-// If set to true, date will become smaller when events are displayed.
-const dynamicDateSize = true
-
-// If the date is not dynamic, should it be large or small?
-const staticDateSize = "large"
-
-// Determine the date format for each element. See docs.scriptable.app/dateformatter
-const smallDateFormat = "EEEE, MMMM d"
-const largeDateLineOne = "EEEE,"
-const largeDateLineTwo = "MMMM d"
+  // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
+  ,tomorrowShownAtHour: 20
+}
 
 /*
- * FORMATTING
- * Adjust the formatting of the widget.
- * ====================================
+ * TEXT
+ * Change the language and formatting of text displayed.
+ * =====================================================
  */  
  
-// Set the padding around each element. Default is 10.
-const padding = 10
+// You can change the language or wording of any text in the widget.
+const localizedText = {
+  
+  // The text shown if you add a greeting item to the layout.
+  nightGreeting: "Good night."
+  ,morningGreeting: "Good morning."
+  ,afternoonGreeting: "Good afternoon."
+  ,eveningGreeting: "Good evening."
+  
+  // The text shown if you add a future weather item to the layout, or tomorrow's events.
+  ,nextHourLabel: "Next hour"
+  ,tomorrowLabel: "Tomorrow"
 
-// In this section, set the font, size, and color. Use iosfonts.com to find fonts to use. If you want to use the default iOS font, set the font name to one of the following: ultralight, light, regular, medium, semibold, bold, heavy, black, or italic.
+  // The text shown in an events item when no events remain.
+  // Change to blank "" if you don't want to show a message.
+  ,noEventMessage: "Enjoy the rest of your day."
+  
+  // The text shown after the hours and minutes of an event duration.
+  ,durationMinute: "m"
+  ,durationHour: "h"
+     
+}
+
+// Set the font, size, and color of various text elements. Use iosfonts.com to find fonts to use. If you want to use the default iOS font, set the font name to one of the following: ultralight, light, regular, medium, semibold, bold, heavy, black, or italic.
 const textFormat = {
   
   // Set the default font and color.
@@ -171,92 +180,19 @@ const textFormat = {
  * =====================================
  */
 
-// Set up the date and event information.
-const currentDate = new Date()
-const todayEvents = await CalendarEvent.today([])
-const tomorrowEvents = await CalendarEvent.tomorrow([])
-const eventsAreFiltered = selectCalendars.length
-const futureEvents = enumerateEvents()
-const eventsAreVisible = (futureEvents.length > 0) && (numberOfEvents > 0)
+// Make sure we have a locale value.
+if (locale == "" || locale == null) { locale = Device.locale() }
 
-// Set up the file manager.
+// Declare the data variables.
+var eventData, locationData, sunData, weatherData
+
+// Create global constants.
+const currentDate = new Date()
 const files = FileManager.local()
 
-// Set up the location logic.
-const locationPath = files.joinPath(files.documentsDirectory(), "weather-cal-location")
-var latitude, longitude
-
-// If we're locking our location and it's saved already, read from the file.
-if (lockLocation && files.fileExists(locationPath)) {
-  const locationStr = files.readString(locationPath).split(",")
-  latitude = locationStr[0]
-  longitude = locationStr[1]
-
-// Otherwise, get the location from the system.
-} else {
-  const location = await Location.current()
-  latitude = location.latitude
-  longitude = location.longitude
-  files.writeString(locationPath, latitude + "," + longitude)
-}
-
-// Set up the cache.
-const cachePath = files.joinPath(files.documentsDirectory(), "weather-cal-cache")
-const cacheExists = files.fileExists(cachePath)
-const cacheDate = cacheExists ? files.modificationDate(cachePath) : 0
-var data
-
-// If cache exists and it's been less than 60 seconds since last request, use cached data.
-if (cacheExists && (currentDate.getTime() - cacheDate.getTime()) < 60000) {
-  const cache = files.readString(cachePath)
-  data = JSON.parse(cache)
-
-// Otherwise, use the API to get new weather data.
-} else {
-  const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,alerts&units=" + units + "&lang=" + locale + "&appid=" + apiKey
-  data = await new Request(weatherReq).loadJSON()
-  files.writeString(cachePath, JSON.stringify(data))
-}
-
-// Store the weather values.
-const currentTemp = data.current.temp
-const currentCondition = data.current.weather[0].id
-const todayHigh = data.daily[0].temp.max
-const todayLow = data.daily[0].temp.min
-
-const nextHourTemp = data.hourly[1].temp
-const nextHourCondition = data.hourly[1].weather[0].id
-
-const tomorrowHigh = data.daily[1].temp.max
-const tomorrowLow = data.daily[1].temp.min
-const tomorrowCondition = data.daily[1].weather[0].id
-
-// Set up the sunrise/sunset cache.
-const sunCachePath = files.joinPath(files.documentsDirectory(), "weather-cal-sun")
-const sunCacheExists = files.fileExists(sunCachePath)
-const sunCacheDate = sunCacheExists ? files.modificationDate(sunCachePath) : 0
-var sunData
-
-// If cache exists and it was created today, use cached data.
-if (sunCacheExists && sameDay(currentDate, sunCacheDate)) {
-  const sunCache = files.readString(sunCachePath)
-  sunData = JSON.parse(sunCache)
-
-// Otherwise, use the API to get sunrise and sunset times.
-} else {
-  const sunReq = "https://api.sunrise-sunset.org/json?lat=" + latitude + "&lng=" + longitude + "&formatted=0&date=" + currentDate.getFullYear() + "-" + (currentDate.getMonth()+1) + "-" + currentDate.getDate()
-  sunData = await new Request(sunReq).loadJSON()
-  files.writeString(sunCachePath, JSON.stringify(sunData))
-}
-
-// Store the timing values.
-const sunrise = new Date(sunData.results.sunrise).getTime()
-const sunset = new Date(sunData.results.sunset).getTime()
-const utcTime = currentDate.getTime()
-
 /*
- * COLUMNS AND PADDING
- * ===================
+ * COLUMNS
+ * =======
  */
 
 // Set up the widget and the main stack.
@@ -267,7 +203,7 @@ let mainStack = widget.addStack()
 mainStack.layoutHorizontally()
 mainStack.setPadding(0, 0, 0, 0)
 
-// Set up alignment
+// Set up alignment.
 var currentAlignment = left
 
 // Set up our columns.
@@ -283,7 +219,7 @@ for (var x = 0; x < columns.length; x++) {
   
   // Add the items to the column.
   for (var i = 0; i < column.items.length; i++) {
-    column.items[i](columnStack)
+    await column.items[i](columnStack)
   }
 }
 
@@ -317,7 +253,7 @@ if (imageBackground) {
 // If it's not an image background, show the gradient.
 } else {
   let gradient = new LinearGradient()
-  let gradientSettings = getGradientSettings()
+  let gradientSettings = await setupGradient()
   
   gradient.colors = gradientSettings.color()
   gradient.locations = gradientSettings.position()
@@ -333,12 +269,154 @@ else if (widgetPreview == "large") { widget.presentLarge() }
 Script.complete()
 
 /*
- * IMAGES AND FORMATTING
- * =====================
+ * LAYOUT FUNCTIONS
+ * These functions manage spacing and alignment.
+ * =============================================
  */
 
-// Get the gradient settings for each time of day.
-function getGradientSettings() {
+// Create an aligned stack to add content to.
+function align(column) {
+  
+  // Add the containing stack to the column.
+  let alignmentStack = column.addStack()
+  alignmentStack.layoutHorizontally()
+  
+  // Get the correct stack from the alignment function.
+  let returnStack = currentAlignment(alignmentStack)
+  returnStack.layoutVertically()
+  return returnStack
+}
+
+// Create a right-aligned stack.
+function alignRight(alignmentStack) {
+  alignmentStack.addSpacer()
+  let returnStack = alignmentStack.addStack()
+  return returnStack
+}
+
+// Create a left-aligned stack.
+function alignLeft(alignmentStack) {
+  let returnStack = alignmentStack.addStack()
+  alignmentStack.addSpacer()
+  return returnStack
+}
+
+// Create a center-aligned stack.
+function alignCenter(alignmentStack) {
+  alignmentStack.addSpacer()
+  let returnStack = alignmentStack.addStack()
+  alignmentStack.addSpacer()
+  return returnStack
+}
+
+// This function adds a space, with an optional amount.
+function space(input = null) { 
+  
+  // This function adds a spacer with the input width.
+  function spacer(column) {
+  
+    // If the input is null, add a flexible spacer.
+    if (!input) { column.addSpacer() }
+    
+    // Otherwise, add a space with the specified length.
+    else { column.addSpacer(input) }
+  }
+  
+  // If there's no input or it's a number, it's being called in the column declaration.
+  if (!input || typeof input == "number") { return spacer }
+  
+  // Otherwise, it's being called in the column generator.
+  else { input.addSpacer() }
+}
+
+// Change the current alignment to right.
+function right(x) { currentAlignment = alignRight }
+
+// Change the current alignment to left.
+function left(x) { currentAlignment = alignLeft }
+
+// Change the current alignment to center.
+function center(x) { currentAlignment = alignCenter }
+
+// This function doesn't need to do anything.
+function end(x) { return }
+
+/*
+ * SETUP FUNCTIONS
+ * These functions prepare data needed for items.
+ * ==============================================
+ */
+
+// Set up the eventData object.
+async function setupEvents() {
+  
+  eventData = {}
+  const calendars = eventSettings.selectCalendars
+  const numberOfEvents = eventSettings.numberOfEvents
+
+  // Function to determine if an event should be shown.
+  function shouldShowEvent(event) {
+  
+    // If events are filtered and the calendar isn't in the selected calendars, return false.
+    if (calendars.length && !calendars.includes(event.calendar.title)) { return false }
+
+    // Hack to remove canceled Office 365 events.
+    if (event.title.startsWith("Canceled:")) { return false }
+
+    // If it's an all-day event, only show if the setting is active.
+    if (event.isAllDay) { return eventSettings.showAllDay }
+
+    // Otherwise, return the event if it's in the future.
+    return (event.startDate.getTime() > currentDate.getTime())
+  }
+  
+  // Determine which events to show, and how many.
+  const todayEvents = await CalendarEvent.today([])
+  let shownEvents = 0
+  let futureEvents = []
+  
+  for (const event of todayEvents) {
+    if (shownEvents == numberOfEvents) { break }
+    if (shouldShowEvent(event)) {
+      futureEvents.push(event)
+      shownEvents++
+    }
+  }
+
+  // If there's room and we need to, show tomorrow's events.
+  let multipleTomorrowEvents = false
+  if (eventSettings.showTomorrow && shownEvents < numberOfEvents) {
+  
+    const tomorrowEvents = await CalendarEvent.tomorrow([])
+    for (const event of tomorrowEvents) {
+      if (shownEvents == numberOfEvents) { break }
+      if (shouldShowEvent(event)) {
+      
+        // Add the tomorrow label prior to the first tomorrow event.
+        if (!multipleTomorrowEvents) { 
+          
+          // The tomorrow label is pretending to be an event.
+          futureEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isLabel: true })
+          multipleTomorrowEvents = true
+        }
+        
+        // Show the tomorrow event and increment the counter.
+        futureEvents.push(event)
+        shownEvents++
+      }
+    }
+  }
+  
+  // Store the future events, and whether or not any events are displayed.
+  eventData.futureEvents = futureEvents
+  eventData.eventsAreVisible = (futureEvents.length > 0) && (eventSettings.numberOfEvents > 0)
+}
+
+// Set up the gradient for the widget background.
+async function setupGradient() {
+  
+  // Requirements: sunrise
+  if (!sunData) { await setupSunrise() }
 
   let gradient = {
 		"dawn": {
@@ -376,6 +454,10 @@ function getGradientSettings() {
 			"position": function() { return [-0.5, 0.2, 0.5, 1] }
 		}
 	}
+	
+	const sunrise = sunData.sunrise
+	const sunset = sunData.sunset
+	const utcTime = currentDate.getTime()
 
   function closeTo(time,mins) {
     return Math.abs(utcTime - time) < (mins * 60000)
@@ -397,6 +479,439 @@ function getGradientSettings() {
 
 	// Otherwise, return the "typical" theme.
 	return gradient.midday
+}
+
+// Set up the locationData object.
+async function setupLocation() {
+
+  locationData = {}
+  const locationPath = files.joinPath(files.documentsDirectory(), "weather-cal-location")
+
+  // If our location is unlocked or cache doesn't exist, ask iOS for location.
+  var readLocationFromFile = false
+  if (!lockLocation || !files.fileExists(locationPath)) {
+    try {
+      const location = await Location.current()
+      locationData.latitude = location.latitude
+      locationData.longitude = location.longitude
+      files.writeString(locationPath, location.latitude + "," + location.longitude)
+    
+    } catch(e) {
+      // If we fail in unlocked mode, read it from the cache.
+      if (!lockLocation) { readLocationFromFile = true }
+      
+      // We can't recover if we fail on first run in locked mode.
+      else { return }
+    }
+  }
+  
+  // If our location is locked or we need to read from file, do it.
+  if (lockLocation || readLocationFromFile) {
+    const locationStr = files.readString(locationPath).split(",")
+    locationData.latitude = locationStr[0]
+    locationData.longitude = locationStr[1]
+  }
+}
+
+// Set up the sunData object.
+async function setupSunrise() {
+
+  // Requirements: location
+  if (!locationData) { await setupLocation() }
+
+  // Set up the sunrise/sunset cache.
+  const sunCachePath = files.joinPath(files.documentsDirectory(), "weather-cal-sun")
+  const sunCacheExists = files.fileExists(sunCachePath)
+  const sunCacheDate = sunCacheExists ? files.modificationDate(sunCachePath) : 0
+  var sunDataRaw
+
+  // If cache exists and it was created today, use cached data.
+  if (sunCacheExists && sameDay(currentDate, sunCacheDate)) {
+    const sunCache = files.readString(sunCachePath)
+    sunDataRaw = JSON.parse(sunCache)
+
+  // Otherwise, use the API to get sunrise and sunset times.
+  } else {
+    const sunReq = "https://api.sunrise-sunset.org/json?lat=" + locationData.latitude + "&lng=" + locationData.longitude + "&formatted=0&date=" + currentDate.getFullYear() + "-" + (currentDate.getMonth()+1) + "-" + currentDate.getDate()
+    sunDataRaw = await new Request(sunReq).loadJSON()
+    files.writeString(sunCachePath, JSON.stringify(sunDataRaw))
+  }
+
+  // Store the timing values.
+  sunData = {}
+  sunData.sunrise = new Date(sunDataRaw.results.sunrise).getTime()
+  sunData.sunset = new Date(sunDataRaw.results.sunset).getTime()
+}
+
+// Set up the weatherData object.
+async function setupWeather() {
+
+  // Requirements: location
+  if (!locationData) { await setupLocation() }
+
+  // Set up the cache.
+  const cachePath = files.joinPath(files.documentsDirectory(), "weather-cal-cache")
+  const cacheExists = files.fileExists(cachePath)
+  const cacheDate = cacheExists ? files.modificationDate(cachePath) : 0
+  var weatherDataRaw
+
+  // If cache exists and it's been less than 60 seconds since last request, use cached data.
+  if (cacheExists && (currentDate.getTime() - cacheDate.getTime()) < 60000) {
+    const cache = files.readString(cachePath)
+    weatherDataRaw = JSON.parse(cache)
+
+  // Otherwise, use the API to get new weather data.
+  } else {
+    const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + locationData.latitude + "&lon=" + locationData.longitude + "&exclude=minutely,alerts&units=" + weatherSettings.units + "&lang=" + locale + "&appid=" + apiKey
+    weatherDataRaw = await new Request(weatherReq).loadJSON()
+    files.writeString(cachePath, JSON.stringify(weatherDataRaw))
+  }
+
+  // Store the weather values.
+  weatherData = {}
+  weatherData.currentTemp = weatherDataRaw.current.temp
+  weatherData.currentCondition = weatherDataRaw.current.weather[0].id
+  weatherData.todayHigh = weatherDataRaw.daily[0].temp.max
+  weatherData.todayLow = weatherDataRaw.daily[0].temp.min
+
+  weatherData.nextHourTemp = weatherDataRaw.hourly[1].temp
+  weatherData.nextHourCondition = weatherDataRaw.hourly[1].weather[0].id
+
+  weatherData.tomorrowHigh = weatherDataRaw.daily[1].temp.max
+  weatherData.tomorrowLow = weatherDataRaw.daily[1].temp.min
+  weatherData.tomorrowCondition = weatherDataRaw.daily[1].weather[0].id
+}
+
+/*
+ * WIDGET ITEMS
+ * These functions display items on the widget.
+ * ============================================
+ */
+
+// Display the date on the widget.
+async function date(column) {
+
+  // Requirements: events (if dynamicDateSize is enabled)
+  if (!eventData && dateSettings.dynamicDateSize) { await setupEvents() }
+
+  // Set up the date formatter and set its locale.
+  let df = new DateFormatter()
+  df.locale = locale
+  
+  // Show small if it's hard coded, or if it's dynamic and events are visible.
+  if (dateSettings.staticDateSize == "small" || (dateSettings.dynamicDateSize && eventData.eventsAreVisible)) {
+    let dateStack = align(column)
+    dateStack.setPadding(padding, padding, padding, padding)
+
+    df.dateFormat = dateSettings.smallDateFormat
+    let dateText = dateStack.addText(df.string(currentDate))
+    formatText(dateText, textFormat.smallDate)
+    
+  // Otherwise, show the large date.
+  } else {
+    let dateOneStack = align(column)
+    df.dateFormat = dateSettings.largeDateLineOne
+    let dateOne = dateOneStack.addText(df.string(currentDate))
+    formatText(dateOne, textFormat.largeDate1)
+    dateOneStack.setPadding(padding, padding, 0, padding)
+    
+    let dateTwoStack = align(column)
+    df.dateFormat = dateSettings.largeDateLineTwo
+    let dateTwo = dateTwoStack.addText(df.string(currentDate))
+    formatText(dateTwo, textFormat.largeDate2)
+    dateTwoStack.setPadding(0, padding, padding, 10)
+  }
+}
+
+// Display a time-based greeting on the widget.
+async function greeting(column) {
+
+  // This function makes a greeting based on the time of day.
+  function makeGreeting() {
+    const hour = currentDate.getHours()
+    if (hour    < 5)  { return localizedText.nightGreeting }
+    if (hour    < 12) { return localizedText.morningGreeting }
+    if (hour-12 < 5)  { return localizedText.afternoonGreeting }
+    if (hour-12 < 10) { return localizedText.eveningGreeting }
+    return localizedText.nightGreeting
+  }
+  
+  // Set up the greeting.
+  let greetingStack = align(column)
+  let greeting = greetingStack.addText(makeGreeting())
+  formatText(greeting, textFormat.greeting)
+  greetingStack.setPadding(padding, padding, padding, padding)
+}
+
+// Display events on the widget.
+async function events(column) {
+
+  // Requirements: events
+  if (!eventData) { await setupEvents() }
+
+  // If nothing should be displayed, just return.
+  if (!eventData.eventsAreVisible && !localizedText.noEventMessage.length) { return }
+  
+  // Set up the event stack.
+  let eventStack = column.addStack()
+  eventStack.layoutVertically()
+  const todaySeconds = Math.floor(currentDate.getTime() / 1000) - 978307200
+  eventStack.url = 'calshow:' + todaySeconds
+  
+  // If there are no events and we have a message, show it and return.
+  if (!eventData.eventsAreVisible && localizedText.noEventMessage.length) {
+    let message = eventStack.addText(localizedText.noEventMessage)
+    formatText(message, textFormat.greeting)
+    eventStack.setPadding(padding, padding, padding, padding)
+    return
+  }
+  
+  // If we're not showing the message, don't pad the event stack.
+  eventStack.setPadding(0, 0, 0, 0)
+  
+  // Add each event to the stack.
+  var currentStack = eventStack
+  const futureEvents = eventData.futureEvents
+  for (let i = 0; i < futureEvents.length; i++) {
+    
+    const event = futureEvents[i]
+    const bottomPadding = (padding-10 < 0) ? 0 : padding-10
+    
+    // If it's the tomorrow label, change to the tomorrow stack.
+    if (event.isLabel) {
+      let tomorrowStack = column.addStack()
+      tomorrowStack.layoutVertically()
+      const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
+      tomorrowStack.url = 'calshow:' + tomorrowSeconds
+      currentStack = tomorrowStack
+      
+      // Mimic the formatting of an event title, mostly.
+      const eventLabelStack = align(currentStack)
+      const eventLabel = eventLabelStack.addText(event.title)
+      formatText(eventLabel, textFormat.eventLabel)
+      eventLabelStack.setPadding(i==0 ? padding : padding/2, padding, padding/2, padding)
+      continue
+    }
+    
+    const titleStack = align(currentStack)
+    titleStack.layoutHorizontally()
+    const showCalendarColor = eventSettings.showCalendarColor
+    const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
+    
+    // If we're showing a color, and it's not shown on the right, add it to the left.
+    if (showCalendarColor.length && !showCalendarColor.includes("right")) {
+      let colorItem = titleStack.addText(provideTextSymbol(colorShape) + " ")
+      formatText(colorItem, textFormat.eventTitle)
+      colorItem.textColor = event.calendar.color
+    }
+
+    const title = titleStack.addText(event.title.trim())
+    formatText(title, textFormat.eventTitle)
+    titleStack.setPadding(i==0 ? padding : padding/2, padding, event.isAllDay ? padding/2 : padding/10, padding)
+    
+    // If we're showing a color on the right, show it.
+    if (showCalendarColor.length && showCalendarColor.includes("right")) {
+      let colorItem = titleStack.addText(" " + provideTextSymbol(colorShape))
+      formatText(colorItem, textFormat.eventTitle)
+      colorItem.textColor = event.calendar.color
+    }
+  
+    // If there are too many events, limit the line height.
+    if (futureEvents.length >= 3) { title.lineLimit = 1 }
+
+    // If it's an all-day event, we don't need a time.
+    if (event.isAllDay) { continue }
+    
+    // Format the time information.
+    let df = new DateFormatter()
+    df.useNoDateStyle()
+    df.useShortTimeStyle()
+    let timeText = df.string(event.startDate)
+    
+    // If we show the length as time, add an en dash and the time.
+    if (eventSettings.showEventLength == "time") { 
+      timeText += "–" + df.string(event.endDate) 
+      
+    // If we should it as a duration, add the minutes.
+    } else if (eventSettings.showEventLength == "duration") {
+      const duration = (event.endDate.getTime() - event.startDate.getTime()) / (1000*60)
+      const hours = Math.floor(duration/60)
+      const minutes = Math.floor(duration % 60)
+      const hourText = hours>0 ? hours + localizedText.durationHour : ""
+      const minuteText = minutes>0 ? minutes + localizedText.durationMinute : ""
+      const showSpace = hourText.length && minuteText.length
+      timeText += " \u2022 " + hourText + (showSpace ? " " : "") + minuteText
+    }
+
+    const timeStack = align(currentStack)
+    const time = timeStack.addText(timeText)
+    formatText(time, textFormat.eventTime)
+    timeStack.setPadding(0, padding, i==futureEvents.length-1 ? padding : padding/2, padding)
+  }
+}
+
+// Display the current weather.
+async function current(column) {
+
+  // Requirements: weather and sunrise
+  if (!weatherData) { await setupWeather() }
+  if (!sunData) { await setupSunrise() }
+
+  // Set up the current weather stack.
+  let currentWeatherStack = column.addStack()
+  currentWeatherStack.layoutVertically()
+  currentWeatherStack.setPadding(0, 0, 0, 0)
+  currentWeatherStack.url = "https://weather.com/weather/today/l/" + locationData.latitude + "," + locationData.longitude
+
+  // Show the current condition symbol.
+  let mainConditionStack = align(currentWeatherStack)
+  let mainCondition = mainConditionStack.addImage(provideSymbol(weatherData.currentCondition,isNight(currentDate)))
+  mainCondition.imageSize = new Size(22,22)
+  mainConditionStack.setPadding(padding, padding, 0, padding)
+
+  // Show the current temperature.
+  let tempStack = align(currentWeatherStack)
+  let temp = tempStack.addText(Math.round(weatherData.currentTemp) + "°")
+  tempStack.setPadding(0, padding, 0, padding)
+  formatText(temp, textFormat.largeTemp)
+  
+  // If we're not showing the high and low, end it here.
+  if (!weatherSettings.showHighLow) { return }
+
+  // Show the temp bar and high/low values.
+  let tempBarStack = align(currentWeatherStack)
+  tempBarStack.layoutVertically()
+  tempBarStack.setPadding(0, padding, padding/2, padding)
+  
+  let tempBar = drawTempBar()
+  let tempBarImage = tempBarStack.addImage(tempBar)
+  tempBarImage.size = new Size(50,0)
+  
+  tempBarStack.addSpacer(1)
+  
+  let highLowStack = tempBarStack.addStack()
+  highLowStack.layoutHorizontally()
+  
+  let mainLow = highLowStack.addText(Math.round(weatherData.todayLow).toString())
+  highLowStack.addSpacer()
+  let mainHigh = highLowStack.addText(Math.round(weatherData.todayHigh).toString())
+  
+  formatText(mainHigh, textFormat.tinyTemp)
+  formatText(mainLow, textFormat.tinyTemp)
+  
+  tempBarStack.size = new Size(70,30)
+}
+
+// Display upcoming weather.
+async function future(column) {
+
+  // Requirements: weather and sunrise
+  if (!weatherData) { await setupWeather() }
+  if (!sunData) { await setupSunrise() }
+
+  // Set up the future weather stack.
+  let futureWeatherStack = column.addStack()
+  futureWeatherStack.layoutVertically()
+  futureWeatherStack.setPadding(0, 0, 0, 0)
+  futureWeatherStack.url = "https://weather.com/weather/tenday/l/" + locationData.latitude + "," + locationData.longitude
+
+  // Determine if we should show the next hour.
+  const showNextHour = (currentDate.getHours() < weatherSettings.tomorrowShownAtHour)
+  
+  // Set the label value.
+  const subLabelText = showNextHour ? localizedText.nextHourLabel : localizedText.tomorrowLabel
+  let subLabelStack = align(futureWeatherStack)
+  let subLabel = subLabelStack.addText(subLabelText)
+  formatText(subLabel, textFormat.smallTemp)
+  subLabelStack.setPadding(0, padding, padding/4, padding)
+  
+  // Set up the sub condition stack.
+  let subConditionStack = align(futureWeatherStack)
+  subConditionStack.layoutHorizontally()
+  subConditionStack.centerAlignContent()
+  subConditionStack.setPadding(0, padding, padding, padding)
+  
+  // Determine what condition to show.
+  var nightCondition
+  if (showNextHour) {
+    const addHour = currentDate.getTime() + (60*60*1000)
+    const newDate = new Date(addHour)
+    nightCondition = isNight(newDate)
+  } else {
+    nightCondition = false 
+  }
+  
+  let subCondition = subConditionStack.addImage(provideSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.tomorrowCondition,nightCondition))
+  const subConditionSize = showNextHour ? 14 : 18
+  subCondition.imageSize = new Size(subConditionSize, subConditionSize)
+  subConditionStack.addSpacer(5)
+  
+  // The next part of the display changes significantly for next hour vs tomorrow.
+  if (showNextHour) {
+    let subTemp = subConditionStack.addText(Math.round(weatherData.nextHourTemp) + "°")
+    formatText(subTemp, textFormat.smallTemp)
+    
+  } else {
+    let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color("ffffff", 0.5), 20))
+    tomorrowLine.imageSize = new Size(3,28)
+    subConditionStack.addSpacer(5)
+    let tomorrowStack = subConditionStack.addStack()
+    tomorrowStack.layoutVertically()
+    
+    let tomorrowHighText = tomorrowStack.addText(Math.round(weatherData.tomorrowHigh) + "")
+    tomorrowStack.addSpacer(4)
+    let tomorrowLowText = tomorrowStack.addText(Math.round(weatherData.tomorrowLow) + "")
+    
+    formatText(tomorrowHighText, textFormat.tinyTemp)
+    formatText(tomorrowLowText, textFormat.tinyTemp)
+  }
+}
+
+// Return a text-creation function.
+function text(inputText) {
+  
+  async function displayText(column) {
+    let textStack = align(column)
+    textStack.setPadding(padding, padding, padding, padding)
+    
+    let textDisplay = textStack.addText(inputText || "")
+    formatText(textDisplay, textFormat.customText)
+  }
+  return displayText
+}
+
+/*
+ * HELPER FUNCTIONS
+ * These functions perform duties for other functions.
+ * ===================================================
+ */
+
+// Determines if the provided date is at night.
+function isNight(dateInput) {
+  const timeValue = dateInput.getTime()
+  return (timeValue < sunData.sunrise) || (timeValue > sunData.sunset)
+}
+
+// Determines if two dates occur on the same day
+function sameDay(d1, d2) {
+  return d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+}
+
+// Provide a text symbol with the specified shape.
+function provideTextSymbol(shape) {
+
+  // Rectangle character.
+  if (shape.startsWith("rect")) {
+    return "\u2759"
+  }
+  // Circle character.
+  if (shape == "circle") {
+    return "\u2B24"
+  }
+  // Default to the rectangle.
+  return "\u2759" 
 }
 
 // Provide a symbol based on the condition.
@@ -469,97 +984,9 @@ function formatText(textItem, format) {
 }
 
 /*
- * HELPER FUNCTIONS
- * ================
- */
-
-// Find future events that aren't all day and aren't canceled
-function enumerateEvents() {
-
-  // Function to determine if an event should be shown.
-  function shouldShowEvent(event) {
-  
-    // If events are filtered and the calendar isn't in the selected calendars, return false.
-    if (eventsAreFiltered && !selectCalendars.includes(event.calendar.title)) { return false }
-
-    // Hack to remove canceled Office 365 events.
-    if (event.title.startsWith("Canceled:")) { return false }
-
-    // If it's an all-day event, only show if the setting is active.
-    if (event.isAllDay) { return showAllDay }
-
-    // Otherwise, return the event if it's in the future.
-    return (event.startDate.getTime() > currentDate.getTime())
-  }
-  
-  // Determine which events to show, and how many.
-  let shownEvents = 0
-  let returnedEvents = []
-  
-  for (const event of todayEvents) {
-    if (shownEvents == numberOfEvents) { break }
-    if (shouldShowEvent(event)) {
-      returnedEvents.push(event)
-      shownEvents++
-    }
-  }
-
-  // If there's room and we need to, show tomorrow's events.
-  let multipleTomorrowEvents = false
-  if (showTomorrow && shownEvents < numberOfEvents) {
-
-    for (const event of tomorrowEvents) {
-      if (shownEvents == numberOfEvents) { break }
-      if (shouldShowEvent(event)) {
-      
-        // Add the tomorrow label prior to the first tomorrow event.
-        if (!multipleTomorrowEvents) { 
-          
-          // The tomorrow label is pretending to be an event.
-          returnedEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isLabel: true })
-          multipleTomorrowEvents = true
-        }
-        
-        // Show the tomorrow event and increment the counter.
-        returnedEvents.push(event)
-        shownEvents++
-      }
-    }
-  }
-  return returnedEvents
-}
-
-// Determines if the provided date is at night.
-function isNight(dateInput) {
-  const timeValue = dateInput.getTime()
-  return (timeValue < sunrise) || (timeValue > sunset)
-}
-
-// Determines if two dates occur on the same day
-function sameDay(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() &&
-    d1.getMonth() === d2.getMonth() &&
-    d1.getDate() === d2.getDate()
-}
-
-// Provide a text symbol with the specified shape.
-function provideTextSymbol(shape) {
-
-  // Rectangle character.
-  if (shape.startsWith("rect")) {
-    return "\u2759"
-  }
-  // Circle character.
-  if (shape == "circle") {
-    return "\u2B24"
-  }
-  // Default to the rectangle.
-  return "\u2759" 
-}
-
-/*
  * DRAWING FUNCTIONS
- * =================
+ * These functions draw onto a canvas.
+ * ===================================
  */
 
 // Draw the vertical line in the tomorrow view.
@@ -590,7 +1017,7 @@ function drawTempBar() {
   const tempBarHeight = 20
   
   // Calculate the current percentage of the high-low range.
-  let percent = (currentTemp - todayLow) / (todayHigh - todayLow)
+  let percent = (weatherData.currentTemp - weatherData.todayLow) / (weatherData.todayHigh - weatherData.todayLow)
 
   // If we're out of bounds, clip it.
   if (percent < 0) {
@@ -625,336 +1052,3 @@ function drawTempBar() {
 
   return draw.getImage()
 }
-
-/*
- * ELEMENTS AND ALIGNMENT
- * ======================
- */
-
-// Create an aligned stack to add content to.
-function align(column) {
-  
-  // Add the containing stack to the column.
-  let alignmentStack = column.addStack()
-  alignmentStack.layoutHorizontally()
-  
-  // Get the correct stack from the alignment function.
-  let returnStack = currentAlignment(alignmentStack)
-  returnStack.layoutVertically()
-  return returnStack
-}
-
-// Create a right-aligned stack.
-function alignRight(alignmentStack) {
-  alignmentStack.addSpacer()
-  let returnStack = alignmentStack.addStack()
-  return returnStack
-}
-
-// Create a left-aligned stack.
-function alignLeft(alignmentStack) {
-  let returnStack = alignmentStack.addStack()
-  alignmentStack.addSpacer()
-  return returnStack
-}
-
-// Create a center-aligned stack.
-function alignCenter(alignmentStack) {
-  alignmentStack.addSpacer()
-  let returnStack = alignmentStack.addStack()
-  alignmentStack.addSpacer()
-  return returnStack
-}
-
-// Display the date on the widget.
-function date(column) {
-
-  // Set up the date formatter and set its locale.
-  let df = new DateFormatter()
-  df.locale = locale
-  
-  // Show small if it's hard coded, or if it's dynamic and events are visible.
-  if ((dynamicDateSize && eventsAreVisible) || staticDateSize == "small") {
-    let dateStack = align(column)
-    dateStack.setPadding(padding, padding, padding, padding)
-
-    df.dateFormat = smallDateFormat
-    let dateText = dateStack.addText(df.string(currentDate))
-    formatText(dateText, textFormat.smallDate)
-    
-  // Otherwise, show the large date.
-  } else {
-    let dateOneStack = align(column)
-    df.dateFormat = largeDateLineOne
-    let dateOne = dateOneStack.addText(df.string(currentDate))
-    formatText(dateOne, textFormat.largeDate1)
-    dateOneStack.setPadding(padding, padding, 0, padding)
-    
-    let dateTwoStack = align(column)
-    df.dateFormat = largeDateLineTwo
-    let dateTwo = dateTwoStack.addText(df.string(currentDate))
-    formatText(dateTwo, textFormat.largeDate2)
-    dateTwoStack.setPadding(0, padding, padding, 10)
-  }
-}
-
-function greeting(column) {
-
-  // This function makes a greeting based on the time of day.
-  function makeGreeting() {
-    const hour = currentDate.getHours()
-    if (hour    < 5)  { return localizedText.nightGreeting }
-    if (hour    < 12) { return localizedText.morningGreeting }
-    if (hour-12 < 5)  { return localizedText.afternoonGreeting }
-    if (hour-12 < 10) { return localizedText.eveningGreeting }
-    return localizedText.nightGreeting
-  }
-  
-  // Set up the greeting.
-  let greetingStack = align(column)
-  let greeting = greetingStack.addText(makeGreeting())
-  formatText(greeting, textFormat.greeting)
-  greetingStack.setPadding(padding, padding, padding, padding)
-}
-
-// Display events on the widget.
-function events(column) {
-
-  // If nothing should be displayed, just return.
-  if (!eventsAreVisible && !localizedText.noEventMessage.length) { return }
-  
-  // Set up the event stack.
-  let eventStack = column.addStack()
-  eventStack.layoutVertically()
-  const todaySeconds = Math.floor(currentDate.getTime() / 1000) - 978307200
-  eventStack.url = 'calshow:' + todaySeconds
-  
-  // If there are no events, show the message and return.
-  if (!eventsAreVisible) {
-    let message = eventStack.addText(localizedText.noEventMessage)
-    formatText(message, textFormat.greeting)
-    eventStack.setPadding(padding, padding, padding, padding)
-    return
-  }
-  
-  // If we're not showing the message, don't pad the event stack.
-  eventStack.setPadding(0, 0, 0, 0)
-  
-  var currentStack = eventStack
-  
-  // Add each event to the stack.
-  for (let i = 0; i < futureEvents.length; i++) {
-    
-    const event = futureEvents[i]
-    const bottomPadding = (padding-10 < 0) ? 0 : padding-10
-    
-    // If it's the tomorrow label, change to the tomorrow stack.
-    if (event.isLabel) {
-      let tomorrowStack = column.addStack()
-      tomorrowStack.layoutVertically()
-      const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
-      tomorrowStack.url = 'calshow:' + tomorrowSeconds
-      currentStack = tomorrowStack
-      
-      // Mimic the formatting of an event title, mostly.
-      const eventLabelStack = align(currentStack)
-      const eventLabel = eventLabelStack.addText(event.title)
-      formatText(eventLabel, textFormat.eventLabel)
-      eventLabelStack.setPadding(i==0 ? padding : padding/2, padding, padding/2, padding)
-      continue
-    }
-    
-    const titleStack = align(currentStack)
-    titleStack.layoutHorizontally()
-    const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
-    
-    // If we're showing a color, and it's not shown on the right, show it.
-    if (showCalendarColor && !showCalendarColor.includes("right")) {
-      let colorItem = titleStack.addText(provideTextSymbol(colorShape) + " ")
-      formatText(colorItem, textFormat.eventTitle)
-      colorItem.textColor = event.calendar.color
-    }
-
-    const title = titleStack.addText(event.title.trim())
-    formatText(title, textFormat.eventTitle)
-    titleStack.setPadding(i==0 ? padding : padding/2, padding, event.isAllDay ? padding/2 : padding/10, padding)
-    
-    // If we're showing a color on the right, show it.
-    if (showCalendarColor && showCalendarColor.includes("right")) {
-      let colorItem = titleStack.addText(" " + provideTextSymbol(colorShape))
-      formatText(colorItem, textFormat.eventTitle)
-      colorItem.textColor = event.calendar.color
-    }
-  
-    // If there are too many events, limit the line height.
-    if (futureEvents.length >= 3) { title.lineLimit = 1 }
-
-    // If it's an all-day event, we don't need a time.
-    if (event.isAllDay) { continue }
-    
-    // Format the time information.
-    let df = new DateFormatter()
-    df.useNoDateStyle()
-    df.useShortTimeStyle()
-    let timeText = df.string(event.startDate)
-    
-    // If we show the length as time, add an en dash and the time.
-    if (showEventLength == "time") { 
-      timeText += "–" + df.string(event.endDate) 
-      
-    // If we should it as a duration, add the minutes.
-    } else if (showEventLength == "duration") {
-      const duration = (event.endDate.getTime() - event.startDate.getTime()) / (1000*60)
-      timeText += " \u2022 " + Math.round(duration) + "m"
-    }
-
-    const timeStack = align(currentStack)
-    const time = timeStack.addText(timeText)
-    formatText(time, textFormat.eventTime)
-    timeStack.setPadding(0, padding, i==futureEvents.length-1 ? padding : padding/2, padding)
-  }
-}
-
-// Display the current weather.
-function current(column) {
-
-  // Set up the current weather stack.
-  let currentWeatherStack = column.addStack()
-  currentWeatherStack.layoutVertically()
-  currentWeatherStack.setPadding(0, 0, 0, 0)
-  currentWeatherStack.url = "https://weather.com/weather/today/l/" + latitude + "," + longitude
-
-  // Show the current condition symbol.
-  let mainConditionStack = align(currentWeatherStack)
-  let mainCondition = mainConditionStack.addImage(provideSymbol(currentCondition,isNight(currentDate)))
-  mainCondition.imageSize = new Size(22,22)
-  mainConditionStack.setPadding(padding, padding, 0, padding)
-
-  // Show the current temperature.
-  let tempStack = align(currentWeatherStack)
-  let temp = tempStack.addText(Math.round(currentTemp) + "°")
-  tempStack.setPadding(0, padding, 0, padding)
-  formatText(temp, textFormat.largeTemp)
-  
-  // If we're not showing the high and low, end it here.
-  if (!showHighLow) { return }
-
-  // Show the temp bar and high/low values.
-  let tempBarStack = align(currentWeatherStack)
-  tempBarStack.layoutVertically()
-  tempBarStack.setPadding(0, padding, padding/2, padding)
-  
-  let tempBar = drawTempBar()
-  let tempBarImage = tempBarStack.addImage(tempBar)
-  tempBarImage.size = new Size(50,0)
-  
-  tempBarStack.addSpacer(1)
-  
-  let highLowStack = tempBarStack.addStack()
-  highLowStack.layoutHorizontally()
-  
-  let mainLow = highLowStack.addText(Math.round(todayLow).toString())
-  highLowStack.addSpacer()
-  let mainHigh = highLowStack.addText(Math.round(todayHigh).toString())
-  
-  formatText(mainHigh, textFormat.tinyTemp)
-  formatText(mainLow, textFormat.tinyTemp)
-  
-  tempBarStack.size = new Size(70,30)
-}
-
-// Display upcoming weather.
-function future(column) {
-
-  // Set up the future weather stack.
-  let futureWeatherStack = column.addStack()
-  futureWeatherStack.layoutVertically()
-  futureWeatherStack.setPadding(0, 0, 0, 0)
-  futureWeatherStack.url = "https://weather.com/weather/tenday/l/" + latitude + "," + longitude
-
-  // Determine if we should show the next hour.
-  const showNextHour = (currentDate.getHours() < tomorrowShownAtHour)
-  
-  // Set the label value.
-  const subLabelText = showNextHour ? localizedText.nextHourLabel : localizedText.tomorrowLabel
-  let subLabelStack = align(futureWeatherStack)
-  let subLabel = subLabelStack.addText(subLabelText)
-  formatText(subLabel, textFormat.smallTemp)
-  subLabelStack.setPadding(0, padding, padding/4, padding)
-  
-  // Set up the sub condition stack.
-  let subConditionStack = align(futureWeatherStack)
-  subConditionStack.layoutHorizontally()
-  subConditionStack.centerAlignContent()
-  subConditionStack.setPadding(0, padding, padding, padding)
-  
-  // Determine what condition to show.
-  var nightCondition
-  if (showNextHour) {
-    const addHour = currentDate.getTime() + (60*60*1000)
-    const newDate = new Date(addHour)
-    nightCondition = isNight(newDate)
-  } else {
-    nightCondition = false 
-  }
-  
-  let subCondition = subConditionStack.addImage(provideSymbol(showNextHour ? nextHourCondition : tomorrowCondition,nightCondition))
-  const subConditionSize = showNextHour ? 14 : 18
-  subCondition.imageSize = new Size(subConditionSize, subConditionSize)
-  subConditionStack.addSpacer(5)
-  
-  // The next part of the display changes significantly for next hour vs tomorrow.
-  if (showNextHour) {
-    let subTemp = subConditionStack.addText(Math.round(nextHourTemp) + "°")
-    formatText(subTemp, textFormat.smallTemp)
-    
-  } else {
-    let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color("ffffff", 0.5), 20))
-    tomorrowLine.imageSize = new Size(3,28)
-    subConditionStack.addSpacer(5)
-    let tomorrowStack = subConditionStack.addStack()
-    tomorrowStack.layoutVertically()
-    
-    let tomorrowHighText = tomorrowStack.addText(Math.round(tomorrowHigh) + "")
-    tomorrowStack.addSpacer(4)
-    let tomorrowLowText = tomorrowStack.addText(Math.round(tomorrowLow) + "")
-    
-    formatText(tomorrowHighText, textFormat.tinyTemp)
-    formatText(tomorrowLowText, textFormat.tinyTemp)
-  }
-}
-
-// Return a text-creation function.
-function text(inputText) {
-  
-  function displayText(column) {
-    let textStack = align(column)
-    textStack.setPadding(padding, padding, padding, padding)
-    
-    let textDisplay = textStack.addText(inputText)
-    formatText(textDisplay, textFormat.customText)
-  }
-  return displayText
-}
-
-/*
- * MINI FUNCTIONS
- * ==============
- */
-
-// This function adds a space.
-function space(column) { column.addSpacer() }
-
-// Change the current alignment to right.
-function right(x) { currentAlignment = alignRight }
-
-// Change the current alignment to left.
-function left(x) { currentAlignment = alignLeft }
-
-// Change the current alignment to center.
-function center(x) { currentAlignment = alignCenter }
-
-// This function doesn't need to do anything.
-function end(x) { return }
-
-Script.complete()
