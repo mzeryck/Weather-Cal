@@ -50,7 +50,7 @@ const columns = [{
     date,
     events,
     
-end]}, {
+]}, {
 
   // Settings for the right column.
   width: 100,
@@ -61,7 +61,7 @@ end]}, {
     space,
     future,
   
-end]}]
+]}]
 
 /*
  * ITEM SETTINGS
@@ -166,12 +166,13 @@ const textFormat = {
   eventLabel:  { size: 14, color: "", font: "semibold" },
   eventTitle:  { size: 14, color: "", font: "semibold" },
   eventTime:   { size: 14, color: "ffffffcc", font: "" },
+  noEvents:    { size: 30, color: "", font: "semibold" },
   
   largeTemp:   { size: 34, color: "", font: "light" },
   smallTemp:   { size: 14, color: "", font: "" },
   tinyTemp:    { size: 12, color: "", font: "" },
   
-  customText:  { size: 14, color: "", font: "" } 
+  customText:  { size: 14, color: "", font: "" },
 }
 
 /*
@@ -315,8 +316,8 @@ function space(input = null) {
   // This function adds a spacer with the input width.
   function spacer(column) {
   
-    // If the input is null, add a flexible spacer.
-    if (!input) { column.addSpacer() }
+    // If the input is null or zero, add a flexible spacer.
+    if (!input || input == 0) { column.addSpacer() }
     
     // Otherwise, add a space with the specified length.
     else { column.addSpacer(input) }
@@ -337,9 +338,6 @@ function left(x) { currentAlignment = alignLeft }
 
 // Change the current alignment to center.
 function center(x) { currentAlignment = alignCenter }
-
-// This function doesn't need to do anything.
-function end(x) { return }
 
 /*
  * SETUP FUNCTIONS
@@ -419,66 +417,66 @@ async function setupGradient() {
   if (!sunData) { await setupSunrise() }
 
   let gradient = {
-		"dawn": {
-			"color": function() { return [new Color("142C52"), new Color("1B416F"), new Color("62668B")] },
-			"position": function() { return [0, 0.5, 1] }
-		},
-	
-		"sunrise": {
-			"color": function() { return [new Color("274875"), new Color("766f8d"), new Color("f0b35e")] },
-			"position": function() { return [0, 0.8, 1.5] }
-		},
-	
-		"midday": {
-			"color": function() { return [new Color("3a8cc1"), new Color("90c0df")] },
-			"position": function() { return [0, 1] }
-		},
-	
-		"noon": {
-			"color": function() { return [new Color("b2d0e1"), new Color("80B5DB"), new Color("3a8cc1")] },
-			"position": function() { return [-0.2, 0.2, 1.5] }
-		},
-	
-		"sunset": {
-			"color": function() { return [new Color("32327A"), new Color("662E55"), new Color("7C2F43")] },
-			"position": function() { return [0.1, 0.9, 1.2] }
-		},
-	
-		"twilight": {
-			"color": function() { return [new Color("021033"), new Color("16296b"), new Color("414791")] },
-			"position": function() { return [0, 0.5, 1] }
-		},
-	
-		"night": {
-			"color": function() { return [new Color("16296b"), new Color("021033"), new Color("021033"), new Color("113245")] },
-			"position": function() { return [-0.5, 0.2, 0.5, 1] }
-		}
-	}
-	
-	const sunrise = sunData.sunrise
-	const sunset = sunData.sunset
-	const utcTime = currentDate.getTime()
+    dawn: {
+      color() { return [new Color("142C52"), new Color("1B416F"), new Color("62668B")] },
+      position() { return [0, 0.5, 1] },
+    },
+
+    sunrise: {
+      color() { return [new Color("274875"), new Color("766f8d"), new Color("f0b35e")] },
+      position() { return [0, 0.8, 1.5] },
+    },
+
+    midday: {
+      color() { return [new Color("3a8cc1"), new Color("90c0df")] },
+      position() { return [0, 1] },
+    },
+
+    noon: {
+      color() { return [new Color("b2d0e1"), new Color("80B5DB"), new Color("3a8cc1")] },
+      position() { return [-0.2, 0.2, 1.5] },
+    },
+
+    sunset: {
+      color() { return [new Color("32327A"), new Color("662E55"), new Color("7C2F43")] },
+      position() { return [0.1, 0.9, 1.2] },
+    },
+
+    twilight: {
+      color() { return [new Color("021033"), new Color("16296b"), new Color("414791")] },
+      position() { return [0, 0.5, 1] },
+    },
+
+    night: {
+      color() { return [new Color("16296b"), new Color("021033"), new Color("021033"), new Color("113245")] },
+      position() { return [-0.5, 0.2, 0.5, 1] },
+    },
+  }
+
+  const sunrise = sunData.sunrise
+  const sunset = sunData.sunset
+  const utcTime = currentDate.getTime()
 
   function closeTo(time,mins) {
     return Math.abs(utcTime - time) < (mins * 60000)
   }
 
   // Use sunrise or sunset if we're within 30min of it.
-	if (closeTo(sunrise,15)) { return gradient.sunrise }
-	if (closeTo(sunset,15)) { return gradient.sunset }
+  if (closeTo(sunrise,15)) { return gradient.sunrise }
+  if (closeTo(sunset,15)) { return gradient.sunset }
 
-	// In the 30min before/after, use dawn/twilight.
-	if (closeTo(sunrise,45) && utcTime < sunrise) { return gradient.dawn }
-	if (closeTo(sunset,45) && utcTime > sunset) { return gradient.twilight }
+  // In the 30min before/after, use dawn/twilight.
+  if (closeTo(sunrise,45) && utcTime < sunrise) { return gradient.dawn }
+  if (closeTo(sunset,45) && utcTime > sunset) { return gradient.twilight }
 
-    // Otherwise, if it's night, return night.
-	if (isNight(currentDate)) { return gradient.night }
+  // Otherwise, if it's night, return night.
+  if (isNight(currentDate)) { return gradient.night }
 
-	// If it's around noon, the sun is high in the sky.
-	if (currentDate.getHours() == 12) { return gradient.noon }
+  // If it's around noon, the sun is high in the sky.
+  if (currentDate.getHours() == 12) { return gradient.noon }
 
-	// Otherwise, return the "typical" theme.
-	return gradient.midday
+  // Otherwise, return the "typical" theme.
+  return gradient.midday
 }
 
 // Set up the locationData object.
@@ -604,21 +602,18 @@ async function date(column) {
     dateStack.setPadding(padding, padding, padding, padding)
 
     df.dateFormat = dateSettings.smallDateFormat
-    let dateText = dateStack.addText(df.string(currentDate))
-    formatText(dateText, textFormat.smallDate)
+    let dateText = provideText(df.string(currentDate), dateStack, textFormat.smallDate)
     
   // Otherwise, show the large date.
   } else {
     let dateOneStack = align(column)
     df.dateFormat = dateSettings.largeDateLineOne
-    let dateOne = dateOneStack.addText(df.string(currentDate))
-    formatText(dateOne, textFormat.largeDate1)
+    let dateOne = provideText(df.string(currentDate), dateOneStack, textFormat.largeDate1)
     dateOneStack.setPadding(padding, padding, 0, padding)
     
     let dateTwoStack = align(column)
     df.dateFormat = dateSettings.largeDateLineTwo
-    let dateTwo = dateTwoStack.addText(df.string(currentDate))
-    formatText(dateTwo, textFormat.largeDate2)
+    let dateTwo = provideText(df.string(currentDate), dateTwoStack, textFormat.largeDate2)
     dateTwoStack.setPadding(0, padding, padding, 10)
   }
 }
@@ -638,8 +633,7 @@ async function greeting(column) {
   
   // Set up the greeting.
   let greetingStack = align(column)
-  let greeting = greetingStack.addText(makeGreeting())
-  formatText(greeting, textFormat.greeting)
+  let greeting = provideText(makeGreeting(), greetingStack, textFormat.greeting)
   greetingStack.setPadding(padding, padding, padding, padding)
 }
 
@@ -660,8 +654,7 @@ async function events(column) {
   
   // If there are no events and we have a message, show it and return.
   if (!eventData.eventsAreVisible && localizedText.noEventMessage.length) {
-    let message = eventStack.addText(localizedText.noEventMessage)
-    formatText(message, textFormat.greeting)
+    let message = provideText(localizedText.noEventMessage, eventStack, textFormat.noEvents)
     eventStack.setPadding(padding, padding, padding, padding)
     return
   }
@@ -687,8 +680,7 @@ async function events(column) {
       
       // Mimic the formatting of an event title, mostly.
       const eventLabelStack = align(currentStack)
-      const eventLabel = eventLabelStack.addText(event.title)
-      formatText(eventLabel, textFormat.eventLabel)
+      const eventLabel = provideText(event.title, eventLabelStack, textFormat.eventLabel)
       eventLabelStack.setPadding(i==0 ? padding : padding/2, padding, padding/2, padding)
       continue
     }
@@ -700,19 +692,18 @@ async function events(column) {
     
     // If we're showing a color, and it's not shown on the right, add it to the left.
     if (showCalendarColor.length && !showCalendarColor.includes("right")) {
-      let colorItem = titleStack.addText(provideTextSymbol(colorShape) + " ")
-      formatText(colorItem, textFormat.eventTitle)
+      let colorItemText = provideTextSymbol(colorShape) + " "
+      let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
       colorItem.textColor = event.calendar.color
     }
 
-    const title = titleStack.addText(event.title.trim())
-    formatText(title, textFormat.eventTitle)
+    const title = provideText(event.title.trim(), titleStack, textFormat.eventTitle)
     titleStack.setPadding(i==0 ? padding : padding/2, padding, event.isAllDay ? padding/2 : padding/10, padding)
     
     // If we're showing a color on the right, show it.
     if (showCalendarColor.length && showCalendarColor.includes("right")) {
-      let colorItem = titleStack.addText(" " + provideTextSymbol(colorShape))
-      formatText(colorItem, textFormat.eventTitle)
+      let colorItemText = " " + provideTextSymbol(colorShape)
+      let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
       colorItem.textColor = event.calendar.color
     }
   
@@ -724,6 +715,7 @@ async function events(column) {
     
     // Format the time information.
     let df = new DateFormatter()
+    df.locale = locale
     df.useNoDateStyle()
     df.useShortTimeStyle()
     let timeText = df.string(event.startDate)
@@ -744,8 +736,7 @@ async function events(column) {
     }
 
     const timeStack = align(currentStack)
-    const time = timeStack.addText(timeText)
-    formatText(time, textFormat.eventTime)
+    const time = provideText(timeText, timeStack, textFormat.eventTime)
     timeStack.setPadding(0, padding, i==futureEvents.length-1 ? padding : padding/2, padding)
   }
 }
@@ -770,10 +761,10 @@ async function current(column) {
   mainConditionStack.setPadding(padding, padding, 0, padding)
 
   // Show the current temperature.
-  let tempStack = align(currentWeatherStack)
-  let temp = tempStack.addText(Math.round(weatherData.currentTemp) + "°")
+  const tempStack = align(currentWeatherStack)
   tempStack.setPadding(0, padding, 0, padding)
-  formatText(temp, textFormat.largeTemp)
+  const tempText = Math.round(weatherData.currentTemp) + "°"
+  const temp = provideText(tempText, tempStack, textFormat.largeTemp)
   
   // If we're not showing the high and low, end it here.
   if (!weatherSettings.showHighLow) { return }
@@ -792,12 +783,11 @@ async function current(column) {
   let highLowStack = tempBarStack.addStack()
   highLowStack.layoutHorizontally()
   
-  let mainLow = highLowStack.addText(Math.round(weatherData.todayLow).toString())
+  const mainLowText = Math.round(weatherData.todayLow).toString()
+  const mainLow = provideText(mainLowText, highLowStack, textFormat.tinyTemp)
   highLowStack.addSpacer()
-  let mainHigh = highLowStack.addText(Math.round(weatherData.todayHigh).toString())
-  
-  formatText(mainHigh, textFormat.tinyTemp)
-  formatText(mainLow, textFormat.tinyTemp)
+  const mainHighText = Math.round(weatherData.todayHigh).toString()
+  const mainHigh = provideText(mainHighText, highLowStack, textFormat.tinyTemp)
   
   tempBarStack.size = new Size(70,30)
 }
@@ -819,10 +809,9 @@ async function future(column) {
   const showNextHour = (currentDate.getHours() < weatherSettings.tomorrowShownAtHour)
   
   // Set the label value.
+  const subLabelStack = align(futureWeatherStack)
   const subLabelText = showNextHour ? localizedText.nextHourLabel : localizedText.tomorrowLabel
-  let subLabelStack = align(futureWeatherStack)
-  let subLabel = subLabelStack.addText(subLabelText)
-  formatText(subLabel, textFormat.smallTemp)
+  const subLabel = provideText(subLabelText, subLabelStack, textFormat.smallTemp)
   subLabelStack.setPadding(0, padding, padding/4, padding)
   
   // Set up the sub condition stack.
@@ -831,7 +820,7 @@ async function future(column) {
   subConditionStack.centerAlignContent()
   subConditionStack.setPadding(0, padding, padding, padding)
   
-  // Determine what condition to show.
+  // Determine if it will be night in the next hour.
   var nightCondition
   if (showNextHour) {
     const addHour = currentDate.getTime() + (60*60*1000)
@@ -848,8 +837,8 @@ async function future(column) {
   
   // The next part of the display changes significantly for next hour vs tomorrow.
   if (showNextHour) {
-    let subTemp = subConditionStack.addText(Math.round(weatherData.nextHourTemp) + "°")
-    formatText(subTemp, textFormat.smallTemp)
+    const subTempText = Math.round(weatherData.nextHourTemp) + "°"
+    const subTemp = provideText(subTempText, subConditionStack, textFormat.smallTemp)
     
   } else {
     let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color("ffffff", 0.5), 20))
@@ -858,24 +847,26 @@ async function future(column) {
     let tomorrowStack = subConditionStack.addStack()
     tomorrowStack.layoutVertically()
     
-    let tomorrowHighText = tomorrowStack.addText(Math.round(weatherData.tomorrowHigh) + "")
+    const tomorrowHighText = Math.round(weatherData.tomorrowHigh) + ""
+    const tomorrowHigh = provideText(tomorrowHighText, tomorrowStack, textFormat.tinyTemp)
     tomorrowStack.addSpacer(4)
-    let tomorrowLowText = tomorrowStack.addText(Math.round(weatherData.tomorrowLow) + "")
-    
-    formatText(tomorrowHighText, textFormat.tinyTemp)
-    formatText(tomorrowLowText, textFormat.tinyTemp)
+    const tomorrowLowText = Math.round(weatherData.tomorrowLow) + ""
+    const tomorrowLow = provideText(tomorrowLowText, tomorrowStack, textFormat.tinyTemp)
   }
 }
 
 // Return a text-creation function.
-function text(inputText) {
+function text(input = null) {
+
+  function displayText(column) {
   
-  async function displayText(column) {
-    let textStack = align(column)
+    // Don't do anything if the input is blank.
+    if (!input || input == "") { return }
+  
+    // Otherwise, add the text.
+    const textStack = align(column)
     textStack.setPadding(padding, padding, padding, padding)
-    
-    let textDisplay = textStack.addText(inputText || "")
-    formatText(textDisplay, textFormat.customText)
+    const textDisplay = provideText(input, textStack, textFormat.customText)
   }
   return displayText
 }
@@ -973,14 +964,16 @@ function provideFont(fontName, fontSize) {
   return new Font(fontName, fontSize)
 }
  
-// Format text based on the settings.
-function formatText(textItem, format) {
+// Add formatted text to a container.
+function provideText(string, container, format) {
+  const textItem = container.addText(string)
   const textFont = format.font || textFormat.defaultText.font
   const textSize = format.size || textFormat.defaultText.size
   const textColor = format.color || textFormat.defaultText.color
   
   textItem.font = provideFont(textFont, textSize)
   textItem.textColor = new Color(textColor)
+  return textItem
 }
 
 /*
