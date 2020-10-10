@@ -25,3 +25,23 @@ events,
 ```
     
 Adding an alignment key, like `left`, `right`, or `center` will apply that alignment to everything after it. Adding `space` will add a space that automatically expands to fill the available room in the widget. Everything above the space will align to the top, and everything below will align to the bottom.
+
+## Technical details
+The `LAYOUT` section contains an array of objects which each represent a column in the widget. By default, there are two columns in the `columns` array—but it is possible to add or remove columns if desired. Users decide what will appear in each column by adding and removing items from the `items` array in each column.
+
+When run, the script creates a WidgetStack with the provided width for each column. It then iterates through each column’s `items` array. Every item is a function, so the script calls the function and passes the WidgetStack representing the current column as an argument. Since most widget items need to perform asynchronous work, the script uses an `await` expression when calling the function.
+
+### Creating a widget item
+If you would like to create your own widget items, consider the following required and optional elements:
+
+* __Required:__ A function with the name of the widget item, for example: `function date(column)`. The name of the function is what gets entered by the user in the `LAYOUT` section. This function needs to have a single `column` argument, representing the WidgetStack that the function will be adding elements to. It’s best to make this an `async` function, since most widget items will need to perform asynchronous work. 
+
+* __Conditionally required:__ If a widget item displays text, it should use the `formatText` function along with a value in the `textFormat` object. Existing values can be used if they make sense, or values can be added.
+
+* __Conditionally required:__ If a widget needs to display predefined strings like labels, they must be defined in the `localizedText` object. This allows users to easily translate text into their preferred language. 
+
+* __Optional:__ A settings object that lets the user choose how the widget item is displayed. Match the existing format in the `ITEM SETTINGS` section using a comment header and comments explaining each setting or group of settings. A small number of well-considered, powerful settings is best.
+
+* __Optional:__ A variable for storing structured data that your item needs. The name should be one word followed by “Data”. For example: `weatherData`. Declare it alongside the other data variables (`eventData`, `locationData`, etc). Make sure there isn’t an existing data variable that has the information needed for your item.
+
+* __Conditionally required:__ If a widget item uses a data variable, a setup function is required. The name should be “setup” followed by one word. For example: `setupWeather`. If you’re using a setup function, the item function should check to see if the data is null, and run the setup function if it is. For example: `if (!weatherData) { await setupWeather() }`. This allows other widget items to use the provided data if needed. For example, the `current` and `future` weather items both use `weatherData`, so they both check this variable and run the setup if needed.
