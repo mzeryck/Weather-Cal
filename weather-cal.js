@@ -873,7 +873,7 @@ function text(input = null) {
   return displayText
 }
 
-/ Provide the SF Symbols battery icon depending on the battery level
+// Provide the SF Symbols battery icon depending on the battery level
 function provideBatteryIcon() {
 
   const batteryLevel = Device.batteryLevel()
