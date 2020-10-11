@@ -34,7 +34,7 @@ const padding = 10
 // Set the width of the column, or set to 0 for an automatic width.
 
 // You can add items to the column: 
-// date, greeting, events, current, future, text("Your text here")
+// date, greeting, events, current, future, battery, text("Your text here")
 // You can also add a left, center, or right to the list. Everything after it will be aligned that way.
 
 // Make sure to always put a comma after each item.
@@ -173,6 +173,8 @@ const textFormat = {
   tinyTemp:    { size: 12, color: "", font: "" },
   
   customText:  { size: 14, color: "", font: "" },
+  
+  battery:    { size: 18, color: "", font: "medium" }
 }
 
 /*
@@ -871,6 +873,49 @@ function text(input = null) {
   return displayText
 }
 
+// Add a battery element to the widget; consisting of a battery icon and percentage
+async function battery(column) {
+
+  // Get battery level via Scriptable function and format it in a convenient way
+  function getBatteryLevel() {
+  
+    const batteryLevel = Device.batteryLevel()
+    const batteryPercentage = `${Math.round(batteryLevel * 100)}%`
+
+    return batteryPercentage
+  }
+
+  const batteryLevel = Device.batteryLevel()
+  
+  // Set up the battery level item
+  let batteryStack = align(column)
+  batteryStack.layoutHorizontally()
+  batteryStack.centerAlignContent()
+
+  let batteryIcon = batteryStack.addImage(provideBatteryIcon())
+  batteryIcon.imageSize = new Size(30,30)
+  
+
+  // Change the battery icon to red if battery level is <= 20 to match system behavior
+  if ( Math.round(batteryLevel * 100) > 20 || Device.isCharging() ) {
+
+    batteryIcon.tintColor = Color.white()
+
+  } else {
+
+    batteryIcon.tintColor = Color.red()
+
+  }
+
+  batteryStack.addSpacer(8)
+
+  // Display the battery status
+  let batteryInfo = provideText(getBatteryLevel(), batteryStack, textFormat.battery)
+
+  batteryStack.setPadding(10, 10, 10, 10)
+
+}
+
 /*
  * HELPER FUNCTIONS
  * These functions perform duties for other functions.
@@ -903,6 +948,44 @@ function provideTextSymbol(shape) {
   }
   // Default to the rectangle.
   return "\u2759" 
+}
+
+// Provide the SF Symbols battery icon depending on the battery level
+function provideBatteryIcon() {
+
+  const batteryLevel = Device.batteryLevel()
+
+  if ( Device.isCharging() ) {
+
+    let batIcon = SFSymbol.named("battery.100.bolt")
+    batIcon.applyLightWeight()
+
+    return batIcon.image
+
+  } else
+
+    if ( Math.round(batteryLevel * 100) > 65 ) {
+
+      let batIcon = SFSymbol.named("battery.100")
+      batIcon.applyLightWeight()
+
+      return batIcon.image
+
+    } else if ( Math.round(batteryLevel * 100) > 30 ) {
+
+      let batIcon = SFSymbol.named("battery.25")
+      batIcon.applyLightWeight()
+
+      return batIcon.image
+
+    } else {
+
+      let batIcon = SFSymbol.named("battery.0")
+      batIcon.applySemiboldWeight()
+
+      return batIcon.image
+    }
+
 }
 
 // Provide a symbol based on the condition.
