@@ -873,46 +873,8 @@ function text(input = null) {
   return displayText
 }
 
-// Provide the SF Symbols battery icon depending on the battery level
-function provideBatteryIcon() {
-
-  const batteryLevel = Device.batteryLevel()
-
-  if ( Device.isCharging() ) {
-
-    let batIcon = SFSymbol.named("battery.100.bolt")
-    batIcon.applyLightWeight()
-
-    return batIcon.image
-
-  } else
-
-    if ( Math.round(batteryLevel * 100) > 65 ) {
-
-      let batIcon = SFSymbol.named("battery.100")
-      batIcon.applyLightWeight()
-
-      return batIcon.image
-
-    } else if ( Math.round(batteryLevel * 100) > 30 ) {
-
-      let batIcon = SFSymbol.named("battery.25")
-      batIcon.applyLightWeight()
-
-      return batIcon.image
-
-    } else {
-
-      let batIcon = SFSymbol.named("battery.0")
-      batIcon.applySemiboldWeight()
-
-      return batIcon.image
-    }
-
-}
-
 // Add a battery element to the widget; consisting of a battery icon and percentage
-async function battery(column, alignment) {
+async function battery(column) {
 
   // Get battery level via Scriptable function and format it in a convenient way
   function getBatteryLevel() {
@@ -926,7 +888,7 @@ async function battery(column, alignment) {
   const batteryLevel = Device.batteryLevel()
   
   // Set up the battery level item
-  let batteryStack = align(column, alignment)
+  let batteryStack = align(column)
   batteryStack.layoutHorizontally()
   batteryStack.centerAlignContent()
 
@@ -986,6 +948,44 @@ function provideTextSymbol(shape) {
   }
   // Default to the rectangle.
   return "\u2759" 
+}
+
+// Provide the SF Symbols battery icon depending on the battery level
+function provideBatteryIcon() {
+
+  const batteryLevel = Device.batteryLevel()
+
+  if ( Device.isCharging() ) {
+
+    let batIcon = SFSymbol.named("battery.100.bolt")
+    batIcon.applyLightWeight()
+
+    return batIcon.image
+
+  } else
+
+    if ( Math.round(batteryLevel * 100) > 65 ) {
+
+      let batIcon = SFSymbol.named("battery.100")
+      batIcon.applyLightWeight()
+
+      return batIcon.image
+
+    } else if ( Math.round(batteryLevel * 100) > 30 ) {
+
+      let batIcon = SFSymbol.named("battery.25")
+      batIcon.applyLightWeight()
+
+      return batIcon.image
+
+    } else {
+
+      let batIcon = SFSymbol.named("battery.0")
+      batIcon.applySemiboldWeight()
+
+      return batIcon.image
+    }
+
 }
 
 // Provide a symbol based on the condition.
