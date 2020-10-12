@@ -106,6 +106,17 @@ const eventSettings = {
 
   // Leave blank "" for no color, or specify shape (circle, rectangle) and/or side (left, right).
   ,showCalendarColor: "rectangle left"
+  
+  // When no events remain, show a hard-coded "message", a "greeting", or "none".
+  ,noEventBehavior: "message"
+}
+
+// SUNRISE
+// =======
+const sunriseSettings = {
+  
+  // How many minutes before/after sunrise or sunset to show this element. 0 for always.
+  showWithin: 0
 }
 
 // WEATHER
@@ -114,6 +125,12 @@ const weatherSettings = {
 
   // Set to imperial for Fahrenheit, or metric for Celsius
   units: "imperial"
+  
+  // Show the location of the current weather.
+  ,showLocation: false
+  
+  // Show the text description of the current conditions.
+  ,showCondition: false
 
   // Show today's high and low temperatures.
   ,showHighLow: true
@@ -141,8 +158,7 @@ const localizedText = {
   ,nextHourLabel: "Next hour"
   ,tomorrowLabel: "Tomorrow"
 
-  // The text shown in an events item when no events remain.
-  // Change to blank "" if you don't want to show a message.
+  // Shown when noEventBehavior is set to "message".
   ,noEventMessage: "Enjoy the rest of your day."
   
   // The text shown after the hours and minutes of an event duration.
@@ -174,7 +190,8 @@ const textFormat = {
   
   customText:  { size: 14, color: "", font: "" },
   
-  battery:    { size: 18, color: "", font: "medium" }
+  battery:     { size: 18, color: "", font: "medium" },
+  sunrise:     { size: 18, color: "", font: "medium" },
 }
 
 /*
@@ -457,19 +474,14 @@ async function setupGradient() {
 
   const sunrise = sunData.sunrise
   const sunset = sunData.sunset
-  const utcTime = currentDate.getTime()
-
-  function closeTo(time,mins) {
-    return Math.abs(utcTime - time) < (mins * 60000)
-  }
 
   // Use sunrise or sunset if we're within 30min of it.
-  if (closeTo(sunrise,15)) { return gradient.sunrise }
-  if (closeTo(sunset,15)) { return gradient.sunset }
+  if (closeTo(sunrise)<=15) { return gradient.sunrise }
+  if (closeTo(sunset)<=15) { return gradient.sunset }
 
   // In the 30min before/after, use dawn/twilight.
-  if (closeTo(sunrise,45) && utcTime < sunrise) { return gradient.dawn }
-  if (closeTo(sunset,45) && utcTime > sunset) { return gradient.twilight }
+  if (closeTo(sunrise)<=45 && utcTime < sunrise) { return gradient.dawn }
+  if (closeTo(sunset)<=45 && utcTime > sunset) { return gradient.twilight }
 
   // Otherwise, if it's night, return night.
   if (isNight(currentDate)) { return gradient.night }
@@ -485,16 +497,18 @@ async function setupGradient() {
 async function setupLocation() {
 
   locationData = {}
-  const locationPath = files.joinPath(files.documentsDirectory(), "weather-cal-location")
+  const locationPath = files.joinPath(files.documentsDirectory(), "weather-cal-loc")
 
   // If our location is unlocked or cache doesn't exist, ask iOS for location.
   var readLocationFromFile = false
   if (!lockLocation || !files.fileExists(locationPath)) {
     try {
       const location = await Location.current()
+      const geocode = await Location.reverseGeocode(location.latitude, location.longitude, locale)
       locationData.latitude = location.latitude
       locationData.longitude = location.longitude
-      files.writeString(locationPath, location.latitude + "," + location.longitude)
+      locationData.locality = geocode[0].locality
+      files.writeString(locationPath, location.latitude + "|" + location.longitude + "|" + locationData.locality)
     
     } catch(e) {
       // If we fail in unlocked mode, read it from the cache.
@@ -507,9 +521,10 @@ async function setupLocation() {
   
   // If our location is locked or we need to read from file, do it.
   if (lockLocation || readLocationFromFile) {
-    const locationStr = files.readString(locationPath).split(",")
+    const locationStr = files.readString(locationPath).split("|")
     locationData.latitude = locationStr[0]
     locationData.longitude = locationStr[1]
+    locationData.locality = locationStr[2]
   }
 }
 
@@ -523,16 +538,24 @@ async function setupSunrise() {
   const sunCachePath = files.joinPath(files.documentsDirectory(), "weather-cal-sun")
   const sunCacheExists = files.fileExists(sunCachePath)
   const sunCacheDate = sunCacheExists ? files.modificationDate(sunCachePath) : 0
-  var sunDataRaw
+  let sunDataRaw, afterSunset
 
-  // If cache exists and it was created today, use cached data.
+  // If cache exists and was created today, use cached data.
   if (sunCacheExists && sameDay(currentDate, sunCacheDate)) {
     const sunCache = files.readString(sunCachePath)
     sunDataRaw = JSON.parse(sunCache)
-
-  // Otherwise, use the API to get sunrise and sunset times.
-  } else {
-    const sunReq = "https://api.sunrise-sunset.org/json?lat=" + locationData.latitude + "&lng=" + locationData.longitude + "&formatted=0&date=" + currentDate.getFullYear() + "-" + (currentDate.getMonth()+1) + "-" + currentDate.getDate()
+    
+    // Determine if it's after sunset.
+    const sunsetDate = new Date(sunDataRaw.results.sunset)
+    afterSunset = currentDate.getTime() - sunsetDate.getTime() > (45 * 60 * 1000)
+  }
+  
+  // If we don't have data yet, or we need to get tomorrow's data, get it from the server.
+  if (!sunDataRaw || afterSunset) {
+    let tomorrowDate = new Date()
+    tomorrowDate.setDate(currentDate.getDate() + 1)
+    const dateToUse = afterSunset ? tomorrowDate : currentDate
+    const sunReq = "https://api.sunrise-sunset.org/json?lat=" + locationData.latitude + "&lng=" + locationData.longitude + "&formatted=0&date=" + dateToUse.getFullYear() + "-" + (dateToUse.getMonth()+1) + "-" + dateToUse.getDate()
     sunDataRaw = await new Request(sunReq).loadJSON()
     files.writeString(sunCachePath, JSON.stringify(sunDataRaw))
   }
@@ -571,6 +594,7 @@ async function setupWeather() {
   weatherData = {}
   weatherData.currentTemp = weatherDataRaw.current.temp
   weatherData.currentCondition = weatherDataRaw.current.weather[0].id
+  weatherData.currentDescription = weatherDataRaw.current.weather[0].main
   weatherData.todayHigh = weatherDataRaw.daily[0].temp.max
   weatherData.todayLow = weatherDataRaw.daily[0].temp.min
 
@@ -645,8 +669,23 @@ async function events(column) {
   // Requirements: events
   if (!eventData) { await setupEvents() }
 
-  // If nothing should be displayed, just return.
-  if (!eventData.eventsAreVisible && !localizedText.noEventMessage.length) { return }
+  // If no events are visible, figure out what to do.
+  if (!eventData.eventsAreVisible) { 
+    const display = eventSettings.noEventBehavior
+    
+    // If it's a greeting, let the greeting function handle it.
+    if (display == "greeting") { return await greeting(column) }
+    
+    // If it's a message, get the localized text.
+    if (display == "message" && localizedText.noEventMessage.length) {
+      const messageStack = align(column)
+      messageStack.setPadding(padding, padding, padding, padding)
+      provideText(localizedText.noEventMessage, messageStack, textFormat.noEvents)
+    }
+    
+    // Whether or not we displayed something, return here.
+    return
+  }
   
   // Set up the event stack.
   let eventStack = column.addStack()
@@ -716,15 +755,11 @@ async function events(column) {
     if (event.isAllDay) { continue }
     
     // Format the time information.
-    let df = new DateFormatter()
-    df.locale = locale
-    df.useNoDateStyle()
-    df.useShortTimeStyle()
-    let timeText = df.string(event.startDate)
+    let timeText = formatTime(event.startDate)
     
     // If we show the length as time, add an en dash and the time.
     if (eventSettings.showEventLength == "time") { 
-      timeText += "–" + df.string(event.endDate) 
+      timeText += "–" + formatTime(event.endDate) 
       
     // If we should it as a duration, add the minutes.
     } else if (eventSettings.showEventLength == "duration") {
@@ -755,12 +790,26 @@ async function current(column) {
   currentWeatherStack.layoutVertically()
   currentWeatherStack.setPadding(0, 0, 0, 0)
   currentWeatherStack.url = "https://weather.com/weather/today/l/" + locationData.latitude + "," + locationData.longitude
+  
+  // If we're showing the location, add it.
+  if (weatherSettings.showLocation) {
+    let locationTextStack = align(currentWeatherStack)
+    let locationText = provideText(locationData.locality, locationTextStack, textFormat.smallTemp)
+    locationTextStack.setPadding(padding, padding, padding/2, padding)
+  }
 
   // Show the current condition symbol.
   let mainConditionStack = align(currentWeatherStack)
-  let mainCondition = mainConditionStack.addImage(provideSymbol(weatherData.currentCondition,isNight(currentDate)))
+  let mainCondition = mainConditionStack.addImage(provideConditionSymbol(weatherData.currentCondition,isNight(currentDate)))
   mainCondition.imageSize = new Size(22,22)
-  mainConditionStack.setPadding(padding, padding, 0, padding)
+  mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : padding, padding, 0, padding)
+  
+  // If we're showing the description, add it.
+  if (weatherSettings.showCondition) {
+    let conditionTextStack = align(currentWeatherStack)
+    let conditionText = provideText(weatherData.currentDescription, conditionTextStack, textFormat.smallTemp)
+    conditionTextStack.setPadding(padding/2, padding, 0, padding)
+  }
 
   // Show the current temperature.
   const tempStack = align(currentWeatherStack)
@@ -832,7 +881,7 @@ async function future(column) {
     nightCondition = false 
   }
   
-  let subCondition = subConditionStack.addImage(provideSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.tomorrowCondition,nightCondition))
+  let subCondition = subConditionStack.addImage(provideConditionSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.tomorrowCondition,nightCondition))
   const subConditionSize = showNextHour ? 14 : 18
   subCondition.imageSize = new Size(subConditionSize, subConditionSize)
   subConditionStack.addSpacer(5)
@@ -873,7 +922,7 @@ function text(input = null) {
   return displayText
 }
 
-// Add a battery element to the widget; consisting of a battery icon and percentage
+// Add a battery element to the widget; consisting of a battery icon and percentage.
 async function battery(column) {
 
   // Get battery level via Scriptable function and format it in a convenient way
@@ -907,13 +956,54 @@ async function battery(column) {
 
   }
 
-  batteryStack.addSpacer(8)
+  batteryStack.addSpacer(padding * 0.8)
 
   // Display the battery status
   let batteryInfo = provideText(getBatteryLevel(), batteryStack, textFormat.battery)
 
-  batteryStack.setPadding(10, 10, 10, 10)
+  batteryStack.setPadding(padding, padding, padding, padding)
 
+}
+
+// Show the sunrise or sunset time.
+async function sunrise(column) {
+  
+  // Requirements: sunrise
+  if (!sunData) { await setupSunrise() }
+  
+  const sunrise = sunData.sunrise
+  const sunset = sunData.sunset
+  const showWithin = sunriseSettings.showWithin
+  const closeToSunrise = closeTo(sunrise) <= showWithin
+  const closeToSunset = closeTo(sunset) <= showWithin
+
+  // If we only show sometimes and we're not close, return.
+  if (showWithin > 0 && !closeToSunrise && !closeToSunset) { return }
+  
+  // Otherwise, determine which time to show.
+  const showSunrise = closeTo(sunrise) <= closeTo(sunset)
+  
+  // Set up the stack.
+  const sunriseStack = align(column)
+  sunriseStack.setPadding(padding, padding, padding, padding)
+  sunriseStack.layoutHorizontally()
+  sunriseStack.centerAlignContent()
+  
+  // Add the correct symbol.
+  const symbolName = showSunrise ? "sunrise.fill" : "sunset.fill"
+  const symbol = sunriseStack.addImage(SFSymbol.named(symbolName).image)
+  symbol.imageSize = new Size(22,22)
+  
+  sunriseStack.addSpacer(padding * 0.8)
+  
+  // Add the time.
+  const timeText = formatTime(showSunrise ? new Date(sunrise) : new Date(sunset))
+  const time = provideText(timeText, sunriseStack, textFormat.sunrise)
+}
+
+// Allow for either term to be used.
+async function sunset(column) {
+  return await sunrise(column)
 }
 
 /*
@@ -935,6 +1025,20 @@ function sameDay(d1, d2) {
     d1.getDate() === d2.getDate()
 }
 
+// Returns the number of minutes between now and the provided date.
+function closeTo(time) {
+  return Math.abs(currentDate.getTime() - time) / 60000
+}
+
+// Format the time for a Date input.
+function formatTime(date) {
+  let df = new DateFormatter()
+  df.locale = locale
+  df.useNoDateStyle()
+  df.useShortTimeStyle()
+  return df.string(date)
+}
+
 // Provide a text symbol with the specified shape.
 function provideTextSymbol(shape) {
 
@@ -950,46 +1054,47 @@ function provideTextSymbol(shape) {
   return "\u2759" 
 }
 
-// Provide the SF Symbols battery icon depending on the battery level
+// Provide the SF Symbols battery icon depending on the battery level.
 function provideBatteryIcon() {
-
-  const batteryLevel = Device.batteryLevel()
-
+  
+  // Charging symbol
   if ( Device.isCharging() ) {
 
     let batIcon = SFSymbol.named("battery.100.bolt")
     batIcon.applyLightWeight()
 
     return batIcon.image
+  }
+  
+  const batteryLevel = Device.batteryLevel()
+  
+  // Battery mostly full
+  if ( Math.round(batteryLevel * 100) > 65 ) {
 
-  } else
+    let batIcon = SFSymbol.named("battery.100")
+    batIcon.applyLightWeight()
 
-    if ( Math.round(batteryLevel * 100) > 65 ) {
+    return batIcon.image
+  }
+  
+  // Battery getting low
+  if ( Math.round(batteryLevel * 100) > 30 ) {
 
-      let batIcon = SFSymbol.named("battery.100")
-      batIcon.applyLightWeight()
+    let batIcon = SFSymbol.named("battery.25")
+    batIcon.applyLightWeight()
 
-      return batIcon.image
+    return batIcon.image
+  }
+  
+  // Low battery
+  let batIcon = SFSymbol.named("battery.0")
+  batIcon.applySemiboldWeight()
 
-    } else if ( Math.round(batteryLevel * 100) > 30 ) {
-
-      let batIcon = SFSymbol.named("battery.25")
-      batIcon.applyLightWeight()
-
-      return batIcon.image
-
-    } else {
-
-      let batIcon = SFSymbol.named("battery.0")
-      batIcon.applySemiboldWeight()
-
-      return batIcon.image
-    }
-
+  return batIcon.image
 }
 
 // Provide a symbol based on the condition.
-function provideSymbol(cond,night) {
+function provideConditionSymbol(cond,night) {
   
   // Define our symbol equivalencies.
   let symbols = {
