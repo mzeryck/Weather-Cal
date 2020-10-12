@@ -34,9 +34,9 @@ When run, the script creates a WidgetStack with the provided width for each colu
 ### Creating a widget item
 If you would like to create your own widget items, consider the following required and optional elements:
 
-* __Required:__ A function with the name of the widget item, for example: `function date(column)`. The name of the function is what gets entered by the user in the `LAYOUT` section. This function needs to have a single `column` argument, representing the WidgetStack that the function will be adding elements to. It’s best to make this an `async` function, since most widget items will need to perform asynchronous work. 
+* __Required:__ A function with the name of the widget item, for example: `function date(column)`. The name of the function is what gets entered by the user in the `LAYOUT` section. This function needs to have a single `column` argument, representing the WidgetStack that the function will be adding elements to. It’s best to make this an `async` function, since most widget items will need to perform asynchronous work. For padding around the element, use the global `padding` variable as a baseline.
 
-* __Conditionally required:__ If a widget item displays text, it should use the `formatText` function along with a value in the `textFormat` object. Existing values can be used if they make sense, or values can be added.
+* __Conditionally required:__ If a widget item displays text, it should use the `provideText` function along with a value in the `textFormat` object. Existing values can be used if they make sense, or values can be added.
 
 * __Conditionally required:__ If a widget needs to display predefined strings like labels, they must be defined in the `localizedText` object. This allows users to easily translate text into their preferred language. 
 
