@@ -1056,6 +1056,9 @@ function provideTextSymbol(shape) {
 // Provide a battery SFSymbol with accurate level drawn on top of it.
 function provideBatteryIcon() {
   
+  // If we're charging, show the charging icon.
+  if (Device.isCharging()) { return SFSymbol.named("battery100.bolt").image }
+  
   // Set the size of the battery icon.
   const batteryWidth = 87
   const batteryHeight = 41
