@@ -933,7 +933,7 @@ async function battery(column) {
 
     return batteryPercentage
   }
-
+  
   const batteryLevel = Device.batteryLevel()
   
   // Set up the battery level item
@@ -944,11 +944,10 @@ async function battery(column) {
   let batteryIcon = batteryStack.addImage(provideBatteryIcon())
   batteryIcon.imageSize = new Size(30,30)
   
-
   // Change the battery icon to red if battery level is <= 20 to match system behavior
   if ( Math.round(batteryLevel * 100) > 20 || Device.isCharging() ) {
 
-    batteryIcon.tintColor = Color.white()
+    batteryIcon.tintColor = new Color(textFormat.battery.color || textFormat.defaultText.color)
 
   } else {
 
@@ -1054,43 +1053,46 @@ function provideTextSymbol(shape) {
   return "\u2759" 
 }
 
-// Provide the SF Symbols battery icon depending on the battery level.
+// Provide a battery SFSymbol with accurate level drawn on top of it.
 function provideBatteryIcon() {
   
-  // Charging symbol
-  if ( Device.isCharging() ) {
-
-    let batIcon = SFSymbol.named("battery.100.bolt")
-    batIcon.applyLightWeight()
-
-    return batIcon.image
-  }
+  // Set the size of the battery icon.
+  const batteryWidth = 87
+  const batteryHeight = 41
   
-  const batteryLevel = Device.batteryLevel()
+  // Start our draw context.
+  let draw = new DrawContext()
+  draw.opaque = false
+  draw.respectScreenScale = true
+  draw.size = new Size(batteryWidth, batteryHeight)
   
-  // Battery mostly full
-  if ( Math.round(batteryLevel * 100) > 65 ) {
-
-    let batIcon = SFSymbol.named("battery.100")
-    batIcon.applyLightWeight()
-
-    return batIcon.image
-  }
+  // Draw the battery.
+  draw.drawImageInRect(SFSymbol.named("battery.0").image, new Rect(0, 0, batteryWidth, batteryHeight))
   
-  // Battery getting low
-  if ( Math.round(batteryLevel * 100) > 30 ) {
-
-    let batIcon = SFSymbol.named("battery.25")
-    batIcon.applyLightWeight()
-
-    return batIcon.image
-  }
+  // Match the battery level values to the SFSymbol.
+  const x = batteryWidth*0.1525
+  const y = batteryHeight*0.247
+  const width = batteryWidth*0.602
+  const height = batteryHeight*0.505
   
-  // Low battery
-  let batIcon = SFSymbol.named("battery.0")
-  batIcon.applySemiboldWeight()
+  // Prevent unreadable icons.
+  let level = Device.batteryLevel()
+  if (level < 0.05) { level = 0.05 }
+  
+  // Determine the width and radius of the battery level.
+  const current = width * level
+  let radius = height/6.5
+  
+  // When it gets low, adjust the radius to match.
+  if (current < (radius * 2)) { radius = current / 2 }
 
-  return batIcon.image
+  // Make the path for the battery level.
+  let barPath = new Path()
+  barPath.addRoundedRect(new Rect(x, y, current, height), radius, radius)
+  draw.addPath(barPath)
+  draw.setFillColor(Color.black())
+  draw.fillPath()
+  return draw.getImage()
 }
 
 // Provide a symbol based on the condition.
