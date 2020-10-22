@@ -42,17 +42,22 @@ const padding = 5
 
 const items = [
   
-`
+  row,
 
--------------------
-|date    |   90   |
-|battery |current |
-|sunrise |future  |
--------------------
-|events           |
--------------------
+     column,
+     date,
+     battery,
+     sunrise,
+     space,
 
-`
+     column(90),
+     current,
+     future,
+
+   row,
+
+     column,
+     events,
   
 ]
 
