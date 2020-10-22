@@ -42,22 +42,17 @@ const padding = 5
 
 const items = [
   
-  row,
-  
-    column,
-    date,
-    battery,
-    sunrise,
-    space,
-    
-    column(90),
-    current,
-    future,
-    
-  row,
-  
-    column,
-    events,
+`
+
+-------------------
+|date    |   90   |
+|battery |current |
+|sunrise |future  |
+-------------------
+|events           |
+-------------------
+
+`
   
 ]
 
@@ -227,8 +222,18 @@ var currentColumn = {}
 // Set up the initial alignment.
 var currentAlignment = alignLeft
 
-// Set up our items.
-for (item of items) { await item(currentColumn) }
+// Set up the global ASCII variables.
+var currentColumns = []
+var rowNeedsSetup = false
+
+// It's ASCII time!
+if (typeof items[0] == 'string') {
+  for (line of items[0].split(/\r?\n/)) { await processLine(line) }
+}
+// Otherwise, set up normally.
+else {
+  for (item of items) { await item(currentColumn) }
+}
 
 /*
  * BACKGROUND DISPLAY
@@ -274,6 +279,132 @@ if (widgetPreview == "small") { widget.presentSmall() }
 else if (widgetPreview == "medium") { widget.presentMedium() }
 else if (widgetPreview == "large") { widget.presentLarge() }
 Script.complete()
+
+/*
+ * ASCII FUNCTIONS
+ * Now isn't this a lot of fun?
+ * ============================
+ */
+
+// Provide the named function.
+function provideFunction(name) {
+  const functions = {
+    space() { return space },
+    left() { return left },
+    right() { return right },
+    center() { return center },
+    date() { return date },
+    greeting() { return greeting },
+    events() { return events },
+    current() { return current },
+    future() { return future },
+    battery() { return battery },
+    sunrise() { return sunrise },
+  }
+  return functions[name]
+}
+
+// Processes a single line of ASCII. 
+async function processLine(lineInput) {
+  
+  // Because iOS loves adding periods to everything.
+  const line = lineInput.replace(/\.+/g,'')
+  
+  // If it's blank, return.
+  if (line.trim() == '') { return }
+  
+  // If it's a line, enumerate previous columns (if any) and set up the new row.
+  if (line[0] == '-' && line[line.length-1] == '-') { 
+    if (currentColumns.length > 0) { await enumerateColumns() }
+    rowNeedsSetup = true
+    return
+  }
+  
+  // If it's the first content row, finish the row setup.
+  if (rowNeedsSetup) { 
+    row(currentColumn)
+    rowNeedsSetup = false 
+  }
+  
+  // If there's a number, this is a setup row.
+  const setupRow = line.match(/\d+/)
+
+  // Otherwise, it has columns.
+  const items = line.split('|')
+  
+  // Iterate through each item.
+  for (var i=1; i < items.length-1; i++) {
+    
+    // If the current column doesn't exist, make it.
+    if (!currentColumns[i]) { currentColumns[i] = { items: [] } }
+    
+    // Now we have a column to add the items to.
+    const column = currentColumns[i].items
+    
+    // Get the current item and its trimmed version.
+    const item = items[i]
+    const trim = item.trim()
+    
+    // If it's not a function, figure out spacing.
+    if (!provideFunction(trim)) { 
+      
+      // If it's a setup row, whether or not we find the number, we keep going.
+      if (setupRow) {
+        const value = parseInt(trim, 10)
+        if (value) { currentColumns[i].width = value }
+        continue
+      }
+      
+      // If it's blank and we haven't already added a space, add one.
+      const prevItem = column[column.length-1]
+      if (trim == '' && (!prevItem || (prevItem && !prevItem.startsWith("space")))) {
+        column.push("space")
+      }
+      
+      // Either way, we're done.
+      continue
+    
+    }
+    
+    // Determine the alignment.
+    const index = item.indexOf(trim)
+    const length = item.slice(index,item.length).length
+    
+    let align
+    if (index > 0 && length > trim.length) { align = "center" }
+    else if (index > 0) { align = "right" }
+    else { align = "left" }
+    
+    // Add the items to the column.
+    column.push(align)
+    column.push(trim)
+  }
+}
+
+// Runs the function names in each column.
+async function enumerateColumns() {
+  if (currentColumns.length > 0) {
+    for (col of currentColumns) {
+      
+      // If it's null, go to the next one.
+      if (!col) { continue }
+      
+      // If there's a width, use the width function.
+      if (col.width) {
+        column(col.width)(currentColumn)
+        
+      // Otherwise, create the column normally.
+      } else {
+        column(currentColumn)
+      }
+      for (item of col.items) {
+        const func = provideFunction(item)()
+        await func(currentColumn)
+      }
+    }
+    currentColumns = []
+  }
+}
 
 /*
  * LAYOUT FUNCTIONS
