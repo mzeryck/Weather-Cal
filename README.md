@@ -47,6 +47,24 @@ You can change the layout of the widget using the following __layout items__:
 
 * Adding `space,` will add a space that automatically expands to fill the vertical space in the column it's added to. This is the best way to "push" items to the top or bottom edges of the widget. If you need to, you can make fixed-sized spaces like this: `space(50),`.
 
+### ASCII is fun
+If you want to [draw your widget using ASCII](https://twitter.com/mzeryck/status/1316614631868166144), delete all of the items in the `items` array. Add two \` characters, and in between them, draw your widget like so:
+```
+`
+
+ -------------------
+ |date    |   90   |
+ |battery |current |
+ |sunrise |future  |
+ |        |        |
+ -------------------
+ |           events|
+ -------------------
+
+ `
+ ```
+A full line of `-` (dash) starts and ends the widget, or makes a new row. Put `|` (pipe) around each column. Write the name of the item you want to show in the column. The spaces around each element name will determine the alignment (left, right, or center) - for example, `events` are aligned to the right in the example above. Adding a row with nothing in it will add a flexible space. And starting a column with a number will set it to that width. (The right-hand column in the example above has a width of 90.)
+
 ## Technical details
 Users add and remove items from the `items` array in the `LAYOUT` section to determine what is shown in the widget. Items are either function objects (`events`) or they are function calls (`space(50)`) which return a function object. Either way, the widget construction code expects each item to be a function that takes a single `column` argument.
 
