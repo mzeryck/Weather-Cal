@@ -643,8 +643,8 @@ async function setupGradient() {
   if (closeTo(sunset)<=15) { return gradient.sunset }
 
   // In the 30min before/after, use dawn/twilight.
-  if (closeTo(sunrise)<=45 && utcTime < sunrise) { return gradient.dawn }
-  if (closeTo(sunset)<=45 && utcTime > sunset) { return gradient.twilight }
+  if (closeTo(sunrise)<=45 && currentDate.getTime() < sunrise) { return gradient.dawn }
+  if (closeTo(sunset)<=45 && currentDate.getTime() > sunset) { return gradient.twilight }
 
   // Otherwise, if it's night, return night.
   if (isNight(currentDate)) { return gradient.night }
