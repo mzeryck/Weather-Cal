@@ -699,30 +699,37 @@ async function setupSunrise() {
 
   // Requirements: location
   if (!locationData) { await setupLocation() }
+  
+  async function getSunData(date) {
+    const req = "https://api.sunrise-sunset.org/json?lat=" + locationData.latitude + "&lng=" + locationData.longitude + "&formatted=0&date=" + date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate()
+    const data = await new Request(req).loadJSON()
+    return data
+  }
 
   // Set up the sunrise/sunset cache.
-  const sunCachePath = files.joinPath(files.documentsDirectory(), "weather-cal-sun")
+  const sunCachePath = files.joinPath(files.documentsDirectory(), "weather-cal-sunrise")
   const sunCacheExists = files.fileExists(sunCachePath)
   const sunCacheDate = sunCacheExists ? files.modificationDate(sunCachePath) : 0
-  let sunDataRaw, afterSunset
+  let sunDataRaw
 
   // If cache exists and was created today, use cached data.
   if (sunCacheExists && sameDay(currentDate, sunCacheDate)) {
     const sunCache = files.readString(sunCachePath)
     sunDataRaw = JSON.parse(sunCache)
-    
-    // Determine if it's after sunset.
-    const sunsetDate = new Date(sunDataRaw.results.sunset)
-    afterSunset = currentDate.getTime() - sunsetDate.getTime() > (45 * 60 * 1000)
   }
   
-  // If we don't have data yet, or we need to get tomorrow's data, get it from the server.
-  if (!sunDataRaw || afterSunset) {
+  // Otherwise, get the data from the server.
+  else {
+
+    sunDataRaw = await getSunData(currentDate)
+  
+    // Calculate tomorrow's date and get tomorrow's data.
     let tomorrowDate = new Date()
     tomorrowDate.setDate(currentDate.getDate() + 1)
-    const dateToUse = afterSunset ? tomorrowDate : currentDate
-    const sunReq = "https://api.sunrise-sunset.org/json?lat=" + locationData.latitude + "&lng=" + locationData.longitude + "&formatted=0&date=" + dateToUse.getFullYear() + "-" + (dateToUse.getMonth()+1) + "-" + dateToUse.getDate()
-    sunDataRaw = await new Request(sunReq).loadJSON()
+    const tomorrowData = await getSunData(tomorrowDate)
+    sunDataRaw.results.tomorrow = tomorrowData.results.sunrise
+    
+    // Cache the file.
     files.writeString(sunCachePath, JSON.stringify(sunDataRaw))
   }
 
@@ -730,6 +737,7 @@ async function setupSunrise() {
   sunData = {}
   sunData.sunrise = new Date(sunDataRaw.results.sunrise).getTime()
   sunData.sunset = new Date(sunDataRaw.results.sunset).getTime()
+  sunData.tomorrow = new Date(sunDataRaw.results.tomorrow).getTime()
 }
 
 // Set up the weatherData object.
@@ -1140,6 +1148,9 @@ async function sunrise(column) {
   
   const sunrise = sunData.sunrise
   const sunset = sunData.sunset
+  const tomorrow = sunData.tomorrow
+  const current = currentDate.getTime()
+  
   const showWithin = sunriseSettings.showWithin
   const closeToSunrise = closeTo(sunrise) <= showWithin
   const closeToSunset = closeTo(sunset) <= showWithin
@@ -1148,7 +1159,20 @@ async function sunrise(column) {
   if (showWithin > 0 && !closeToSunrise && !closeToSunset) { return }
   
   // Otherwise, determine which time to show.
-  const showSunrise = closeTo(sunrise) <= closeTo(sunset)
+  let timeToShow, symbolName
+  const halfHour = 30 * 60 * 1000
+  
+  // If we're between sunrise and sunset, show the sunset.
+  if (current > sunrise + halfHour && current < sunset + halfHour) {
+    symbolName = "sunset.fill"
+    timeToShow = sunset
+  }
+  
+  // Otherwise, show a sunrise.
+  else {
+    symbolName = "sunrise.fill"
+    timeToShow = current > sunset ? tomorrow : sunrise
+  }
   
   // Set up the stack.
   const sunriseStack = align(column)
@@ -1159,7 +1183,6 @@ async function sunrise(column) {
   sunriseStack.addSpacer(padding * 0.3)
   
   // Add the correct symbol.
-  const symbolName = showSunrise ? "sunrise.fill" : "sunset.fill"
   const symbol = sunriseStack.addImage(SFSymbol.named(symbolName).image)
   symbol.imageSize = new Size(22,22)
   tintIcon(symbol, textFormat.sunrise)
@@ -1167,7 +1190,7 @@ async function sunrise(column) {
   sunriseStack.addSpacer(padding)
   
   // Add the time.
-  const timeText = formatTime(showSunrise ? new Date(sunrise) : new Date(sunset))
+  const timeText = formatTime(new Date(timeToShow))
   const time = provideText(timeText, sunriseStack, textFormat.sunrise)
 }
 
