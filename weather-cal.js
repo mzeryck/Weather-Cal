@@ -25,6 +25,9 @@ const forceImageUpdate = false
 // Set the padding around each item. Default is 5.
 const padding = 5
 
+// Decide if icons should match the color of the text around them.
+const tintIcons = false
+
 /*
  * LAYOUT
  * Decide what items to show on the widget.
@@ -965,6 +968,7 @@ async function current(column) {
   let mainConditionStack = align(currentWeatherStack)
   let mainCondition = mainConditionStack.addImage(provideConditionSymbol(weatherData.currentCondition,isNight(currentDate)))
   mainCondition.imageSize = new Size(22,22)
+  tintIcon(mainCondition, textFormat.largeTemp)
   mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : padding, padding, 0, padding)
   
   // If we're showing the description, add it.
@@ -1047,6 +1051,7 @@ async function future(column) {
   let subCondition = subConditionStack.addImage(provideConditionSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.tomorrowCondition,nightCondition))
   const subConditionSize = showNextHour ? 14 : 18
   subCondition.imageSize = new Size(subConditionSize, subConditionSize)
+  tintIcon(subCondition, textFormat.smallTemp)
   subConditionStack.addSpacer(5)
   
   // The next part of the display changes significantly for next hour vs tomorrow.
@@ -1055,7 +1060,7 @@ async function future(column) {
     const subTemp = provideText(subTempText, subConditionStack, textFormat.smallTemp)
     
   } else {
-    let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color("ffffff", 0.5), 20))
+    let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5), 20))
     tomorrowLine.imageSize = new Size(3,28)
     subConditionStack.addSpacer(5)
     let tomorrowStack = subConditionStack.addStack()
@@ -1110,7 +1115,7 @@ async function battery(column) {
   // Change the battery icon to red if battery level is <= 20 to match system behavior
   if ( Math.round(batteryLevel * 100) > 20 || Device.isCharging() ) {
 
-    batteryIcon.tintColor = new Color(textFormat.battery.color || textFormat.defaultText.color)
+    tintIcon(batteryIcon, textFormat.battery)
 
   } else {
 
@@ -1157,6 +1162,7 @@ async function sunrise(column) {
   const symbolName = showSunrise ? "sunrise.fill" : "sunset.fill"
   const symbol = sunriseStack.addImage(SFSymbol.named(symbolName).image)
   symbol.imageSize = new Size(22,22)
+  tintIcon(symbol, textFormat.sunrise)
   
   sunriseStack.addSpacer(padding)
   
@@ -1175,6 +1181,12 @@ async function sunset(column) {
  * These functions perform duties for other functions.
  * ===================================================
  */
+
+// Tints icons if needed.
+function tintIcon(icon,format) {
+  if (!tintIcons) { return }
+  icon.tintColor = new Color(format.color || textFormat.defaultText.color)
+}
 
 // Determines if the provided date is at night.
 function isNight(dateInput) {
@@ -1258,7 +1270,8 @@ function provideBatteryIcon() {
   let barPath = new Path()
   barPath.addRoundedRect(new Rect(x, y, current, height), radius, radius)
   draw.addPath(barPath)
-  draw.setFillColor(Color.black())
+  const color = tintIcons ? (textFormat.battery.color || textFormat.defaultText.color) : "000000"
+  draw.setFillColor(new Color(color))
   draw.fillPath()
   return draw.getImage()
 }
@@ -1391,14 +1404,17 @@ function drawTempBar() {
   const barHeight = tempBarHeight - 10
   barPath.addRoundedRect(new Rect(0, 5, tempBarWidth, barHeight), barHeight / 2, barHeight / 2)
   draw.addPath(barPath)
-  draw.setFillColor(new Color("ffffff", 0.5))
+  
+  // Determine the color.
+  const barColor = textFormat.battery.color || textFormat.defaultText.color
+  draw.setFillColor(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5))
   draw.fillPath()
 
   // Make the path for the current temp indicator.
   let currPath = new Path()
   currPath.addEllipse(new Rect(currPosition, 0, tempBarHeight, tempBarHeight))
   draw.addPath(currPath)
-  draw.setFillColor(new Color("ffffff", 1))
+  draw.setFillColor(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 1))
   draw.fillPath()
 
   return draw.getImage()
