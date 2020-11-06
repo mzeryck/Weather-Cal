@@ -664,21 +664,35 @@ async function setupLocation() {
 
   locationData = {}
   const locationPath = files.joinPath(files.documentsDirectory(), "weather-cal-loc")
+  
+  // If we have a location cached, read it and determine if it's good.
+  let locationArray, mustRequestLocation
+  if (files.fileExists(locationPath)) {
+    locationArray = files.readString(locationPath).split("|")
+    
+    // If any value is null, we need to request location from iOS.
+    for (item of locationArray) {
+      if (item == null || item == "" || item == "null") {
+        mustRequestLocation = true
+        break
+      }
+    }
+  }
 
-  // If our location is unlocked or cache doesn't exist, ask iOS for location.
+  // Ask for location if it's unlocked, cache doesn't exist, or we had bad data.
   var readLocationFromFile = false
-  if (!lockLocation || !files.fileExists(locationPath)) {
+  if (!lockLocation || !files.fileExists(locationPath) || mustRequestLocation) {
     try {
       const location = await Location.current()
       const geocode = await Location.reverseGeocode(location.latitude, location.longitude, locale)
       locationData.latitude = location.latitude
       locationData.longitude = location.longitude
-      locationData.locality = geocode[0].locality
+      locationData.locality = geocode[0].locality || ""
       files.writeString(locationPath, location.latitude + "|" + location.longitude + "|" + locationData.locality)
     
     } catch(e) {
-      // If we fail in unlocked mode, read it from the cache.
-      if (!lockLocation) { readLocationFromFile = true }
+      // If we fail and we have a cache, use it.
+      if (locationArray) { readLocationFromFile = true }
       
       // We can't recover if we fail on first run in locked mode.
       else { return }
@@ -687,10 +701,9 @@ async function setupLocation() {
   
   // If our location is locked or we need to read from file, do it.
   if (lockLocation || readLocationFromFile) {
-    const locationStr = files.readString(locationPath).split("|")
-    locationData.latitude = locationStr[0]
-    locationData.longitude = locationStr[1]
-    locationData.locality = locationStr[2]
+    locationData.latitude = locationArray[0]
+    locationData.longitude = locationArray[1]
+    locationData.locality = locationArray[2] || ""
   }
 }
 
