@@ -687,7 +687,7 @@ async function setupLocation() {
       const geocode = await Location.reverseGeocode(location.latitude, location.longitude, locale)
       locationData.latitude = location.latitude
       locationData.longitude = location.longitude
-      locationData.locality = geocode[0].locality || ""
+      locationData.locality = (geocode[0].locality || geocode[0].postalAddress.city) || geocode[0].administrativeArea
       files.writeString(locationPath, location.latitude + "|" + location.longitude + "|" + locationData.locality)
     
     } catch(e) {
