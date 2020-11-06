@@ -759,16 +759,35 @@ async function setupWeather() {
 
   // Otherwise, use the API to get new weather data.
   } else {
-    const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + locationData.latitude + "&lon=" + locationData.longitude + "&exclude=minutely,alerts&units=" + weatherSettings.units + "&lang=" + locale + "&appid=" + apiKey
+    
+    // OpenWeather only supports a subset of language codes.
+    const openWeatherLang = ["af","al","ar","az","bg","ca","cz","da","de","el","en","eu","fa","fi","fr","gl","he","hi","hr","hu","id","it","ja","kr","la","lt","mk","no","nl","pl","pt","pt_br","ro","ru","sv","se","sk","sl","sp","es","sr","th","tr","ua","uk","vi","zh_cn","zh_tw","zu"]
+    var lang
+    
+    // Find all possible language matches.
+    const languages = [locale, locale.split("_")[0], Device.locale(), Device.locale().split("_")[0]]
+
+    for (item of languages) {
+      // If it matches, use the value and stop the loop.
+      if (openWeatherLang.includes(item)) {
+        lang = "&lang=" + item
+        break
+      }
+    }
+  
+    const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + locationData.latitude + "&lon=" + locationData.longitude + "&exclude=minutely,alerts&units=" + weatherSettings.units + lang + "&appid=" + apiKey
     weatherDataRaw = await new Request(weatherReq).loadJSON()
     files.writeString(cachePath, JSON.stringify(weatherDataRaw))
   }
+  
+  // English continues using the "main" weather description.
+  const english = (locale.split("_")[0] == "en")
 
   // Store the weather values.
   weatherData = {}
   weatherData.currentTemp = weatherDataRaw.current.temp
   weatherData.currentCondition = weatherDataRaw.current.weather[0].id
-  weatherData.currentDescription = weatherDataRaw.current.weather[0].main
+  weatherData.currentDescription = english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description
   weatherData.todayHigh = weatherDataRaw.daily[0].temp.max
   weatherData.todayLow = weatherDataRaw.daily[0].temp.min
 
