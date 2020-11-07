@@ -61,6 +61,7 @@ const items = [
 
      column,
      events,
+     reminders,
   
 ]
 
@@ -91,7 +92,7 @@ const dateSettings = {
 const eventSettings = {
 
   // How many events to show.
-  numberOfEvents: 3
+  numberOfEvents: 2
 
   // Show all-day events.
   ,showAllDay: true
@@ -110,6 +111,29 @@ const eventSettings = {
   
   // When no events remain, show a hard-coded "message", a "greeting", or "none".
   ,noEventBehavior: "message"
+}
+
+// REMINDERS
+// =========
+const reminderSettings = {
+
+  // How many reminders to show. Use 0 for all.
+  numberOfReminders: 2
+
+  // Set to true for a relative due date ("in 3 hours") instead of absolute ("3:00 PM")
+  ,useRelativeDueDate: false
+  
+  // Set to true to show reminders without a due date. Default is false.
+  ,showWithoutDueDate: true
+  
+  // Show reminders that are overdue.
+  ,showOverdue: false
+
+  // Set which calendars for which to show events. Empty [] means all calendars.
+  ,selectLists: []
+
+  // Leave blank "" for no color, or specify shape (circle, rectangle) and/or side (left, right).
+  ,showListColor: "rectangle left"
 }
 
 // SUNRISE
@@ -205,7 +229,7 @@ const textFormat = {
 if (locale == "" || locale == null) { locale = Device.locale() }
 
 // Declare the data variables.
-var eventData, locationData, sunData, weatherData
+var eventData, locationData, sunData, weatherData, reminderData
 
 // Create global constants.
 const currentDate = new Date()
@@ -595,6 +619,48 @@ async function setupEvents() {
   eventData.eventsAreVisible = (futureEvents.length > 0) && (eventSettings.numberOfEvents > 0)
 }
 
+// Set up the reminderData object.
+async function setupReminders() {
+  
+  reminderData = {}
+  const lists = reminderSettings.selectLists
+  const numberOfReminders = reminderSettings.numberOfReminders
+  const showWithoutDueDate = reminderSettings.showWithoutDueDate
+  const showOverdue = reminderSettings.showOverdue
+
+  // Function to determine if an event should be shown.
+  function shouldShowReminder(reminder) {
+      
+    // If reminders are filtered and the list isn't in the selected lists, return false.
+    if (lists.length && !lists.includes(reminder.calendar.title)) { return false }
+    
+    // If there's no due date, use the setting.
+    if (!reminder.dueDate)  { return showWithoutDueDate }
+    
+    // If it's overdue, use the setting.
+    if (reminder.isOverdue) { return showOverdue }
+
+    // Otherwise, return true.
+    return true
+  }
+  
+  // Determine which events to show, and how many.
+  const reminders = await Reminder.allIncomplete()
+  let shownReminders = 0
+  let remindersToShow = []
+  
+  for (reminder of reminders) {
+    if (numberOfReminders && shownReminders == numberOfReminders) { break }
+    if (shouldShowReminder(reminder)) {
+      remindersToShow.push(reminder)
+      shownReminders++
+    }
+  }
+  
+  // Store the data.
+  reminderData.reminders = remindersToShow
+}
+
 // Set up the gradient for the widget background.
 async function setupGradient() {
   
@@ -912,6 +978,9 @@ async function events(column) {
   // Add each event to the stack.
   var currentStack = eventStack
   const futureEvents = eventData.futureEvents
+  const showCalendarColor = eventSettings.showCalendarColor
+  const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
+    
   for (let i = 0; i < futureEvents.length; i++) {
     
     const event = futureEvents[i]
@@ -934,8 +1003,6 @@ async function events(column) {
     
     const titleStack = align(currentStack)
     titleStack.layoutHorizontally()
-    const showCalendarColor = eventSettings.showCalendarColor
-    const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
     
     // If we're showing a color, and it's not shown on the right, add it to the left.
     if (showCalendarColor.length && !showCalendarColor.includes("right")) {
@@ -979,6 +1046,94 @@ async function events(column) {
     }
 
     const timeStack = align(currentStack)
+    const time = provideText(timeText, timeStack, textFormat.eventTime)
+    timeStack.setPadding(0, padding, padding, padding)
+  }
+}
+
+// Display reminders on the widget.
+async function reminders(column) {
+
+  // Requirements: reminders
+  if (!reminderData) { await setupReminders() }
+  
+  // Set up the reminders stack.
+  let reminderStack = column.addStack()
+  reminderStack.layoutVertically()
+  reminderStack.setPadding(0, 0, 0, 0)
+
+  // Add each reminder to the stack.
+  const reminders = reminderData.reminders
+  const showListColor = reminderSettings.showListColor
+  const colorShape = showListColor.includes("circle") ? "circle" : "rectangle"
+  
+  for (let i = 0; i < reminders.length; i++) {
+    
+    const reminder = reminders[i]
+    const bottomPadding = (padding-10 < 0) ? 0 : padding-10
+    
+    const titleStack = align(reminderStack)
+    titleStack.layoutHorizontally()
+    const showCalendarColor = reminderSettings.showListColor
+    const colorShape = showListColor.includes("circle") ? "circle" : "rectangle"
+    
+    // If we're showing a color, and it's not shown on the right, add it to the left.
+    if (showListColor.length && !showListColor.includes("right")) {
+      let colorItemText = provideTextSymbol(colorShape) + " "
+      let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+      colorItem.textColor = reminder.calendar.color
+    }
+
+    const title = provideText(reminder.title.trim(), titleStack, textFormat.eventTitle)
+    titleStack.setPadding(padding, padding, padding/5, padding)
+    
+    // If we're showing a color on the right, show it.
+    if (showListColor.length && showListColor.includes("right")) {
+      let colorItemText = " " + provideTextSymbol(colorShape)
+      let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+      colorItem.textColor = reminder.calendar.color
+    }
+    
+    // If it doesn't have a due date, keep going.
+    if (!reminder.dueDate) { continue }
+
+    // If it's overdue, display in red without a time.
+    if (reminder.isOverdue) { 
+      title.textColor = Color.red()
+      continue 
+    }
+    
+    // Format with the relative style if set.
+    let timeText
+    if (reminderSettings.useRelativeDueDate) {
+      let rdf = new RelativeDateTimeFormatter()
+      rdf.locale = locale
+      rdf.useNamedDateTimeStyle()
+      timeText = rdf.string(reminder.dueDate, currentDate)
+      
+    // Otherwise, use a normal date, time, or datetime format.
+    } else {
+      let df = new DateFormatter()
+      df.locale = locale
+      
+      // If it's due today and it has a time, don't show the date.
+      if (sameDay(reminder.dueDate, currentDate) && reminder.dueDateIncludesTime) {
+        df.useNoDateStyle()
+      } else {
+        df.useShortDateStyle()
+      }
+      
+      // Only show the time if it's available.
+      if (reminder.dueDateIncludesTime) {
+        df.useShortTimeStyle()
+      } else {
+        df.useNoTimeStyle()
+      }
+      
+      timeText = df.string(reminder.dueDate)
+    }
+
+    const timeStack = align(reminderStack)
     const time = provideText(timeText, timeStack, textFormat.eventTime)
     timeStack.setPadding(0, padding, padding, padding)
   }
