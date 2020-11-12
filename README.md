@@ -4,7 +4,7 @@ This is a Scriptable widget that lets you display, position, and format multiple
 ## Setup
 Setting up Weather Cal is easy. Add the code in weather-cal.js to Scriptable on your device by downloading the file into the Scriptable folder in iCloud Drive or copying and pasting the code into a new Scriptable script. When you run the script, it will walk you through each step of the setup process.
 
-If you want a transparent widget, use [my transparent widget script](https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9) before you start. At the end of that script, select "Export to Photos", and then use the photo in the Weather Cal setup.
+If you want a transparent or translucent blurred widget, use [the Widget Blur script](https://github.com/mzeryck/Widget-Blur/blob/main/widget-blur.js) before you start. At the end of that script, select "Export to Photos", and then use the photo in the Weather Cal setup.
 
 ## Customization
 Changing the items that appear on your widget is easy. Scroll to the section of the code that looks like this:
@@ -23,22 +23,20 @@ row
     future
 ```
 
-Each word is a __widget item__. You can add the following items to your widget: `date`, `greeting`, `events`, `reminders`, `battery,`, `current` and `future` weather, `sunrise` (shows sunrise and sunset), and `text`. If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
+Each word is a __widget item__. You can add the following items to your widget: `date`, `greeting`, `events`, `reminders`, `battery`, `current` and `future` weather, `sunrise` (shows sunrise and sunset), and `text`. If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
 
 ### Layout
 You can change the layout of the widget using the following __layout items__: 
 
-* The `row` and `column` items create the structure of the widget. Feel free to add or remove rows and columns. Just remember that you __always__ need at least one row and one column, and every row has to start with a column. If you want to specify the size of a row or column, use parentheses like this: `row(50)` or `column(100)`.
+* The `row` and `column` items create the structure of the widget. You can add or remove rows and columns, just remember that you __always__ need at least one row and one column, and every row has to start with a column. If you want to specify the size of a row or column, use parentheses: `row(50)` or `column(100)`.
 
-* You can add an alignment item (`left`, `right`, or `center`) anywhere in the list, and it will align everything after it. 
+* You can add an alignment item (`left`, `right`, or `center`) anywhere in the layout, and it will align everything after it. 
 
 * Using `space` will add a space that automatically expands to fill the vertical space, pushing the items above and below it. You can make fixed-sized spaces using parentheses, like this: `space(50)`.
 
 ### ASCII
 If you want to [draw your widget using ASCII](https://twitter.com/mzeryck/status/1316614631868166144), delete all of the items and draw your widget like this:
 ```
-`
-
  -------------------
  |date    |   90   |
  |battery |current |
@@ -47,23 +45,21 @@ If you want to [draw your widget using ASCII](https://twitter.com/mzeryck/status
  -------------------
  |           events|
  -------------------
-
- `
  ```
-A full line of `-` (dash) starts and ends the widget, or makes a new row. Put `|` (pipe) around each column. Write the name of the item you want to show in the column. The spaces around each element name will determine the alignment (left, right, or center) - for example, `events` are aligned to the right in the example above. Adding a row with nothing in it will add a flexible space. Starting a column with a number will set it to that width. (The right-hand column in the example above has a width of 90.)
+A full line of `-` (dashes) starts and ends the widget, or makes a new row. Put `|` (pipes) around each column. The spaces around each element name will determine the alignment (left, right, or center). For example, `events` are aligned to the right in the example above. Adding a row with nothing in it will add a flexible space. Starting a column with a number will set it to that width. (The right-hand column in the example above has a width of 90.)
 
 ## Technical details
 Weather Cal consists of two scripts: the Weather Cal widget (weather-cal.js) and the Weather Cal code (weather-cal-code.js). When a user first runs the widget script, it downloads the code and saves it as a Scriptable script. It then imports that code as a module and runs it. The widget script is essentially a container for the widget settings, while the code script does the heavy lifting.
 
 ### Widget construction
-Users add and remove items from the `layout` string in the `settings` object to determine what is shown in the widget. When the script runs, it parses this string and isolates each item, using the `provideFunction` function to get the corresponding widget item function. It then provides the current column, as well as any arguments if they are provided. 
+Users add and remove items from the `layout` string in the `settings` object to determine what is shown in the widget. When the script runs, it parses this string and isolates each item, using the `provideFunction` function to get the corresponding widget item function. If an argument was provided using parentheses, the provided parameter is passed to the function, which acts as a generator. Finally, the item function is passed the current column (a WidgetStack) so it can run.
 
 ### Creating a widget item
 Each widget item has the following required and optional elements:
 
 * __Required:__ A function with the name of the widget item, for example: `function date(column)`. The name of the function is what gets entered by the user in the `LAYOUT` section. This function needs to have a single `column` argument, representing the WidgetStack that the function will be adding elements to. For padding around the element, use the global `padding` variable as a baseline.
 
-* __Required:__ Add the function to the `provideFunction` function so the parser knows it exists.
+* __Required:__ Add a value to the `provideFunction` function so the parser knows it exists.
 
 * __Optional:__ A settings object that lets the user choose how the widget item is displayed. Match the existing format in the `ITEM SETTINGS` section using a comment header and comments explaining each setting or group of settings. A small number of well-considered, powerful settings is best.
 
