@@ -62,7 +62,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     if (shouldExit) return
   
     // Welcome the user and check for permissions.
-    message = "Next, we need to check if you've given permissions to the Scriptable app."
+    message = "Next, we need to check if you've given permissions to the Scriptable app. This might take a few seconds."
     options = ["Check permissions"]
     await generateAlert(message,options)
   
@@ -126,7 +126,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
   // Edit the widget settings.
   async function editSettings() {
     let message = "Edit your widget settings."
-    let options = ["Show widget preview", "Change background", "Re-enter API key", "Update code", "Reset widget"]
+    let options = ["Show widget preview", "Change background", "Re-enter API key", "Update code", "Reset widget", "Exit settings menu"]
     const response = await generateAlert(message,options)
   
     // Return true to show the widget preview.
@@ -177,6 +177,9 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       }
       return
     }
+    
+    // If response was Exit, just return.
+    return
   }
 
   // Get the weather key, optionally determining if it's the first run.
@@ -242,8 +245,28 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     
     } else if (backgroundType == 3) {
       background.type = "image"
+      
+      // Create the Weather Cal directory if it doesn't already exist.
+      const dirPath = fm.joinPath(fm.documentsDirectory(), "Weather Cal")
+      if (!fm.fileExists(dirPath) || !fm.isDirectory(dirPath)) {
+        fm.createDirectory(dirPath)
+      }
+      
+      // Determine if a dupe already exists.
+      const dupePath = fm.joinPath(dirPath, name + " 2.jpg")
+      const dupeAlreadyExists = fm.fileExists(dupePath)
+      
+      // Get the image and write it to disk.
       const img = await Photos.fromLibrary()
-      writeImage(name, img, iCloudInUse)
+      const path = fm.joinPath(dirPath, name + ".jpg")
+      fm.writeImage(path, image)
+      
+      // If we just created a dupe, alert the user.
+      if (!dupeAlreadyExists && fm.fileExists(dupePath)) {
+        message = "Weather Cal detected a duplicate image. Please open the Files app, navigate to Scriptable > Weather Cal, and make sure the file named " + name + ".jpg is correct."
+        options = ["OK"]
+        await generateAlert(message,options)
+      }
     }
       
     writePreference("weather-cal-" + name, background)
@@ -267,14 +290,14 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
   // Generate an alert with the provided array of options.
   async function generateAlert(message,options) {
     
-    let alert = new Alert()
+    const alert = new Alert()
     alert.message = message
     
     for (const option of options) {
       alert.addAction(option)
     }
     
-    let response = await alert.presentAlert()
+    const response = await alert.presentAlert()
     return response
   }
   
@@ -297,18 +320,6 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     } else {
       fm.writeString(path, JSON.stringify(value))
     }
-  }
-
-  // Write an image to disk in the appropriate location. 
-  function writeImage(name, image) {
-    const dirPath = fm.joinPath(fm.documentsDirectory(), "Weather Cal")
-    
-    if (!fm.fileExists(dirPath) || !fm.isDirectory(dirPath)) {
-      fm.createDirectory(dirPath)
-    }
-    
-    const path = fm.joinPath(dirPath, name + ".jpg")
-    fm.writeImage(path, image)
   }
 }
 
