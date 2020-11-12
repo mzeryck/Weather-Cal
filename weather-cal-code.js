@@ -116,7 +116,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     
     message = "Your widget is ready! You'll now see a preview. You can adjust more settings in the script itself. When you're ready, add a Scriptable widget to the home screen and select this script."
     options = ["Show preview"]
-    generateAlert(message,options)
+    await generateAlert(message,options)
   
     // Return and show the preview.
     return true
