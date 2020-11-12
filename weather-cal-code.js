@@ -259,13 +259,13 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       // Get the image and write it to disk.
       const img = await Photos.fromLibrary()
       const path = fm.joinPath(dirPath, name + ".jpg")
-      fm.writeImage(path, image)
+      fm.writeImage(path, img)
       
       // If we just created a dupe, alert the user.
       if (!dupeAlreadyExists && fm.fileExists(dupePath)) {
         message = "Weather Cal detected a duplicate image. Please open the Files app, navigate to Scriptable > Weather Cal, and make sure the file named " + name + ".jpg is correct."
         options = ["OK"]
-        await generateAlert(message,options)
+        const response = generateAlert(message,options)
       }
     }
       
@@ -343,6 +343,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       battery() { return battery },
       sunrise() { return sunrise },
       sunset() { return sunset },
+      text() { return text },
     }
     return functions[name]()
   }
@@ -502,7 +503,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     
     // Otherwise, pass the parameter.
     const param = item[1].slice(0, -1)
-    const func = provideFunction(item[0])(parseInt(param))
+    const func = provideFunction(item[0])(parseInt(param) || param)
     await func(currentColumn)
   }
   
@@ -1540,6 +1541,22 @@ async function makeWidget(settings, name, iCloudInUse) {
   // Allow for either term to be used.
   async function sunset(column) {
     return await sunrise(column)
+  }
+  
+  // Return a text-creation function.
+  function text(input = null) {
+
+    function displayText(column) {
+  
+      // Don't do anything if the input is blank.
+      if (!input || input == "") { return }
+  
+      // Otherwise, add the text.
+      const textStack = align(column)
+      textStack.setPadding(padding, padding, padding, padding)
+      const textDisplay = provideText(input, textStack, textFormat.customText)
+    }
+    return displayText
   }
 
   /*
