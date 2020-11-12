@@ -132,10 +132,10 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     // Return true to show the widget preview.
     if (response == 0) return true 
   
-    // Set the background.
+    // Set the background and show a preview.
     if (response == 1) {
       await setWidgetBackground()
-      return
+      return true
     }
   
     // Set the API key.
@@ -301,7 +301,13 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
   // Write an image to disk in the appropriate location. 
   function writeImage(name, image) {
-    const path = fm.joinPath(fm.libraryDirectory(), "Weather Cal/" + name)
+    const dirPath = fm.joinPath(fm.documentsDirectory(), "Weather Cal")
+    
+    if (!fm.fileExists(dirPath) || !fm.isDirectory(dirPath)) {
+      fm.createDirectory(dirPath)
+    }
+    
+    const path = fm.joinPath(dirPath, name + ".jpg")
     fm.writeImage(path, image)
   }
 }
@@ -387,7 +393,8 @@ async function makeWidget(settings, name, iCloudInUse) {
   } else if (background.type == "image") {
     
     // Determine if our image exists.
-    const path = files.joinPath(files.documentsDirectory(), "Weather Cal/" + name)
+    const dirPath = files.joinPath(files.documentsDirectory(), "Weather Cal")
+    const path = files.joinPath(dirPath, name + ".jpg")
     const exists = files.fileExists(path)
   
     // If it exists, load from file.
