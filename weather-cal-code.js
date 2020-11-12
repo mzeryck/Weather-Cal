@@ -257,7 +257,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
     try {
       const codeString = await req.loadString()
-      files.writeString(pathToCode, codeString)
+      fm.writeString(pathToCode, codeString)
       return true
     } catch {
       return false
