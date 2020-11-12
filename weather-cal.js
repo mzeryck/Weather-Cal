@@ -53,7 +53,7 @@ const settings = {
 
 // Adding left, right, or center will align everything after that. Add "space" for a flexible space, or "space(50)" for a specific height.
 
-// There are many possible items, including: date, greeting, events, reminders, current, future, battery, sunrise, text
+// There are many possible items, including: date, greeting, events, reminders, current, future, forecast, battery, sunrise, text
 
   layout: `
   
@@ -67,7 +67,7 @@ const settings = {
     
     column(90)
       current
-      future
+      forecast
        
   `,
   
@@ -191,6 +191,10 @@ const settings = {
 
     // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
     ,tomorrowShownAtHour: 20
+
+    // set the amount of days to show (0 = off, 1..3  (1 = today; 2 = today + next day; 3 = today + next 2 days))
+    ,showDays: 3
+    ,showDaysFormat: "E\t"
   },
 
 /*
