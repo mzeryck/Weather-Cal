@@ -160,6 +160,9 @@ const settings = {
   
     // Show reminders that are overdue.
     ,showOverdue: true
+    
+    // Set to true to hide reminders due in future days.
+    ,todayOnly: false
 
     // Set which calendars for which to show events. Empty [] means all calendars.
     ,selectLists: []
