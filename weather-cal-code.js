@@ -819,7 +819,12 @@ async function makeWidget(settings, name, iCloudInUse) {
     
       // If it's overdue, use the setting.
       if (reminder.isOverdue) { return showOverdue }
-
+      
+      // If we only want today and overdue, use the setting.
+      if (reminderSettings.todayOnly) { 
+        return sameDay(reminder.dueDate, currentDate)
+      }
+      
       // Otherwise, return true.
       return true
     }
