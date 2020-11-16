@@ -32,7 +32,7 @@ module.exports.runSetup = async (name, iCloudInUse, codeFilename, gitHubUrl) => 
 
 // Return the widget.
 module.exports.createWidget = async (settings, name, iCloudInUse) => {
-  return await makeWidget(settings, name, iCloudInUse)
+  return await makeWidget(settings, name, iCloudInUse)
 }
 
 async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
@@ -340,6 +340,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       reminders() { return reminders },
       current() { return current },
       future() { return future },
+      forecast() { return forecast },
       battery() { return battery },
       sunrise() { return sunrise },
       sunset() { return sunset },
@@ -1045,13 +1046,14 @@ async function makeWidget(settings, name, iCloudInUse) {
     data.weather.currentDescription = (english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) || "--"
     data.weather.todayHigh = weatherDataRaw.daily[0].temp.max || "-"
     data.weather.todayLow = weatherDataRaw.daily[0].temp.min || "-"
+    data.weather.forecast = [];
+    
+    for (let i=0; i <= 7; i++) {
+      data.weather.forecast[i] = {High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}
+    }
 
     data.weather.nextHourTemp = weatherDataRaw.hourly[1].temp || "--"
     data.weather.nextHourCondition = weatherDataRaw.hourly[1].weather[0].id || 100
-
-    data.weather.tomorrowHigh = weatherDataRaw.daily[1].temp.max || "--"
-    data.weather.tomorrowLow = weatherDataRaw.daily[1].temp.min || "--"
-    data.weather.tomorrowCondition = weatherDataRaw.daily[1].weather[0].id || 100
   }
 
   /*
@@ -1351,6 +1353,15 @@ async function makeWidget(settings, name, iCloudInUse) {
     mainCondition.imageSize = new Size(22,22)
     tintIcon(mainCondition, textFormat.largeTemp)
     mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : padding, padding, 0, padding)
+    
+    // Add the temp horizontally if enabled.
+    if (weatherSettings.horizontalCondition) {
+      mainConditionStack.addSpacer(5)
+      mainConditionStack.layoutHorizontally()
+      mainConditionStack.centerAlignContent()
+      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const temp = provideText(tempText, mainConditionStack, textFormat.largeTemp)
+    }
   
     // If we're showing the description, add it.
     if (weatherSettings.showCondition) {
@@ -1358,12 +1369,14 @@ async function makeWidget(settings, name, iCloudInUse) {
       let conditionText = provideText(data.weather.currentDescription, conditionTextStack, textFormat.smallTemp)
       conditionTextStack.setPadding(padding, padding, 0, padding)
     }
-
-    // Show the current temperature.
-    const tempStack = align(currentWeatherStack)
-    tempStack.setPadding(0, padding, 0, padding)
-    const tempText = Math.round(data.weather.currentTemp) + "°"
-    const temp = provideText(tempText, tempStack, textFormat.largeTemp)
+    
+    // Add the temp vertically if it's not horizontal.
+    if (!weatherSettings.horizontalCondition) {
+      const tempStack = align(currentWeatherStack)
+      tempStack.setPadding(0, padding, 0, padding)
+      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const temp = provideText(tempText, tempStack, textFormat.largeTemp)
+    }
   
     // If we're not showing the high and low, end it here.
     if (!weatherSettings.showHighLow) { return }
@@ -1432,7 +1445,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       nightCondition = false 
     }
   
-    let subCondition = subConditionStack.addImage(provideConditionSymbol(showNextHour ? data.weather.nextHourCondition : data.weather.tomorrowCondition,nightCondition))
+    let subCondition = subConditionStack.addImage(provideConditionSymbol(showNextHour ? data.weather.nextHourCondition : data.weather.forecast[1].Condition,nightCondition))
     const subConditionSize = showNextHour ? 14 : 18
     subCondition.imageSize = new Size(subConditionSize, subConditionSize)
     tintIcon(subCondition, textFormat.smallTemp)
@@ -1450,11 +1463,76 @@ async function makeWidget(settings, name, iCloudInUse) {
       let tomorrowStack = subConditionStack.addStack()
       tomorrowStack.layoutVertically()
     
-      const tomorrowHighText = Math.round(data.weather.tomorrowHigh) + ""
+      const tomorrowHighText = Math.round(data.weather.forecast[1].High) + ""
       const tomorrowHigh = provideText(tomorrowHighText, tomorrowStack, textFormat.tinyTemp)
       tomorrowStack.addSpacer(4)
-      const tomorrowLowText = Math.round(data.weather.tomorrowLow) + ""
+      const tomorrowLowText = Math.round(data.weather.forecast[1].Low) + ""
       const tomorrowLow = provideText(tomorrowLowText, tomorrowStack, textFormat.tinyTemp)
+    }
+  }
+
+  // Display forecast weather.
+  async function forecast(column) {
+  
+    // Get the weather settings.
+    const weatherSettings = settings.weather
+
+    // Requirements: weather and sunrise
+    if (!data.weather) { await setupWeather() }
+    if (!data.sun) { await setupSunrise() }
+
+    let startIndex = weatherSettings.showToday ? 1 : 2
+    let endIndex = weatherSettings.showDays + startIndex
+    if (endIndex > 9) { endIndex = 9 }
+
+    for (var i=startIndex; i < endIndex; i++) {
+      // Set up the today weather stack.
+      let weatherStack = column.addStack()
+      weatherStack.layoutVertically()
+      weatherStack.setPadding(0, 0, 0, 0)
+      weatherStack.url = "https://weather.com/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+
+      // Set up the date formatter and set its locale.
+      let df = new DateFormatter()
+      df.locale = locale
+
+      // Set up the sub condition stack.
+      let subConditionStack = align(weatherStack)
+      var myDate = new Date();
+      myDate.setDate(currentDate.getDate() + (i - 1));
+      df.dateFormat = weatherSettings.showDaysFormat
+      
+      let dateStack = subConditionStack.addStack()
+      dateStack.layoutHorizontally()
+      dateStack.setPadding(0, 0, 0, 0)
+      
+      let dateText = provideText(df.string(myDate), dateStack, textFormat.smallTemp)
+      dateText.lineLimit = 1
+      dateText.minimumScaleFactor = 0.5
+      dateStack.addSpacer()
+      let fontSize = textFormat.smallTemp.size || textFormat.defaultText.size
+      dateStack.size = new Size(fontSize*2.64,0)
+      subConditionStack.addSpacer(5)
+      subConditionStack.layoutHorizontally()
+      subConditionStack.centerAlignContent()
+      subConditionStack.setPadding(0, padding, padding, padding)
+
+      let subCondition = subConditionStack.addImage(provideConditionSymbol(data.weather.forecast[i - 1].Condition, false))
+      subCondition.imageSize = new Size(18, 18)
+      tintIcon(subCondition, textFormat.smallTemp)
+      subConditionStack.addSpacer(5)
+
+      let tempLine = subConditionStack.addImage(drawVerticalLine(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5), 20))
+      tempLine.imageSize = new Size(3,28)
+      subConditionStack.addSpacer(5)
+      let tempStack = subConditionStack.addStack()
+      tempStack.layoutVertically()
+
+      const tempHighText = Math.round(data.weather.forecast[i - 1].High) + ""
+      const tempHigh = provideText(tempHighText, tempStack, textFormat.tinyTemp)
+      tempStack.addSpacer(4)
+      const tempLowText = Math.round(data.weather.forecast[i - 1].Low) + ""
+      const tempLow = provideText(tempLowText, tempStack, textFormat.tinyTemp)
     }
   }
 

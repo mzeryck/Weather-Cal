@@ -53,7 +53,7 @@ const settings = {
 
 // Adding left, right, or center will align everything after that. Add "space" for a flexible space, or "space(50)" for a specific height.
 
-// There are many possible items, including: date, greeting, events, reminders, current, future, battery, sunrise, text
+// There are many possible items, including: date, greeting, events, reminders, current, future, forecast, battery, sunrise, text
 
   layout: `
   
@@ -182,6 +182,9 @@ const settings = {
   
     // Show the location of the current weather.
     showLocation: false
+    
+    // Show the condition and temperature horizontally. Default is false.
+    ,horizontalCondition: true
   
     // Show the text description of the current conditions.
     ,showCondition: false
@@ -191,6 +194,15 @@ const settings = {
 
     // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
     ,tomorrowShownAtHour: 20
+
+    // Set the amount of days to show in the forecast item.
+    ,showDays: 3
+    
+    // Set the format for each day of the week in the forecast item.
+    ,showDaysFormat: "E"
+    
+    // Set to true to show today's weather in the forecast item.
+    ,showToday: false
   },
 
 /*
