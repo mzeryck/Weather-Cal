@@ -1047,9 +1047,10 @@ async function makeWidget(settings, name, iCloudInUse) {
     data.weather.todayHigh = weatherDataRaw.daily[0].temp.max || "-"
     data.weather.todayLow = weatherDataRaw.daily[0].temp.min || "-"
     data.weather.forecast = [];
-    data.weather.forecast[0] = {High: weatherDataRaw.daily[0].temp.max || "-", Low: weatherDataRaw.daily[0].temp.min || "-", Condition: weatherDataRaw.daily[0].weather[0].id || 100}
-    data.weather.forecast[1] = {High: weatherDataRaw.daily[1].temp.max || "-", Low: weatherDataRaw.daily[1].temp.min || "-", Condition: weatherDataRaw.daily[1].weather[0].id || 100}
-    data.weather.forecast[2] = {High: weatherDataRaw.daily[2].temp.max || "-", Low: weatherDataRaw.daily[2].temp.min || "-", Condition: weatherDataRaw.daily[2].weather[0].id || 100}
+    
+    for (let i=0; i <= 7; i++) {
+      data.weather.forecast[i] = {High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}
+    }
 
     data.weather.nextHourTemp = weatherDataRaw.hourly[1].temp || "--"
     data.weather.nextHourCondition = weatherDataRaw.hourly[1].weather[0].id || 100
@@ -1470,7 +1471,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     if (!data.weather) { await setupWeather() }
     if (!data.sun) { await setupSunrise() }
 
-    let showDays = (weatherSettings.showDays > 3) ? 3 : weatherSettings.showDays;
+    let showDays = (weatherSettings.showDays > 7) ? 7 : weatherSettings.showDays;
 
     for (var i=1; i <= showDays; i++) {
       // Set up the today weather stack.
@@ -1488,7 +1489,17 @@ async function makeWidget(settings, name, iCloudInUse) {
       var myDate = new Date();
       myDate.setDate(currentDate.getDate() + (i - 1));
       df.dateFormat = weatherSettings.showDaysFormat
-      let dateText = provideText(df.string(myDate), subConditionStack, textFormat.smallTemp)
+      
+      let dateStack = subConditionStack.addStack()
+      dateStack.layoutHorizontally()
+      dateStack.setPadding(0, 0, 0, 0)
+      
+      let dateText = provideText(df.string(myDate), dateStack, textFormat.smallTemp)
+      dateText.lineLimit = 1
+      dateText.minimumScaleFactor = 0.5
+      dateStack.addSpacer()
+      let fontSize = textFormat.smallTemp.size || textFormat.defaultText.size
+      dateStack.size = new Size(fontSize*2.64,0)
       subConditionStack.addSpacer(5)
       subConditionStack.layoutHorizontally()
       subConditionStack.centerAlignContent()
