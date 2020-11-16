@@ -125,6 +125,9 @@ const settings = {
 
     // How many events to show.
     numberOfEvents: 3
+    
+    // Minutes after an event begins that it should still be shown. 
+    ,minutesAfter: 5
 
     // Show all-day events.
     ,showAllDay: true
