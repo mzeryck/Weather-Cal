@@ -1352,20 +1352,30 @@ async function makeWidget(settings, name, iCloudInUse) {
     let mainCondition = mainConditionStack.addImage(provideConditionSymbol(data.weather.currentCondition,isNight(currentDate)))
     mainCondition.imageSize = new Size(22,22)
     tintIcon(mainCondition, textFormat.largeTemp)
-    mainConditionStack.addSpacer(5)
-    mainConditionStack.layoutHorizontally()
-    mainConditionStack.centerAlignContent()
     mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : padding, padding, 0, padding)
-
-    // Show the current temperature.
-    const tempText = Math.round(data.weather.currentTemp) + "°"
-    const temp = provideText(tempText, mainConditionStack, textFormat.largeTemp)
+    
+    // Add the temp horizontally if enabled.
+    if (weatherSettings.horizontalCondition) {
+      mainConditionStack.addSpacer(5)
+      mainConditionStack.layoutHorizontally()
+      mainConditionStack.centerAlignContent()
+      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const temp = provideText(tempText, mainConditionStack, textFormat.largeTemp)
+    }
   
     // If we're showing the description, add it.
     if (weatherSettings.showCondition) {
       let conditionTextStack = align(currentWeatherStack)
       let conditionText = provideText(data.weather.currentDescription, conditionTextStack, textFormat.smallTemp)
       conditionTextStack.setPadding(padding, padding, 0, padding)
+    }
+    
+    // Add the temp vertically if it's not horizontal.
+    if (!weatherSettings.horizontalCondition) {
+      const tempStack = align(currentWeatherStack)
+      tempStack.setPadding(0, padding, 0, padding)
+      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const temp = provideText(tempText, tempStack, textFormat.largeTemp)
     }
   
     // If we're not showing the high and low, end it here.
