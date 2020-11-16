@@ -182,6 +182,9 @@ const settings = {
   
     // Show the location of the current weather.
     showLocation: false
+    
+    // Show the condition and temperature horizontally. Default is false.
+    ,horizontalCondition: true
   
     // Show the text description of the current conditions.
     ,showCondition: false
