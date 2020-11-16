@@ -1471,9 +1471,11 @@ async function makeWidget(settings, name, iCloudInUse) {
     if (!data.weather) { await setupWeather() }
     if (!data.sun) { await setupSunrise() }
 
-    let showDays = (weatherSettings.showDays > 7) ? 7 : weatherSettings.showDays;
+    let startIndex = weatherSettings.showToday ? 1 : 2
+    let endIndex = weatherSettings.showDays + startIndex
+    if (endIndex > 9) { endIndex = 9 }
 
-    for (var i=1; i <= showDays; i++) {
+    for (var i=startIndex; i < endIndex; i++) {
       // Set up the today weather stack.
       let weatherStack = column.addStack()
       weatherStack.layoutVertically()
