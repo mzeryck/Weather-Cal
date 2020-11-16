@@ -764,7 +764,14 @@ async function makeWidget(settings, name, iCloudInUse) {
 
     // If there's room and we need to, show tomorrow's events.
     let multipleTomorrowEvents = false
-    if (eventSettings.showTomorrow && shownEvents < numberOfEvents) {
+    let showTomorrow = eventSettings.showTomorrow
+    
+    // Determine if we're specifying an hour to show.
+    if (typeof showTomorrow == "number") {
+      showTomorrow = (currentDate.getHours() > showTomorrow)
+    }
+    
+    if (showTomorrow && shownEvents < numberOfEvents) {
   
       const tomorrowEvents = await CalendarEvent.tomorrow([])
       for (const event of tomorrowEvents) {
