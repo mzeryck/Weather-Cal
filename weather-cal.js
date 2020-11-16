@@ -129,8 +129,8 @@ const settings = {
     // Show all-day events.
     ,showAllDay: true
 
-    // Show tomorrow's events.
-    ,showTomorrow: true
+    // The hour (in 24-hour time) to start showing tomorrow's events. 0 for always, 24 for never.
+    ,showTomorrow: 20
 
     // Can be blank "" or set to "duration" or "time" to display how long an event is.
     ,showEventLength: "duration"
@@ -192,7 +192,7 @@ const settings = {
     // Show today's high and low temperatures.
     ,showHighLow: true
 
-    // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
+    // The hour (in 24-hour time) to switch to tomorrow's weather. 0 for always, 24 for never.
     ,tomorrowShownAtHour: 20
 
     // Set the amount of days to show in the forecast item.
