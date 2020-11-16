@@ -67,7 +67,7 @@ const settings = {
     
     column(90)
       current
-      forecast
+      future
        
   `,
   
@@ -192,9 +192,14 @@ const settings = {
     // Set the hour (in 24-hour time) to switch to tomorrow's weather. Set to 24 to never show it.
     ,tomorrowShownAtHour: 20
 
-    // set the amount of days to show (0 = off, 1..3  (1 = today; 2 = today + next day; 3 = today + next 2 days))
+    // Set the amount of days to show in the forecast item.
     ,showDays: 3
-    ,showDaysFormat: "E\t"
+    
+    // Set the format for each day of the week in the forecast item.
+    ,showDaysFormat: "E"
+    
+    // Set to true to show today's weather in the forecast item.
+    ,showToday: false
   },
 
 /*
