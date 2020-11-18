@@ -328,20 +328,21 @@ async function makeWidget(settings, name, iCloudInUse) {
   // All widget items must be documented here.
   function provideFunction(name) {
     const functions = {
-      space() { return space },
-      row() { return row },
-      column() { return column },
-      left() { return left },
-      right() { return right },
-      center() { return center },
-      date() { return date },
-      greeting() { return greeting },
-      events() { return events },
-      reminders() { return reminders },
-      current() { return current },
-      future() { return future },
-      forecast() { return forecast },
       battery() { return battery },
+      center() { return center },
+      column() { return column },
+      covid() { return covid },
+      current() { return current },
+      date() { return date },
+      events() { return events },
+      forecast() { return forecast },
+      future() { return future },
+      greeting() { return greeting },
+      left() { return left },
+      reminders() { return reminders },
+      right() { return right },
+      row() { return row },
+      space() { return space },
       sunrise() { return sunrise },
       sunset() { return sunset },
       text() { return text },
@@ -431,8 +432,6 @@ async function makeWidget(settings, name, iCloudInUse) {
    * CONSTRUCTION
    * ============
    */
-
-  
 
   // Set up the layout variables.
   var currentRow = {}
@@ -746,7 +745,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       if (event.isAllDay) { return eventSettings.showAllDay }
 
       // Otherwise, return the event if it's in the future or recently started.
-      const minutesAfter = eventSettings.minutesAfter * 60000
+      const minutesAfter = eventSettings.minutesAfter * 60000 || 0
       return (event.startDate.getTime() + minutesAfter > currentDate.getTime())
     }
   
@@ -1064,10 +1063,37 @@ async function makeWidget(settings, name, iCloudInUse) {
     for (let i=0; i <= 7; i++) {
       data.weather.forecast[i] = {High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}
     }
+    data.weather.tomorrowRain = weatherDataRaw.daily[1].pop
 
     data.weather.nextHourTemp = weatherDataRaw.hourly[1].temp || "--"
     data.weather.nextHourCondition = weatherDataRaw.hourly[1].weather[0].id || 100
+    data.weather.nextHourRain = weatherDataRaw.hourly[1].pop
   }
+  
+  // Set up the COVID data object.
+  async function setupCovid() {
+  
+    // Set up the COVID cache.
+    const cacheCovidPath = files.joinPath(files.documentsDirectory(), "weather-cal-covid")
+    const cacheCovidExists = files.fileExists(cacheCovidPath)
+    const cacheCovidDate = cacheCovidExists ? files.modificationDate(cacheCovidPath) : 0
+    let covidDataRaw
+
+    // If cache exists and it's been less than 900 seconds (15min) since last request, use cached data.
+    if (cacheCovidExists && (currentDate.getTime() - cacheCovidDate.getTime()) < 900000) {
+      const cacheCovid = files.readString(cacheCovidPath)
+      covidDataRaw = JSON.parse(cacheCovid)
+
+    // Otherwise, use the API to get new data.
+    } else {
+      const covidReq = "https://coronavirus-19-api.herokuapp.com/countries/" + settings.covid.country
+      covidDataRaw = await new Request(covidReq).loadJSON()
+      files.writeString(cacheCovidPath, JSON.stringify(covidDataRaw))
+    }
+  
+    data.covid = covidDataRaw
+  
+  }	
 
   /*
    * WIDGET ITEMS
@@ -1431,7 +1457,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     let futureWeatherStack = column.addStack()
     futureWeatherStack.layoutVertically()
     futureWeatherStack.setPadding(0, 0, 0, 0)
-    futureWeatherStack.url = "https://weather.com/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+    futureWeatherStack.url = "https://weather.com/" + locale + "weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
 
     // Determine if we should show the next hour.
     const showNextHour = (currentDate.getHours() < weatherSettings.tomorrowShownAtHour)
@@ -1465,9 +1491,11 @@ async function makeWidget(settings, name, iCloudInUse) {
     subConditionStack.addSpacer(5)
   
     // The next part of the display changes significantly for next hour vs tomorrow.
+    let rainPercent
     if (showNextHour) {
       const subTempText = Math.round(data.weather.nextHourTemp) + "°"
       const subTemp = provideText(subTempText, subConditionStack, textFormat.smallTemp)
+      rainPercent = data.weather.nextHourRain
     
     } else {
       let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5), 20))
@@ -1481,6 +1509,23 @@ async function makeWidget(settings, name, iCloudInUse) {
       tomorrowStack.addSpacer(4)
       const tomorrowLowText = Math.round(data.weather.forecast[1].Low) + ""
       const tomorrowLow = provideText(tomorrowLowText, tomorrowStack, textFormat.tinyTemp)
+      rainPercent = data.weather.tomorrowRain
+    }
+    
+    // If we're showing rain percentage, add it.
+    if (weatherSettings.showRain) {
+      let subRainStack = align(futureWeatherStack)
+      subRainStack.layoutHorizontally()
+      subRainStack.centerAlignContent()
+      subRainStack.setPadding(0, padding, padding, padding)
+
+      let subRain = subRainStack.addImage(SFSymbol.named("umbrella").image)
+      const subRainSize = showNextHour ? 14 : 18
+      subRain.imageSize = new Size(subRainSize, subRainSize)
+      subRain.tintColor = new Color(textFormat.smallTemp.color || textFormat.defaultText.color)
+      subRainStack.addSpacer(5)
+
+      const subRainText = provideText((rainPercent*100) + "%", subRainStack, textFormat.smallTemp)
     }
   }
 
@@ -1503,7 +1548,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       let weatherStack = column.addStack()
       weatherStack.layoutVertically()
       weatherStack.setPadding(0, 0, 0, 0)
-      weatherStack.url = "https://weather.com/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+      weatherStack.url = "https://weather.com/" + locale +"weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
 
       // Set up the date formatter and set its locale.
       let df = new DateFormatter()
@@ -1648,6 +1693,37 @@ async function makeWidget(settings, name, iCloudInUse) {
       const textDisplay = provideText(input, textStack, textFormat.customText)
     }
     return displayText
+  }
+  
+  // Display COVID info on the widget.
+  async function covid(column) {
+
+    if (!data.covid) { await setupCovid() }
+  
+    // Set up the stack.
+    const covidStack = align(column)
+    covidStack.setPadding(padding/2, padding, padding/2, padding)
+    covidStack.layoutHorizontally()
+    covidStack.centerAlignContent()
+    covidStack.url = settings.covid.url
+  
+    covidStack.addSpacer(padding * 0.3)
+  
+    // Add the correct symbol.
+    const symbol = covidStack.addImage(SFSymbol.named("bandage").image)
+    symbol.imageSize = new Size(18,18)
+    symbol.tintColor = new Color(textFormat.covid.color || textFormat.defaultText.color)
+
+    covidStack.addSpacer(padding)
+  
+    // Add the COVID information.
+    const covidText = localizedText.covid.replace(/{(.*?)}/g, (match, $1) => {
+      let val = data.covid[$1]
+      if (val) val = new Intl.NumberFormat(locale.replace('_','-')).format(val)
+      return val || ""
+    });
+    provideText(covidText, covidStack, textFormat.covid)
+  
   }
 
   /*
