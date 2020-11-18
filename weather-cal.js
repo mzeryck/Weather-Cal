@@ -183,6 +183,9 @@ const settings = {
   
     // How many minutes before/after sunrise or sunset to show this element. 0 for always.
     showWithin: 0
+    
+    // Set to true to use separate "sunrise" and "sunset" elements. Default is false.
+    ,separateElements: true
   },
 
   // WEATHER
