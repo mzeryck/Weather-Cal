@@ -185,7 +185,7 @@ const settings = {
     showWithin: 0
     
     // Set to true to use separate "sunrise" and "sunset" elements. Default is false.
-    ,separateElements: true
+    ,separateElements: false
   },
 
   // WEATHER
