@@ -1629,7 +1629,7 @@ async function makeWidget(settings, name, iCloudInUse) {
   }
 
   // Show the sunrise or sunset time.
-  async function sunrise(column) {
+  async function sunrise(column, showSunset = false) {
   
     // Requirements: sunrise
     if (!data.sun) { await setupSunrise() }
@@ -1649,9 +1649,12 @@ async function makeWidget(settings, name, iCloudInUse) {
     // Otherwise, determine which time to show.
     let timeToShow, symbolName
     const halfHour = 30 * 60 * 1000
-  
-    // If we're between sunrise and sunset, show the sunset.
-    if (current > sunrise + halfHour && current < sunset + halfHour) {
+    
+    // Determine logic for when to show sunset for a combined element.
+    const combinedSunset = current > sunrise + halfHour && current < sunset + halfHour
+
+    // Determine if we should show the sunset.
+    if (settings.sunrise.separateElements ? showSunset : combinedSunset) {
       symbolName = "sunset.fill"
       timeToShow = sunset
     }
@@ -1684,7 +1687,7 @@ async function makeWidget(settings, name, iCloudInUse) {
 
   // Allow for either term to be used.
   async function sunset(column) {
-    return await sunrise(column)
+    return await sunrise(column, true)
   }
   
   // Return a text-creation function.
