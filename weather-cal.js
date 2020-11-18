@@ -95,6 +95,9 @@ const settings = {
     // The text shown after the hours and minutes of an event duration.
     ,durationMinute: "m"
     ,durationHour: "h"   
+    
+    // Each {token} is replaced with the number from the data.
+    ,covid: "{cases} cases, {deaths} deaths, {recovered} recoveries"
   },
  
 /*
@@ -190,13 +193,16 @@ const settings = {
     showLocation: false
     
     // Show the condition and temperature horizontally. Default is false.
-    ,horizontalCondition: true
+    ,horizontalCondition: false
   
     // Show the text description of the current conditions.
     ,showCondition: false
 
     // Show today's high and low temperatures.
     ,showHighLow: true
+    
+    // Show the percent chance of rain in the future weather item.
+    ,showRain: true
 
     // The hour (in 24-hour time) to switch to tomorrow's weather. 0 for always, 24 for never.
     ,tomorrowShownAtHour: 20
@@ -209,6 +215,17 @@ const settings = {
     
     // Set to true to show today's weather in the forecast item.
     ,showToday: false
+  },
+  
+  // COVID
+  // =====
+  covid: {
+  
+    // Country for COVID information.
+    country: "USA"
+
+    // URL to open when the COVID data is tapped.
+    ,url: "https://covid19.who.int"
   },
 
 /*
@@ -241,6 +258,7 @@ const settings = {
   
     battery:     { size: 14, color: "", font: "medium" },
     sunrise:     { size: 14, color: "", font: "medium" },
+    covid:       { size: 14, color: "", font: "medium" },
   },
 }
 
