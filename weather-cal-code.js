@@ -1123,7 +1123,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     df.locale = locale
   
     // Show small if it's hard coded, or if it's dynamic and events are visible.
-    if (dateSettings.staticDateSize == "small" || (dateSettings.dynamicDateSize && data.events.eventsAreVisible)) {
+    if (dateSettings.dynamicDateSize ? data.events.eventsAreVisible : dateSettings.staticDateSize == "small") {
       let dateStack = align(column)
       dateStack.setPadding(padding, padding, padding, padding)
 
