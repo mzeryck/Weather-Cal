@@ -829,21 +829,29 @@ async function makeWidget(settings, name, iCloudInUse) {
       return true
     }
   
-    // Determine which events to show, and how many.
-    const reminders = await Reminder.allIncomplete()
-    let shownReminders = 0
-    let remindersToShow = []
-  
-    for (reminder of reminders) {
-      if (numberOfReminders && shownReminders == numberOfReminders) { break }
-      if (shouldShowReminder(reminder)) {
-        remindersToShow.push(reminder)
-        shownReminders++
-      }
-    }
+    // Determine which reminders to show.
+    let reminders = await Reminder.allIncomplete()
+    reminders = reminders.filter(shouldShowReminder)
+    
+    // Sort in order of due date.
+    reminders.sort(function(a, b) {
+    
+      // Due dates are always picked first.
+      if (!a.dueDate && b.dueDate) return 1
+      if (a.dueDate && !b.dueDate) return -1
+      if (!a.dueDate && !b.dueDate) return 0
+    
+      // Otherwise, earlier due dates go first.
+      const aTime = a.dueDate.getTime()
+      const bTime = b.dueDate.getTime()
+      
+      if (aTime > bTime) return 1
+      if (aTime < bTime) return -1
+      return 0 
+    })
   
     // Store the data.
-    data.reminders.all = remindersToShow
+    data.reminders.all = reminders
   }
 
   // Set up the gradient for the widget background.
