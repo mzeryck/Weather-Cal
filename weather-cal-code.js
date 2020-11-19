@@ -1743,7 +1743,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     
     // Set up the Stack.
     const weekStack = align(column)
-    weekStack.setPadding(0, 0, 0, 0)
+    weekStack.setPadding(padding/2, padding, 0, padding)
     weekStack.layoutHorizontally()
     weekStack.centerAlignContent()
 
