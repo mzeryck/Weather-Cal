@@ -60,6 +60,7 @@ const settings = {
   row 
     column
       date
+      week
       sunset
       battery
       space
@@ -98,6 +99,9 @@ const settings = {
     
     // Each {token} is replaced with the number from the data.
     ,covid: "{cases} cases, {deaths} deaths, {recovered} recoveries"
+    
+    // The text shown for the Weeknumber
+    ,week: "Week"
   },
  
 /*
@@ -231,6 +235,11 @@ const settings = {
     ,url: "https://covid19.who.int"
   },
 
+  // WeekNumber
+  // ==========
+  week: {
+
+  },
 /*
  * FONTS
  * Change the size, color, and font of various text elements.
@@ -262,6 +271,7 @@ const settings = {
     battery:     { size: 14, color: "", font: "medium" },
     sunrise:     { size: 14, color: "", font: "medium" },
     covid:       { size: 14, color: "", font: "medium" },
+    week:        { size: 14, color: "", font: "semibold" },
   },
 }
 
