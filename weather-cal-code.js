@@ -346,6 +346,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       sunrise() { return sunrise },
       sunset() { return sunset },
       text() { return text },
+      week() { return week },
     }
     return functions[name]()
   }
@@ -1737,6 +1738,24 @@ async function makeWidget(settings, name, iCloudInUse) {
   
   }
 
+  // Display Weeknumber for current Date
+  async function week(column) {
+    
+    // Set up the Stack.
+    const weekStack = align(column)
+    weekStack.setPadding(0, 0, 0, 0)
+    weekStack.layoutHorizontally()
+    weekStack.centerAlignContent()
+
+    // Add the Week Information.
+    var currentThursday = new Date(currentDate.getTime() +(3-((currentDate.getDay()+6) % 7)) * 86400000);
+    var yearOfThursday = currentThursday.getFullYear();
+    var firstThursday = new Date(new Date(yearOfThursday,0,4).getTime() +(3-((new Date(yearOfThursday,0,4).getDay()+6) % 7)) * 86400000);
+    var weekNumber = Math.floor(1 + 0.5 + (currentThursday.getTime() - firstThursday.getTime()) / 86400000/7) + "";
+    var weekText = localizedText.week + " " + weekNumber;
+    provideText(weekText, weekStack, textFormat.week)
+  }
+  
   /*
    * HELPER FUNCTIONS
    * These functions perform duties for other functions.
