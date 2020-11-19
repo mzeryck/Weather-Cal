@@ -59,8 +59,8 @@ const settings = {
   
   row 
     column
-      date
       week
+      date
       sunset
       battery
       space
@@ -271,7 +271,7 @@ const settings = {
     battery:     { size: 14, color: "", font: "medium" },
     sunrise:     { size: 14, color: "", font: "medium" },
     covid:       { size: 14, color: "", font: "medium" },
-    week:        { size: 14, color: "", font: "semibold" },
+    week:        { size: 14, color: "", font: "light" },
   },
 }
 
