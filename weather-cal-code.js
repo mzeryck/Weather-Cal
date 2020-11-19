@@ -831,7 +831,7 @@ async function makeWidget(settings, name, iCloudInUse) {
   
     // Determine which reminders to show.
     let reminders = await Reminder.allIncomplete()
-    reminders = reminders.filter(shouldShowReminder)
+    reminders = reminders.filter(shouldShowReminder).slice(0,numberOfReminders)
     
     // Sort in order of due date.
     reminders.sort(function(a, b) {
