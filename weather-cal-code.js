@@ -1313,17 +1313,17 @@ async function makeWidget(settings, name, iCloudInUse) {
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showListColor.length && !showListColor.includes("right")) {
         let colorItemText = provideTextSymbol(colorShape) + " "
-        let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+        let colorItem = provideText(colorItemText, titleStack, textFormat.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
 
-      const title = provideText(reminder.title.trim(), titleStack, textFormat.eventTitle)
+      const title = provideText(reminder.title.trim(), titleStack, textFormat.reminderTitle)
       titleStack.setPadding(padding, padding, padding/5, padding)
     
       // If we're showing a color on the right, show it.
       if (showListColor.length && showListColor.includes("right")) {
         let colorItemText = " " + provideTextSymbol(colorShape)
-        let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+        let colorItem = provideText(colorItemText, titleStack, textFormat.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
     
