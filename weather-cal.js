@@ -262,6 +262,9 @@ const settings = {
     eventTime:   { size: 14, color: "ffffffcc", font: "" },
     noEvents:    { size: 30, color: "", font: "semibold" },
   
+    reminderTitle:  { size: 14, color: "", font: "" },
+    reminderTime:   { size: 14, color: "ffffffcc", font: "" },
+    
     largeTemp:   { size: 34, color: "", font: "light" },
     smallTemp:   { size: 14, color: "", font: "" },
     tinyTemp:    { size: 12, color: "", font: "" },
