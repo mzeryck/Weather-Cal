@@ -38,6 +38,7 @@ Each word is a __widget item__. You can add the following items to your widget: 
 - sunset
 - text
 - space
+- covid
 
 ### Layout
 You can change the layout of the widget using the following __layout items__: 
