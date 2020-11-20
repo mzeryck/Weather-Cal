@@ -1534,7 +1534,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       subRain.tintColor = new Color(textFormat.smallTemp.color || textFormat.defaultText.color)
       subRainStack.addSpacer(5)
 
-      const subRainText = provideText((rainPercent*100) + "%", subRainStack, textFormat.smallTemp)
+      const subRainText = provideText(Math.round(rainPercent*100) + "%", subRainStack, textFormat.smallTemp)
     }
   }
 
