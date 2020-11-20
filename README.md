@@ -25,6 +25,20 @@ row
 
 Each word is a __widget item__. You can add the following items to your widget: `battery`, `date`, `events`, `greeting`, `reminders`, your own custom `text`, `sunrise` (shows sunrise and sunset), and multiple weather items, including the `current` conditions, `future` weather (next hour or next day), and a customizable multi-day `forecast`. If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
 
+### Available Options
+- battery
+- date
+- greeting
+- events
+- reminders
+- current
+- future
+- forecast
+- sunrise
+- sunset
+- text
+- space
+
 ### Layout
 You can change the layout of the widget using the following __layout items__: 
 
