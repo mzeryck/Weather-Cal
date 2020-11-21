@@ -1051,32 +1051,37 @@ async function makeWidget(settings, name, iCloudInUse) {
       
       const apiKeyPath = files.joinPath(files.libraryDirectory(), "weather-cal-api-key")
       const apiKey = files.readString(apiKeyPath)
-  
-      const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + data.location.latitude + "&lon=" + data.location.longitude + "&exclude=minutely,alerts&units=" + settings.widget.units + lang + "&appid=" + apiKey
-      weatherDataRaw = await new Request(weatherReq).loadJSON()
-      files.writeString(cachePath, JSON.stringify(weatherDataRaw))
+      
+      try {
+        const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + data.location.latitude + "&lon=" + data.location.longitude + "&exclude=minutely,alerts&units=" + settings.widget.units + lang + "&appid=" + apiKey
+        weatherDataRaw = await new Request(weatherReq).loadJSON()
+        files.writeString(cachePath, JSON.stringify(weatherDataRaw))
+      } catch {}
     }
+    
+    // If it's an error, treat it as a null value.
+    if (weatherDataRaw.cod) { weatherDataRaw = null }
   
     // English continues using the "main" weather description.
     const english = (locale.split("_")[0] == "en")
 
     // Store the weather values.
     data.weather = {}
-    data.weather.currentTemp = weatherDataRaw ? (weatherDataRaw.current.temp || "--") : "--"
-    data.weather.currentCondition = weatherDataRaw ? (weatherDataRaw.current.weather[0].id || 100) : 100
-    data.weather.currentDescription = weatherDataRaw ? ((english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) || "--") : "--"
-    data.weather.todayHigh = weatherDataRaw ? (weatherDataRaw.daily[0].temp.max || "-") : "-"
-    data.weather.todayLow = weatherDataRaw ? (weatherDataRaw.daily[0].temp.min || "-") : "-"
+    data.weather.currentTemp = weatherDataRaw ? weatherDataRaw.current.temp : null
+    data.weather.currentCondition = weatherDataRaw ? weatherDataRaw.current.weather[0].id : 100
+    data.weather.currentDescription = weatherDataRaw ? (english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) : "--"
+    data.weather.todayHigh = weatherDataRaw ? weatherDataRaw.daily[0].temp.max : null
+    data.weather.todayLow = weatherDataRaw ? weatherDataRaw.daily[0].temp.min : null
     data.weather.forecast = [];
     
     for (let i=0; i <= 7; i++) {
-      data.weather.forecast[i] = weatherDataRaw ? ({High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}) : { High: "-", Low: "-", Condition: 100 }
+      data.weather.forecast[i] = weatherDataRaw ? ({High: weatherDataRaw.daily[i].temp.max, Low: weatherDataRaw.daily[i].temp.min, Condition: weatherDataRaw.daily[i].weather[0].id}) : { High: null, Low: null, Condition: 100 }
     }
-    data.weather.tomorrowRain = weatherDataRaw ? (weatherDataRaw.daily[1].pop || "--") : "--"
+    data.weather.tomorrowRain = weatherDataRaw ? weatherDataRaw.daily[1].pop : null
 
-    data.weather.nextHourTemp = weatherDataRaw ? (weatherDataRaw.hourly[1].temp || "--") : "--"
-    data.weather.nextHourCondition = weatherDataRaw ? (weatherDataRaw.hourly[1].weather[0].id || 100) : 100
-    data.weather.nextHourRain = weatherDataRaw ? (weatherDataRaw.hourly[1].pop || "--") : "--"
+    data.weather.nextHourTemp = weatherDataRaw ? weatherDataRaw.hourly[1].temp : null
+    data.weather.nextHourCondition = weatherDataRaw ? weatherDataRaw.hourly[1].weather[0].id : 100
+    data.weather.nextHourRain = weatherDataRaw ? weatherDataRaw.hourly[1].pop : null
   }
   
   // Set up the COVID data object.
@@ -1407,7 +1412,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       mainConditionStack.addSpacer(5)
       mainConditionStack.layoutHorizontally()
       mainConditionStack.centerAlignContent()
-      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const tempText = displayNumber(data.weather.currentTemp,"--") + "°"
       const temp = provideText(tempText, mainConditionStack, textFormat.largeTemp)
     }
   
@@ -1422,7 +1427,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     if (!weatherSettings.horizontalCondition) {
       const tempStack = align(currentWeatherStack)
       tempStack.setPadding(0, padding, 0, padding)
-      const tempText = Math.round(data.weather.currentTemp) + "°"
+      const tempText = displayNumber(data.weather.currentTemp,"--") + "°"
       const temp = provideText(tempText, tempStack, textFormat.largeTemp)
     }
   
@@ -1443,10 +1448,10 @@ async function makeWidget(settings, name, iCloudInUse) {
     let highLowStack = tempBarStack.addStack()
     highLowStack.layoutHorizontally()
   
-    const mainLowText = Math.round(data.weather.todayLow).toString()
+    const mainLowText = displayNumber(data.weather.todayLow,"-")
     const mainLow = provideText(mainLowText, highLowStack, textFormat.tinyTemp)
     highLowStack.addSpacer()
-    const mainHighText = Math.round(data.weather.todayHigh).toString()
+    const mainHighText = displayNumber(data.weather.todayHigh,"-")
     const mainHigh = provideText(mainHighText, highLowStack, textFormat.tinyTemp)
   
     tempBarStack.size = new Size(60,30)
@@ -1502,7 +1507,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     // The next part of the display changes significantly for next hour vs tomorrow.
     let rainPercent
     if (showNextHour) {
-      const subTempText = Math.round(data.weather.nextHourTemp) + "°"
+      const subTempText = displayNumber(data.weather.nextHourTemp,"--") + "°"
       const subTemp = provideText(subTempText, subConditionStack, textFormat.smallTemp)
       rainPercent = data.weather.nextHourRain
     
@@ -1513,12 +1518,12 @@ async function makeWidget(settings, name, iCloudInUse) {
       let tomorrowStack = subConditionStack.addStack()
       tomorrowStack.layoutVertically()
     
-      const tomorrowHighText = Math.round(data.weather.forecast[1].High) + ""
+      const tomorrowHighText = displayNumber(data.weather.forecast[1].High,"-")
       const tomorrowHigh = provideText(tomorrowHighText, tomorrowStack, textFormat.tinyTemp)
       tomorrowStack.addSpacer(4)
-      const tomorrowLowText = Math.round(data.weather.forecast[1].Low) + ""
+      const tomorrowLowText = displayNumber(data.weather.forecast[1].Low,"-")
       const tomorrowLow = provideText(tomorrowLowText, tomorrowStack, textFormat.tinyTemp)
-      rainPercent = data.weather.tomorrowRain
+      rainPercent = (data.weather.tomorrowRain == null ? "--" : data.weather.tomorrowRain*100)
     }
     
     // If we're showing rain percentage, add it.
@@ -1533,8 +1538,9 @@ async function makeWidget(settings, name, iCloudInUse) {
       subRain.imageSize = new Size(subRainSize, subRainSize)
       subRain.tintColor = new Color((textFormat.smallTemp && textFormat.smallTemp.color) ? textFormat.smallTemp.color : textFormat.defaultText.color)
       subRainStack.addSpacer(5)
-
-      const subRainText = provideText(Math.round(rainPercent*100) + "%", subRainStack, textFormat.smallTemp)
+      
+      const subRainText = displayNumber(rainPercent,"--") + "%"
+      provideText(subRainText, subRainStack, textFormat.smallTemp)
     }
   }
 
@@ -1595,10 +1601,10 @@ async function makeWidget(settings, name, iCloudInUse) {
       let tempStack = subConditionStack.addStack()
       tempStack.layoutVertically()
 
-      const tempHighText = Math.round(data.weather.forecast[i - 1].High) + ""
+      const tempHighText = displayNumber(data.weather.forecast[i - 1].High,"-")
       const tempHigh = provideText(tempHighText, tempStack, textFormat.tinyTemp)
       tempStack.addSpacer(4)
-      const tempLowText = Math.round(data.weather.forecast[i - 1].Low) + ""
+      const tempLowText = displayNumber(data.weather.forecast[i - 1].Low,"-")
       const tempLow = provideText(tempLowText, tempStack, textFormat.tinyTemp)
     }
   }
@@ -1761,6 +1767,11 @@ async function makeWidget(settings, name, iCloudInUse) {
    * These functions perform duties for other functions.
    * ===================================================
    */
+   
+  // Returns a rounded number string or the provided dummy text.
+  function displayNumber(number,dummy = "-") {
+    return (number == null ? dummy : Math.round(number).toString())
+  }
 
   // Tints icons if needed.
   function tintIcon(icon,format) {
