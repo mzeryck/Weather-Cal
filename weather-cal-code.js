@@ -1062,28 +1062,28 @@ async function makeWidget(settings, name, iCloudInUse) {
 
     // Store the weather values.
     data.weather = {}
-    data.weather.currentTemp = weatherDataRaw.current.temp || "--"
-    data.weather.currentCondition = weatherDataRaw.current.weather[0].id || 100
-    data.weather.currentDescription = (english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) || "--"
-    data.weather.todayHigh = weatherDataRaw.daily[0].temp.max || "-"
-    data.weather.todayLow = weatherDataRaw.daily[0].temp.min || "-"
+    data.weather.currentTemp = weatherDataRaw ? (weatherDataRaw.current.temp || "--") : "--"
+    data.weather.currentCondition = weatherDataRaw ? (weatherDataRaw.current.weather[0].id || 100) : 100
+    data.weather.currentDescription = weatherDataRaw ? ((english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) || "--") : "--"
+    data.weather.todayHigh = weatherDataRaw ? (weatherDataRaw.daily[0].temp.max || "-") : "-"
+    data.weather.todayLow = weatherDataRaw ? (weatherDataRaw.daily[0].temp.min || "-") : "-"
     data.weather.forecast = [];
     
     for (let i=0; i <= 7; i++) {
-      data.weather.forecast[i] = {High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}
+      data.weather.forecast[i] = weatherDataRaw ? ({High: weatherDataRaw.daily[i].temp.max || "-", Low: weatherDataRaw.daily[i].temp.min || "-", Condition: weatherDataRaw.daily[i].weather[0].id || 100}) : { High: "-", Low: "-", Condition: 100 }
     }
-    data.weather.tomorrowRain = weatherDataRaw.daily[1].pop
+    data.weather.tomorrowRain = weatherDataRaw ? (weatherDataRaw.daily[1].pop || "--") : "--"
 
-    data.weather.nextHourTemp = weatherDataRaw.hourly[1].temp || "--"
-    data.weather.nextHourCondition = weatherDataRaw.hourly[1].weather[0].id || 100
-    data.weather.nextHourRain = weatherDataRaw.hourly[1].pop
+    data.weather.nextHourTemp = weatherDataRaw ? (weatherDataRaw.hourly[1].temp || "--") : "--"
+    data.weather.nextHourCondition = weatherDataRaw ? (weatherDataRaw.hourly[1].weather[0].id || 100) : 100
+    data.weather.nextHourRain = weatherDataRaw ? (weatherDataRaw.hourly[1].pop || "--") : "--"
   }
   
   // Set up the COVID data object.
   async function setupCovid() {
   
     // Set up the COVID cache.
-    const cacheCovidPath = files.joinPath(files.documentsDirectory(), "weather-cal-covid")
+    const cacheCovidPath = files.joinPath(files.libraryDirectory(), "weather-cal-covid")
     const cacheCovidExists = files.fileExists(cacheCovidPath)
     const cacheCovidDate = cacheCovidExists ? files.modificationDate(cacheCovidPath) : 0
     let covidDataRaw
@@ -1507,7 +1507,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       rainPercent = data.weather.nextHourRain
     
     } else {
-      let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5), 20))
+      let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color((textFormat.tinyTemp && textFormat.tinyTemp.color) ? textFormat.tinyTemp.color : textFormat.defaultText.color, 0.5), 20))
       tomorrowLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       let tomorrowStack = subConditionStack.addStack()
@@ -1531,7 +1531,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       let subRain = subRainStack.addImage(SFSymbol.named("umbrella").image)
       const subRainSize = showNextHour ? 14 : 18
       subRain.imageSize = new Size(subRainSize, subRainSize)
-      subRain.tintColor = new Color(textFormat.smallTemp.color || textFormat.defaultText.color)
+      subRain.tintColor = new Color((textFormat.smallTemp && textFormat.smallTemp.color) ? textFormat.smallTemp.color : textFormat.defaultText.color)
       subRainStack.addSpacer(5)
 
       const subRainText = provideText(Math.round(rainPercent*100) + "%", subRainStack, textFormat.smallTemp)
@@ -1577,7 +1577,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       dateText.lineLimit = 1
       dateText.minimumScaleFactor = 0.5
       dateStack.addSpacer()
-      let fontSize = textFormat.smallTemp.size || textFormat.defaultText.size
+      let fontSize = (textFormat.smallTemp && textFormat.smallTemp.size) ? textFormat.smallTemp.size : textFormat.defaultText.size
       dateStack.size = new Size(fontSize*2.64,0)
       subConditionStack.addSpacer(5)
       subConditionStack.layoutHorizontally()
@@ -1589,7 +1589,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       tintIcon(subCondition, textFormat.smallTemp)
       subConditionStack.addSpacer(5)
 
-      let tempLine = subConditionStack.addImage(drawVerticalLine(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5), 20))
+      let tempLine = subConditionStack.addImage(drawVerticalLine(new Color((textFormat.tinyTemp && textFormat.tinyTemp.color) ? textFormat.tinyTemp.color : textFormat.defaultText.color, 0.5), 20))
       tempLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       let tempStack = subConditionStack.addStack()
@@ -1619,7 +1619,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     // Change the battery icon to red if battery level is less than 20%.
     const batteryLevel = Math.round(Device.batteryLevel() * 100)
     if (batteryLevel > 20 || Device.isCharging() ) {
-      batteryIcon.tintColor = new Color(textFormat.battery.color || textFormat.defaultText.color)
+      batteryIcon.tintColor = new Color((textFormat.battery && textFormat.battery.color) ? textFormat.battery.color : textFormat.defaultText.color)
     } else {
       batteryIcon.tintColor = Color.red()
     }
@@ -1724,7 +1724,7 @@ async function makeWidget(settings, name, iCloudInUse) {
     // Add the correct symbol.
     const symbol = covidStack.addImage(SFSymbol.named("bandage").image)
     symbol.imageSize = new Size(18,18)
-    symbol.tintColor = new Color(textFormat.covid.color || textFormat.defaultText.color)
+    symbol.tintColor = new Color((textFormat.covid && textFormat.covid.color) ? textFormat.covid.color : textFormat.defaultText.color)
 
     covidStack.addSpacer(padding)
   
@@ -1765,7 +1765,7 @@ async function makeWidget(settings, name, iCloudInUse) {
   // Tints icons if needed.
   function tintIcon(icon,format) {
     if (!tintIcons) { return }
-    icon.tintColor = new Color(format.color || textFormat.defaultText.color)
+    icon.tintColor = new Color((format && format.color) ? format.color : textFormat.defaultText.color)
   }
 
   // Determines if the provided date is at night.
@@ -1920,9 +1920,9 @@ async function makeWidget(settings, name, iCloudInUse) {
   // Add formatted text to a container.
   function provideText(string, container, format) {
     const textItem = container.addText(string)
-    const textFont = format.font || textFormat.defaultText.font
-    const textSize = format.size || textFormat.defaultText.size
-    const textColor = format.color || textFormat.defaultText.color
+    const textFont = (format && format.font) ? format.font : textFormat.defaultText.font
+    const textSize = (format && format.size) ? format.size : textFormat.defaultText.size
+    const textColor = (format && format.color) ? format.color : textFormat.defaultText.color
   
     textItem.font = provideFont(textFont, textSize)
     textItem.textColor = new Color(textColor)
@@ -1988,15 +1988,15 @@ async function makeWidget(settings, name, iCloudInUse) {
     draw.addPath(barPath)
   
     // Determine the color.
-    const barColor = textFormat.battery.color || textFormat.defaultText.color
-    draw.setFillColor(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 0.5))
+    const barColor = (textFormat.tinyTemp && textFormat.tinyTemp.color) ? textFormat.tinyTemp.color : textFormat.defaultText.color
+    draw.setFillColor(new Color(barColor, 0.5))
     draw.fillPath()
 
     // Make the path for the current temp indicator.
     let currPath = new Path()
     currPath.addEllipse(new Rect(currPosition, 0, tempBarHeight, tempBarHeight))
     draw.addPath(currPath)
-    draw.setFillColor(new Color(textFormat.tinyTemp.color || textFormat.defaultText.color, 1))
+    draw.setFillColor(new Color(barColor, 1))
     draw.fillPath()
 
     return draw.getImage()
