@@ -346,6 +346,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       sunrise() { return sunrise },
       sunset() { return sunset },
       text() { return text },
+      week() { return week },
     }
     return functions[name]()
   }
@@ -1312,17 +1313,17 @@ async function makeWidget(settings, name, iCloudInUse) {
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showListColor.length && !showListColor.includes("right")) {
         let colorItemText = provideTextSymbol(colorShape) + " "
-        let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+        let colorItem = provideText(colorItemText, titleStack, textFormat.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
 
-      const title = provideText(reminder.title.trim(), titleStack, textFormat.eventTitle)
+      const title = provideText(reminder.title.trim(), titleStack, textFormat.reminderTitle)
       titleStack.setPadding(padding, padding, padding/5, padding)
     
       // If we're showing a color on the right, show it.
       if (showListColor.length && showListColor.includes("right")) {
         let colorItemText = " " + provideTextSymbol(colorShape)
-        let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
+        let colorItem = provideText(colorItemText, titleStack, textFormat.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
     
@@ -1737,6 +1738,24 @@ async function makeWidget(settings, name, iCloudInUse) {
   
   }
 
+  // Display Weeknumber for current Date
+  async function week(column) {
+    
+    // Set up the Stack.
+    const weekStack = align(column)
+    weekStack.setPadding(padding/2, padding, 0, padding)
+    weekStack.layoutHorizontally()
+    weekStack.centerAlignContent()
+
+    // Add the Week Information.
+    var currentThursday = new Date(currentDate.getTime() +(3-((currentDate.getDay()+6) % 7)) * 86400000);
+    var yearOfThursday = currentThursday.getFullYear();
+    var firstThursday = new Date(new Date(yearOfThursday,0,4).getTime() +(3-((new Date(yearOfThursday,0,4).getDay()+6) % 7)) * 86400000);
+    var weekNumber = Math.floor(1 + 0.5 + (currentThursday.getTime() - firstThursday.getTime()) / 86400000/7) + "";
+    var weekText = localizedText.week + " " + weekNumber;
+    provideText(weekText, weekStack, textFormat.week)
+  }
+  
   /*
    * HELPER FUNCTIONS
    * These functions perform duties for other functions.
