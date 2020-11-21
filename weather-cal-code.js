@@ -348,7 +348,7 @@ async function makeWidget(settings, name, iCloudInUse) {
       text() { return text },
       week() { return week },
     }
-    return functions[name]()
+    return functions[name] ? functions[name]() : null
   }
 
   // Get often-used values from the settings object.
