@@ -23,7 +23,23 @@ row
     future
 ```
 
-Each word is a __widget item__. You can add the following items to your widget: `battery`, `date`, `events`, `greeting`, `reminders`, your own custom `text`, `sunrise` (shows sunrise and sunset), and multiple weather items, including the `current` conditions, `future` weather (next hour or next day), and a customizable multi-day `forecast`. If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
+Each word is a __widget item__. You can add the following items to your widget:
+ 
+- `battery` 
+- `covid`
+- `date` 
+- `events` 
+- `greeting`
+- `reminders`
+- `sunrise` (shows sunrise and sunset), and multiple
+- `text` - your own custom
+- Weather items
+	- `current` conditions
+	- `future` weather (next hour or next day)
+	- `forecast` customizable multi-day
+- `week`- week number for current Date
+
+If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
 
 ### Available Options
 - battery
