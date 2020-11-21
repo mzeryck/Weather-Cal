@@ -31,6 +31,7 @@ Each word is a __widget item__. You can add the following items to your widget:
 - `events` 
 - `greeting`
 - `reminders`
+- `space` - add a blank space
 - `sunrise` (shows sunrise and sunset), and multiple
 - `text` - your own custom
 - Weather items
@@ -40,21 +41,6 @@ Each word is a __widget item__. You can add the following items to your widget:
 - `week`- week number for current Date
 
 If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
-
-### Available Options
-- battery
-- date
-- greeting
-- events
-- reminders
-- current
-- future
-- forecast
-- sunrise
-- sunset
-- text
-- space
-- covid
 
 ### Layout
 You can change the layout of the widget using the following __layout items__: 
