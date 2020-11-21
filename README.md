@@ -54,6 +54,7 @@ If you want to change how an item looks, scroll down to the `ITEM SETTINGS` sect
 - sunset
 - text
 - space
+- covid
 
 ### Layout
 You can change the layout of the widget using the following __layout items__: 
