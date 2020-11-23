@@ -1362,8 +1362,8 @@ async function makeWidget(layout, name, iCloudInUse) {
     let showTomorrow = eventSettings.showTomorrow
     
     // Determine if we're specifying an hour to show.
-    if (typeof showTomorrow == "number") {
-      showTomorrow = (currentDate.getHours() > showTomorrow)
+    if (!isNaN(parseInt(showTomorrow))) {
+      showTomorrow = (currentDate.getHours() > parseInt(showTomorrow))
     }
     
     if (showTomorrow && shownEvents < numberOfEvents) {
