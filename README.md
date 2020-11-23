@@ -6,9 +6,13 @@ Setting up Weather Cal is easy. Add the code in weather-cal.js to Scriptable on 
 
 If you want a transparent or translucent blurred widget, use [the Widget Blur script](https://github.com/mzeryck/Widget-Blur/blob/main/widget-blur.js) before you start. At the end of that script, select "Export to Photos", and then use the photo in the Weather Cal setup.
 
-## Customization
-Changing the items that appear on your widget is easy. Scroll to the section of the code that looks like this:
+## Preferences
+Once you've set up Weather Cal, run the widget script again to access the settings menu. From there, you can show a preview, change the background, edit preferences, re-enter your OpenWeather API key, update the Weather Cal code, or reset the widget.
 
+In the preferences menu, you can change the overall widget settings, customize and/or translate all text, adjust the font, size, and color of text, and adjust settings for each individual widget item.
+
+## Layout
+The only aspect of the widget that you can't change in the settings menu is the layout. Luckily, it's easy to do. Near the top of the widget code, you'll see a section that looks similar to this:
 ```
 row 
   column
@@ -22,27 +26,25 @@ row
     current
     future
 ```
-
 Each word is a __widget item__. You can add the following items to your widget:
  
-- `battery` 
+- `battery`
 - `covid`
 - `date` 
 - `events` 
 - `greeting`
 - `reminders`
-- `space` - add a blank space
-- `sunrise` (shows sunrise and sunset), and multiple
-- `text` - your own custom
+- `sunrise`, which shows the sunrise or sunset time automatically
+- custom `text`, by writing `text(Your text here)`
 - Weather items
 	- `current` conditions
 	- `future` weather (next hour or next day)
-	- `forecast` customizable multi-day
-- `week`- week number for current Date
+	- customizable multi-day `forecast`
+- `week` - week number for current Date
 
 If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
 
-### Layout
+### Spacing and alignment
 You can change the layout of the widget using the following __layout items__: 
 
 * The `row` and `column` items create the structure of the widget. You can add or remove rows and columns, just remember that you __always__ need at least one row and one column, and every row has to start with a column. If you want to specify the size of a row or column, use parentheses: `row(50)` or `column(100)`.
@@ -69,7 +71,7 @@ A full line of `-` (dashes) starts and ends the widget, or makes a new row. Put 
 Weather Cal consists of two scripts: the Weather Cal widget (weather-cal.js) and the Weather Cal code (weather-cal-code.js). When a user first runs the widget script, it downloads the code and saves it as a Scriptable script. It then imports that code as a module and runs it. The widget script is essentially a container for the widget settings, while the code script does the heavy lifting.
 
 ### Widget construction
-Users add and remove items from the `layout` string in the `settings` object to determine what is shown in the widget. When the script runs, it parses this string and isolates each item, using the `provideFunction` function to get the corresponding widget item function. If an argument was provided using parentheses, the provided parameter is passed to the function, which acts as a generator. Finally, the item function is passed the current column (a WidgetStack) so it can run.
+Users add and remove items from the `layout` string to determine what is shown in the widget. When the script runs, it parses this string and isolates each item, using the `provideFunction` function to get the corresponding widget item function. If an argument was provided using parentheses, the provided parameter is passed to the function, which acts as a generator. Finally, the item function is passed the current column (a WidgetStack) so it can run.
 
 ### Creating a widget item
 Each widget item has the following required and optional elements:
@@ -78,7 +80,7 @@ Each widget item has the following required and optional elements:
 
 * __Required:__ Add a value to the `provideFunction` function so the parser knows it exists.
 
-* __Optional:__ A settings object that lets the user choose how the widget item is displayed. Match the existing format in the `ITEM SETTINGS` section using a comment header and comments explaining each setting or group of settings. A small number of well-considered, powerful settings is best.
+* __Optional:__ An entry in the preferences menu that allows the user to choose how the widget item is displayed. Match the format in the `defaultSettings` function, paying attention to the available data types. A small number of well-considered, powerful settings is best.
 
 ### Getting data
 Many widget items need to perform asynchronous work to get the data they will display, like the user's location or weather information. The standard way of doing this is creating a setup function that stores data in the shared `data` variable. For example, `setupWeather` stores several data points in `data.weather`. In the `current` and `future` weather items, they begin by checking to see if the data exists: `if (!data.weather) { await setupWeather() }`. 
