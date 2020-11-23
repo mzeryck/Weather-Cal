@@ -5,9 +5,9 @@
 
 ~
 
-Welcome to Weather Cal. 
-Run this script to set up your widget.
-Adjust the preview size and layout below.
+Welcome to Weather Cal. Run this script to set up your widget.
+
+Add or remove items from the widget in the layout section below.
 
 You can duplicate this script to create multiple widgets. Make sure to change the name of the script each time.
 
@@ -22,7 +22,6 @@ const layout = `
   
   row 
     column
-      week
       date
       sunset
       battery
