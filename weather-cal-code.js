@@ -398,7 +398,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         covid: {
           val: "{cases} cases, {deaths} deaths, {recovered} recoveries",
           name: "COVID data text",
-          description: "Each {token} is replaced with the number from the data."
+          description: "Each {token} is replaced with the number from the data. The available tokens are: cases, todayCases, deaths, todayDeaths, recovered, active, critical, casesPerOneMillion, deathsPerOneMillion, totalTests, testsPerOneMillion"
         },
         week: {
           val: "Week",
@@ -558,7 +558,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         }, 
         showEventLength: {
           val: "duration",
-          name: "Display event length",
+          name: "Event length display style",
           description: "Choose whether to show the duration, the end time, or no length information.",
           type: "enum",
           options: ["duration","time","none"],
@@ -577,7 +577,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         }, 
         noEventBehavior: {
           val: "message",
-          name: "Display calendar color",
+          name: "Show when no events remain",
           description: "When no events remain, show a hard-coded message, a time-based greeting, or nothing.",
           type: "enum",
           options: ["message","greeting","none"],
@@ -654,7 +654,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         },
         showCondition: {
           val: false,
-          name: "Show text value of current condition",
+          name: "Show text value of the current condition",
           type: "bool",
         },
         showHighLow: {
@@ -669,7 +669,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         },
         tomorrowShownAtHour: {
           val: "20",
-          name: "Switch to tomorrow's weather",
+          name: "When to switch to tomorrow's weather",
           description: "Set the hour (in 24-hour time) to switch from the next hour to tomorrow's weather. Use 0 for always, 24 for never.",
         }, 
         showDays: {
@@ -781,20 +781,40 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       table.addRow(row)
     }
   
-    writePreference(prefName, settingsObject)
     table.reload()
   }
 
   async function editPreferences() {
 
-    // Get or create the preferences object.
+    // Get the preferences object.
     let settingsObject
     if (!fm.fileExists(prefPath)) {
       await generateAlert("No preferences file exists. If you're on an older version of Weather Cal, you need to reset your widget in order to use the preferences editor.",["OK"])
       return
     
     } else {
-      settingsObject = JSON.parse(fm.readString(prefPath))
+      const settingsFromFile = JSON.parse(fm.readString(prefPath))
+      settingsObject = defaultSettings()
+      
+      // Iterate through the settings object.
+      if (settingsFromFile.widget.units.val == undefined) {
+        console.log("loading new settings file from disk")
+        for (category in settingsObject) {
+          for (item in settingsObject[category]) {
+          
+            // If the setting exists, use it. Otherwise, the default is used.
+            if (settingsFromFile[category][item] != undefined) {
+              settingsObject[category][item].val = settingsFromFile[category][item]
+            }
+            
+          }
+        }
+        
+      // Fix for old preference files.
+      } else {
+        console.log("loading directly from disk (old preference file)")
+        settingsObject = settingsFromFile
+      }
     }
   
     // Create the settings table.
@@ -822,13 +842,22 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       table.addRow(row)
     }
     await table.present()
+    
+    // Upon dismissal, roll up preferences and write to disk.
+    for (category in settingsObject) {
+      for (item in settingsObject[category]) {
+        if (item == "name") continue
+        settingsObject[category][item] = settingsObject[category][item].val
+      }
+    }
+    writePreference(prefName, settingsObject)
   }
   
   // Return the widget preview value.
   function previewValue() {
     if (fm.fileExists(prefPath)) {
       let settingsObject = JSON.parse(fm.readString(prefPath))
-      return settingsObject.widget.preview.val
+      return settingsObject.widget.preview || settingsObject.widget.preview.val
     } else {
       return "large"
     }
@@ -928,13 +957,16 @@ async function makeWidget(layout, name, iCloudInUse) {
     
   } else {
     const prefPath = files.joinPath(files.libraryDirectory(), "weather-cal-preferences-" + name)
-    const prefs = JSON.parse(files.readString(prefPath))
-    for (category in prefs) {
-      for (item in prefs[category]) {
-        prefs[category][item] = prefs[category][item].val
+    settings = JSON.parse(files.readString(prefPath))
+    
+    // Fix old preference files.
+    if (settings.widget.units.val != undefined) {
+      for (category in settings) {
+        for (item in settings[category]) {
+          settings[category][item] = settings[category][item].val
+        }
       }
     }
-    settings = prefs
     settings.layout = layout
   }
 
