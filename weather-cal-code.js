@@ -582,6 +582,11 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           type: "enum",
           options: ["message","greeting","none"],
         }, 
+        url: {
+          val: "",
+          name: "URL to open when tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Calendar app.",
+        }, 
       },
 
       reminders: {
@@ -622,6 +627,11 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           description: "Choose the shape and location of the list color.",
           type: "enum",
           options: ["rectangle left","rectangle right","circle left","circle right","none"],
+        }, 
+        url: {
+          val: "",
+          name: "URL to open when tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Reminders app.",
         }, 
       },
 
@@ -685,6 +695,21 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           name: "Show today's weather in the forecast item",
           type: "bool",
         },
+        urlCurrent: {
+          val: "",
+          name: "URL to open when current weather is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
+        urlFuture: {
+          val: "",
+          name: "URL to open when future weather is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
+        urlForecast: {
+          val: "",
+          name: "URL to open when the forecast item is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
       },
 
       covid: {
@@ -798,7 +823,6 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       
       // Iterate through the settings object.
       if (settingsFromFile.widget.units.val == undefined) {
-        console.log("loading new settings file from disk")
         for (category in settingsObject) {
           for (item in settingsObject[category]) {
           
@@ -812,7 +836,6 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         
       // Fix for old preference files.
       } else {
-        console.log("loading directly from disk (old preference file)")
         settingsObject = settingsFromFile
       }
     }
@@ -1836,7 +1859,10 @@ async function makeWidget(layout, name, iCloudInUse) {
     let eventStack = column.addStack()
     eventStack.layoutVertically()
     const todaySeconds = Math.floor(currentDate.getTime() / 1000) - 978307200
-    eventStack.url = 'calshow:' + todaySeconds
+    
+    const defaultUrl = 'calshow:' + todaySeconds
+    const settingUrlExists = (settings.events.url || "").length > 0
+    eventStack.url = settingUrlExists ? settings.events.url : defaultUrl
   
     // If there are no events and we have a message, show it and return.
     if (!data.events.eventsAreVisible && localizedText.noEventMessage.length) {
@@ -1864,7 +1890,7 @@ async function makeWidget(layout, name, iCloudInUse) {
         let tomorrowStack = column.addStack()
         tomorrowStack.layoutVertically()
         const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
-        tomorrowStack.url = 'calshow:' + tomorrowSeconds
+        tomorrowStack.url = settingUrlExists ? settings.events.url : 'calshow:' + tomorrowSeconds
         currentStack = tomorrowStack
       
         // Mimic the formatting of an event title, mostly.
@@ -1935,6 +1961,10 @@ async function makeWidget(layout, name, iCloudInUse) {
     let reminderStack = column.addStack()
     reminderStack.layoutVertically()
     reminderStack.setPadding(0, 0, 0, 0)
+    
+    const defaultUrl = "x-apple-reminderkit://REMCDReminder/"
+    const settingUrl = settings.reminders.url || ""
+    reminderStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
 
     // Add each reminder to the stack.
     const reminders = data.reminders.all
@@ -2027,7 +2057,10 @@ async function makeWidget(layout, name, iCloudInUse) {
     let currentWeatherStack = column.addStack()
     currentWeatherStack.layoutVertically()
     currentWeatherStack.setPadding(0, 0, 0, 0)
-    currentWeatherStack.url = "https://weather.com/weather/today/l/" + data.location.latitude + "," + data.location.longitude
+    
+    const defaultUrl = "https://weather.com/" + locale + "/weather/today/l/" + data.location.latitude + "," + data.location.longitude
+    const settingUrl = settings.weather.urlCurrent || ""
+    currentWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
   
     // If we're showing the location, add it.
     if (weatherSettings.showLocation) {
@@ -2107,7 +2140,10 @@ async function makeWidget(layout, name, iCloudInUse) {
     let futureWeatherStack = column.addStack()
     futureWeatherStack.layoutVertically()
     futureWeatherStack.setPadding(0, 0, 0, 0)
-    futureWeatherStack.url = "https://weather.com/" + locale + "weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+    
+    const defaultUrl = "https://weather.com/" + locale + "/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+    const settingUrl = settings.weather.urlFuture || ""
+    futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
 
     // Determine if we should show the next hour.
     const showNextHour = (currentDate.getHours() < parseInt(weatherSettings.tomorrowShownAtHour))
@@ -2193,13 +2229,17 @@ async function makeWidget(layout, name, iCloudInUse) {
     let startIndex = weatherSettings.showToday ? 1 : 2
     let endIndex = parseInt(weatherSettings.showDays) + startIndex
     if (endIndex > 9) { endIndex = 9 }
+    
+    const defaultUrl = "https://weather.com/" + locale + "/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+    const settingUrl = settings.weather.urlForecast || ""
+    const urlToUse = (settingUrl.length > 0) ? settingUrl : defaultUrl
 
     for (var i=startIndex; i < endIndex; i++) {
       // Set up the today weather stack.
       let weatherStack = column.addStack()
       weatherStack.layoutVertically()
       weatherStack.setPadding(0, 0, 0, 0)
-      weatherStack.url = "https://weather.com/" + locale +"weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
+      weatherStack.url = urlToUse
 
       // Set up the date formatter and set its locale.
       let df = new DateFormatter()
