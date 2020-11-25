@@ -1387,12 +1387,13 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     data.events = {}
     const eventSettings = settings.events
 
-    const calSetting = eventSettings.selectCalendars
+    let calSetting = eventSettings.selectCalendars
     let calendars = []
-    if (typeof calSetting == "string") {
-      calendars = calSetting.length > 0 ? calSetting.split(",") : []
-    } else {
+    if (Array.isArray(calSetting)) {
       calendars = calSetting
+    } else if (typeof calSetting == "string") {
+      calSetting = calSetting.trim()
+      calendars = calSetting.length > 0 ? calSetting.split(",") : []
     }
     
     const numberOfEvents = parseInt(eventSettings.numberOfEvents)
@@ -1469,12 +1470,13 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     data.reminders = {}
     const reminderSettings = settings.reminders 
     
-    const listSetting = reminderSettings.selectLists
+    let listSetting = reminderSettings.selectLists
     let lists = []
-    if (typeof listSetting == "string") {
-      lists = listSetting.length > 0 ? listSetting.split(",") : []
-    } else {
+    if (Array.isArray(listSetting)) {
       lists = listSetting
+    } else if (typeof listSetting == "string") {
+      listSetting = listSetting.trim()
+      lists = listSetting.length > 0 ? listSetting.split(",") : []
     }
 
     const numberOfReminders = parseInt(reminderSettings.numberOfReminders)
