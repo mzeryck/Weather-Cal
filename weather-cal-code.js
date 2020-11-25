@@ -31,8 +31,8 @@ module.exports.runSetup = async (name, iCloudInUse, codeFilename, gitHubUrl) => 
 }
 
 // Return the widget.
-module.exports.createWidget = async (layout, name, iCloudInUse) => {
-  return await makeWidget(layout, name, iCloudInUse)
+module.exports.createWidget = async (layout, name, iCloudInUse, custom) => {
+  return await makeWidget(layout, name, iCloudInUse, custom)
 }
 
 /*
@@ -942,10 +942,10 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
   }
 }
 
-async function makeWidget(layout, name, iCloudInUse) {
+async function makeWidget(layout, name, iCloudInUse, custom) {
 
   // All widget items must be documented here.
-  function provideFunction(name) {
+  function provideFunction(functionName) {
     const functions = {
       battery() { return battery },
       center() { return center },
@@ -967,7 +967,9 @@ async function makeWidget(layout, name, iCloudInUse) {
       text() { return text },
       week() { return week },
     }
-    return functions[name] ? functions[name]() : null
+    if (functions[functionName]) return functions[functionName]()
+    if (custom) return custom[functionName]
+    return null
   }
   
   // We always need a file manager.
