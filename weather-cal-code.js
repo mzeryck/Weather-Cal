@@ -444,6 +444,11 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           name: "Event title",
           type: "multival",
         },
+        eventLocation:   {
+          val: { size: "14", color: "", font: "" },
+          name: "Event location",
+          type: "multival",
+        },
         eventTime:   {
           val: { size: "14", color: "ffffffcc", font: "" },
           name: "Event time",
@@ -563,6 +568,11 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           type: "enum",
           options: ["duration","time","none"],
         }, 
+        showLocation: {
+          val: false,
+          name: "Show event location",
+          type: "bool",        
+        },
         selectCalendars: {
           val: "",
           name: "Calendars to show",
@@ -1914,9 +1924,15 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
         let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
         colorItem.textColor = event.calendar.color
       }
-
+      
+      // Determine which elements will be shown.
+      const showLocation = eventSettings.showLocation && event.location
+      const showTime = !event.isAllDay
+      
+      // Set up the title.
       const title = provideText(event.title.trim(), titleStack, textFormat.eventTitle)
-      titleStack.setPadding(padding, padding, event.isAllDay ? padding : padding/5, padding)
+      const titlePadding = (showLocation || showTime) ? padding/5 : padding
+      titleStack.setPadding(padding, padding, titlePadding, padding)
     
       // If we're showing a color on the right, show it.
       if (showCalendarColor.length && showCalendarColor.includes("right")) {
@@ -1927,6 +1943,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
   
       // If there are too many events, limit the line height.
       if (futureEvents.length >= 3) { title.lineLimit = 1 }
+      
+      // Show the location if enabled.
+      if (showLocation) {
+        const locationStack = align(currentStack)
+        const location = provideText(event.location, locationStack, textFormat.eventLocation)
+        location.lineLimit = 1
+        locationStack.setPadding(0, padding, showTime ? padding/5 : padding, padding)
+      }
 
       // If it's an all-day event, we don't need a time.
       if (event.isAllDay) { continue }
