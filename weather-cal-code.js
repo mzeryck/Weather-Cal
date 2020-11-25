@@ -1026,7 +1026,10 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
   const backgroundRaw = files.readString(backgroundPath)
   const background = JSON.parse(backgroundRaw)
 
-  if (background.type == "color") {
+  if (custom && custom.background) {
+    custom.background(widget)
+  
+  } else if (background.type == "color") {
     widget.backgroundColor = new Color(background.color)
   
   } else if (background.type == "auto") {
