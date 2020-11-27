@@ -1327,6 +1327,7 @@ const weatherCal = {
     }
 
     const numberOfEvents = parseInt(eventSettings.numberOfEvents)
+    const currentTime = this.now.getTime()
 
     // Function to determine if an event should be shown.
     function shouldShowEvent(event) {
@@ -1342,7 +1343,7 @@ const weatherCal = {
 
       // Otherwise, return the event if it's in the future or recently started.
       const minutesAfter = parseInt(eventSettings.minutesAfter) * 60000 || 0
-      return (event.startDate.getTime() + minutesAfter > this.now.getTime())
+      return (event.startDate.getTime() + minutesAfter > currentTime)
     }
 
     // Determine which events to show, and how many.
@@ -1412,6 +1413,9 @@ const weatherCal = {
     const numberOfReminders = parseInt(reminderSettings.numberOfReminders)
     const showWithoutDueDate = reminderSettings.showWithoutDueDate
     const showOverdue = reminderSettings.showOverdue
+    
+    const sameDay = this.sameDay
+    const currentDate = this.now
 
     // Function to determine if an event should be shown.
     function shouldShowReminder(reminder) {
@@ -1427,7 +1431,7 @@ const weatherCal = {
 
       // If we only want today and overdue, use the setting.
       if (reminderSettings.todayOnly) { 
-        return this.sameDay(reminder.dueDate, this.now)
+        return sameDay(reminder.dueDate, currentDate)
       }
 
       // Otherwise, return true.
