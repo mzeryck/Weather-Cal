@@ -1,6 +1,6 @@
 # Weather Cal
 
-![Screenshot of a sample Weather Cal widget](https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg)
+<img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg" width="318" height="300" alt="Screenshot of a sample Weather Cal widget">
 
 This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom backgrounds and items](#custom-elements).
 
