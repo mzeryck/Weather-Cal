@@ -931,130 +931,130 @@ const weatherCal = {
     // Initialize if we haven't already.
     if (!this.initialized) this.initialize(name, iCloudInUse)
 
-  // Determine if we're using the old or new setup.
-  if (typeof layout == "object") {
-    this.settings = layout
+    // Determine if we're using the old or new setup.
+    if (typeof layout == "object") {
+      this.settings = layout
 
-  } else {
-    this.prefPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-preferences-" + name)
-    this.settings = JSON.parse(this.fm.readString(this.prefPath))
+    } else {
+      this.prefPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-preferences-" + name)
+      this.settings = JSON.parse(this.fm.readString(this.prefPath))
 
-    // Fix old preference files.
-    if (this.settings.widget.units.val != undefined) {
-      for (category in this.settings) {
-        for (item in this.settings[category]) {
-          this.settings[category][item] = this.settings[category][item].val
+      // Fix old preference files.
+      if (this.settings.widget.units.val != undefined) {
+        for (category in this.settings) {
+          for (item in this.settings[category]) {
+            this.settings[category][item] = this.settings[category][item].val
+          }
         }
       }
+      this.settings.layout = layout
     }
-    this.settings.layout = layout
-  }
 
-  // Initialize additional shared properties.
-  this.locale = this.settings.widget.locale
-  this.padding = parseInt(this.settings.widget.padding)
-  this.tintIcons = this.settings.widget.tintIcons
-  this.localizedText = this.settings.localization
-  this.textFormat = this.settings.font
-  this.data = {}
-  this.currentDate = new Date()
-  this.custom = custom
+    // Initialize additional shared properties.
+    this.locale = this.settings.widget.locale
+    this.padding = parseInt(this.settings.widget.padding)
+    this.tintIcons = this.settings.widget.tintIcons
+    this.localizedText = this.settings.localization
+    this.textFormat = this.settings.font
+    this.data = {}
+    this.currentDate = new Date()
+    this.custom = custom
 
-  // Make sure we have a locale value.
-  if (!this.locale || this.locale == "" || this.locale == null) { this.locale = Device.locale() }
+    // Make sure we have a locale value.
+    if (!this.locale || this.locale == "" || this.locale == null) { this.locale = Device.locale() }
 
-  // Set up the widget with padding.
-  this.widget = new ListWidget()
-  const horizontalPad = this.padding < 10 ? 10 - this.padding : 10
-  const verticalPad = this.padding < 15 ? 15 - this.padding : 15
-  this.widget.setPadding(horizontalPad, verticalPad, horizontalPad, verticalPad)
-  this.widget.spacing = 0
+    // Set up the widget with padding.
+    this.widget = new ListWidget()
+    const horizontalPad = this.padding < 10 ? 10 - this.padding : 10
+    const verticalPad = this.padding < 15 ? 15 - this.padding : 15
+    this.widget.setPadding(horizontalPad, verticalPad, horizontalPad, verticalPad)
+    this.widget.spacing = 0
 
-  /*
-   * BACKGROUND DISPLAY
-   * ==================
-   */
+    /*
+     * BACKGROUND DISPLAY
+     * ==================
+     */
 
-  // Read the background information from disk.
-  const backgroundPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + name)
-  const backgroundRaw = this.fm.readString(backgroundPath)
-  const background = JSON.parse(backgroundRaw)
+    // Read the background information from disk.
+    const backgroundPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + name)
+    const backgroundRaw = this.fm.readString(backgroundPath)
+    const background = JSON.parse(backgroundRaw)
 
-  if (custom && custom.background) {
-    await custom.background(this.widget)
+    if (custom && custom.background) {
+      await custom.background(this.widget)
 
-  } else if (background.type == "color") {
-    this.widget.backgroundColor = new Color(background.color)
+    } else if (background.type == "color") {
+      this.widget.backgroundColor = new Color(background.color)
 
-  } else if (background.type == "auto") {
-    const gradient = new LinearGradient()
-    const gradientSettings = await this.setupGradient()
+    } else if (background.type == "auto") {
+      const gradient = new LinearGradient()
+      const gradientSettings = await this.setupGradient()
 
-    gradient.colors = gradientSettings.color()
-    gradient.locations = gradientSettings.position()
+      gradient.colors = gradientSettings.color()
+      gradient.locations = gradientSettings.position()
 
-    this.widget.backgroundGradient = gradient
+      this.widget.backgroundGradient = gradient
 
-  } else if (background.type == "gradient") {
-    const gradient = new LinearGradient()
-    const initialColor = new Color(background.initialColor)
-    const finalColor = new Color(background.finalColor)
+    } else if (background.type == "gradient") {
+      const gradient = new LinearGradient()
+      const initialColor = new Color(background.initialColor)
+      const finalColor = new Color(background.finalColor)
 
-    gradient.colors = [initialColor, finalColor]
-    gradient.locations = [0, 1]
+      gradient.colors = [initialColor, finalColor]
+      gradient.locations = [0, 1]
 
-    this.widget.backgroundGradient = gradient
+      this.widget.backgroundGradient = gradient
 
-  } else if (background.type == "image") {
+    } else if (background.type == "image") {
 
-    // Determine if our image exists.
-    const dirPath = this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal")
-    const path = this.fm.joinPath(dirPath, name + ".jpg")
-    const exists = this.fm.fileExists(path)
+      // Determine if our image exists.
+      const dirPath = this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal")
+      const path = this.fm.joinPath(dirPath, name + ".jpg")
+      const exists = this.fm.fileExists(path)
 
-    // If it exists, load from file.
-    if (exists) {
-      if (this.iCloudInUse) { await this.fm.downloadFileFromiCloud(path) }
-      this.widget.backgroundImage = this.fm.readImage(path)
+      // If it exists, load from file.
+      if (exists) {
+        if (this.iCloudInUse) { await this.fm.downloadFileFromiCloud(path) }
+        this.widget.backgroundImage = this.fm.readImage(path)
 
-    // If it's missing when running in the widget, use a gray background.
-    } else if (!exists && config.runsInWidget) {
-      this.widget.backgroundColor = Color.gray() 
+      // If it's missing when running in the widget, use a gray background.
+      } else if (!exists && config.runsInWidget) {
+        this.widget.backgroundColor = Color.gray() 
 
-    // But if we're running in app, prompt the user for the image.
-    } else {
-      const img = await Photos.fromLibrary()
-      this.widget.backgroundImage = img
-      this.fm.writeImage(path, img)
+      // But if we're running in app, prompt the user for the image.
+      } else {
+        const img = await Photos.fromLibrary()
+        this.widget.backgroundImage = img
+        this.fm.writeImage(path, img)
+      }
     }
-  }
 
-  /*
-   * CONSTRUCTION
-   * ============
-   */
+    /*
+     * CONSTRUCTION
+     * ============
+     */
 
-  // Set up the layout variables.
-  this.currentRow = {}
-  this.currentColumn = {}
+    // Set up the layout variables.
+    this.currentRow = {}
+    this.currentColumn = {}
 
-  // Set up the initial alignment.
-  this.left()
+    // Set up the initial alignment.
+    this.left()
 
-  // Set up the global ASCII variables.
-  this.foundASCII = null
-  this.usingASCII = null
-  this.currentColumns = []
-  this.rowNeedsSetup = false
+    // Set up the global ASCII variables.
+    this.foundASCII = null
+    this.usingASCII = null
+    this.currentColumns = []
+    this.rowNeedsSetup = false
 
-  // Process the layout.
-  for (line of this.settings.layout.split(/\r?\n/)) {
-    await this.processLine(line)
-  }
+    // Process the layout.
+    for (line of this.settings.layout.split(/\r?\n/)) {
+      await this.processLine(line)
+    }
 
-  // Finish the widget and return.
-  return this.widget
-  },
+    // Finish the widget and return.
+    return this.widget
+    },
 
   // Execute a function for the layout generator.
   async executeFunction(functionName,parameter = null) {
