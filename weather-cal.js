@@ -64,6 +64,12 @@ if (!files.fileExists(pathToCode)) {
 if (iCloudInUse) { await files.downloadFileFromiCloud(pathToCode) }
 const code = importModule(codeFilename)
 
+const custom = {
+
+  // Custom items and backgrounds can be added here.
+
+}
+
 // Run the initial setup or settings menu.
 let preview
 if (config.runsInApp) {
@@ -72,7 +78,7 @@ if (config.runsInApp) {
 }
 
 // Set up the widget.
-const widget = await code.createWidget(layout, Script.name(), iCloudInUse)
+const widget = await code.createWidget(layout, Script.name(), iCloudInUse, custom)
 Script.setWidget(widget)
 
 // If we're in app, display the preview.
