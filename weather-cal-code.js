@@ -135,20 +135,20 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
     // Set up background image.
     await setWidgetBackground()
-    
+
     // Write the default settings to disk.
     writePreference(prefName, defaultSettings())
-    
+
     // Record setup completion.
     writePreference("weather-cal-setup", "true")
-    
+
     message = "Your widget is ready! You'll now see a preview. Re-run this script to edit the default preferences, including localization. When you're ready, add a Scriptable widget to the home screen and select this script."
     options = ["Show preview"]
     await generateAlert(message,options)
 
     // Return and show the preview.
     return previewValue()
- 
+
   }
 
   // Edit the widget settings.
@@ -173,13 +173,13 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       await editPreferences()
       return
     }
-    
+
     // Set the API key.
     if (response == 3) {
       await getWeatherKey()
       return
     }
-    
+
     if (response == 4) {
       // Prompt the user for updates.
       message = "Would you like to update the Weather Cal code? Your widgets will not be affected."
@@ -188,7 +188,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
       // Exit if the user didn't want to update.
       if (updateResponse) return
-      
+
       // Try updating the code.
       const success = await downloadCode(codeFilename, gitHubUrl)
       message = success ? "The update is now complete." : "The update failed. Please try again later."
@@ -197,14 +197,14 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       await generateAlert(message,options)
       return
     }
-    
+
     // Reset the widget.
     if (response == 5) {
       const alert = new Alert()
       alert.message = "Are you sure you want to completely reset this widget?"
       alert.addDestructiveAction("Reset")
       alert.addAction("Cancel")
-    
+
       const cancelReset = await alert.present()
       if (cancelReset == 0) {
         const bgPath = fm.joinPath(fm.libraryDirectory(), "weather-cal-" + name)
@@ -217,14 +217,14 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       }
       return
     }
-    
+
     // If response was Exit, just return.
     return
   }
 
   // Get the weather key, optionally determining if it's the first run.
   async function getWeatherKey(firstRun = false) {
- 
+
     // Prompt for the key.
     const returnVal = await promptForText("Paste your API key in the box below.",[""],["82c29fdbgd6aebbb595d402f8a65fabf"])
     const apiKey = returnVal.textFieldValue(0)
@@ -236,7 +236,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       await generateAlert(message,options)
       return false
     }
-    
+
     // Save the key.
     writePreference("weather-cal-api-key", apiKey)
 
@@ -245,13 +245,13 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
     let val = {}
     try { val = await req.loadJSON() } catch { val.current = false }
-    
+
     // Warn the user if it didn't work.
     if (!val.current) {
       message = firstRun ? "New OpenWeather API keys may take a few hours to activate. Your widget will start displaying weather information once it's active." : "The key you entered, " + apiKey + ", didn't work. If it's a new key, it may take a few hours to activate."
       options = [firstRun ? "Continue" : "OK"]
       await generateAlert(message,options)
-      
+
     // Otherwise, confirm that it was saved.
     } else if (val.current && !firstRun) {
       message = "The new key worked and was saved."
@@ -280,32 +280,32 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
     } else if (backgroundType == 1) {
       background.type = "auto"
-      
+
     } else if (backgroundType == 2) {
       background.type = "gradient"
       returnVal = await promptForText("Enter the hex value of the first gradient color.",[""],["#007030"])
       background.initialColor = returnVal.textFieldValue(0)
       returnVal = await promptForText("Enter the hex value of the second gradient color.",[""],["#007030"])
       background.finalColor = returnVal.textFieldValue(0)
-    
+
     } else if (backgroundType == 3) {
       background.type = "image"
-      
+
       // Create the Weather Cal directory if it doesn't already exist.
       const dirPath = fm.joinPath(fm.documentsDirectory(), "Weather Cal")
       if (!fm.fileExists(dirPath) || !fm.isDirectory(dirPath)) {
         fm.createDirectory(dirPath)
       }
-      
+
       // Determine if a dupe already exists.
       const dupePath = fm.joinPath(dirPath, name + " 2.jpg")
       const dupeAlreadyExists = fm.fileExists(dupePath)
-      
+
       // Get the image and write it to disk.
       const img = await Photos.fromLibrary()
       const path = fm.joinPath(dirPath, name + ".jpg")
       fm.writeImage(path, img)
-      
+
       // If we just created a dupe, alert the user.
       if (!dupeAlreadyExists && fm.fileExists(dupePath)) {
         message = "Weather Cal detected a duplicate image. Please open the Files app, navigate to Scriptable > Weather Cal, and make sure the file named " + name + ".jpg is correct."
@@ -313,7 +313,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         const response = generateAlert(message,options)
       }
     }
-      
+
     writePreference("weather-cal-" + name, background)
     return previewValue() 
   }
@@ -321,7 +321,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
   // Return the default widget settings.
   function defaultSettings() {
     const settings = {
-    
+
       widget: {
         name: "Overall settings",
         locale: {
@@ -743,15 +743,15 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     for (key in category) {
       // Don't show the name as a setting.
       if (key == "name") continue
-    
+
       // Make the row.
       const row = new UITableRow()
       row.dismissOnSelect = false
       row.height = 55
-    
+
       // Fill it with the setting information.
       const setting = category[key]
-    
+
       let valText
       if (typeof setting.val == "object") {
         for (subItem in setting.val) {
@@ -765,10 +765,10 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
       } else {
         valText = setting.val + ""
       }
-    
+
       const cell = row.addText(setting.name,valText)
       cell.subtitleColor = Color.gray()
-    
+
       // If there's no type, it's just text.
       if (!setting.type) {
         row.onSelect = async () => {
@@ -783,17 +783,17 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
           setting.val = setting.options[returnVal]
           await loadTable(table,category,settingsObject)
         }
-    
+
       } else if (setting.type == "bool") {
         row.onSelect = async () => {
           const returnVal = await generateAlert(setting.name,["true","false"],setting.description)
           setting.val = !returnVal
           await loadTable(table,category,settingsObject)
         }
-    
+
       } else if (setting.type == "multival") {
         row.onSelect = async () => {
-      
+
           // We need an ordered set.
           let keys = []
           let values = []
@@ -801,14 +801,14 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
             keys.push(item)
             values.push(setting.val[item])
           }
-      
+
           const returnVal = await promptForText(setting.name,values,keys,setting.description)
-        
+
           for (let i=0; i < keys.length; i++) {
             const currentKey = keys[i]
             setting.val[currentKey] = returnVal.textFieldValue(i)
           }
-        
+
           await loadTable(table,category,settingsObject)
         }
       }
@@ -826,24 +826,24 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     if (!fm.fileExists(prefPath)) {
       await generateAlert("No preferences file exists. If you're on an older version of Weather Cal, you need to reset your widget in order to use the preferences editor.",["OK"])
       return
-    
+
     } else {
       const settingsFromFile = JSON.parse(fm.readString(prefPath))
       settingsObject = defaultSettings()
-      
+
       // Iterate through the settings object.
       if (settingsFromFile.widget.units.val == undefined) {
         for (category in settingsObject) {
           for (item in settingsObject[category]) {
-          
+
             // If the setting exists, use it. Otherwise, the default is used.
             if (settingsFromFile[category][item] != undefined) {
               settingsObject[category][item].val = settingsFromFile[category][item]
             }
-            
+
           }
         }
-        
+
       // Fix for old preference files.
       } else {
         settingsObject = settingsFromFile
@@ -856,11 +856,11 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
 
     // Iterate through each item in the settings object.
     for (key in settingsObject) {
-    
+
       // Make the row.
       let row = new UITableRow()
       row.dismissOnSelect = false
-    
+
       // Fill it with the category information.
       const category = settingsObject[key]
       row.addText(category.name)
@@ -870,12 +870,12 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
         await loadTable(subTable,category,settingsObject)
         await subTable.present()
       }
-    
+
       // Add it to the table.
       table.addRow(row)
     }
     await table.present()
-    
+
     // Upon dismissal, roll up preferences and write to disk.
     for (category in settingsObject) {
       for (item in settingsObject[category]) {
@@ -930,7 +930,7 @@ async function setup(name, iCloudInUse, codeFilename, gitHubUrl) {
     const alert = new Alert()
     alert.title = title
     if (message) alert.message = message
-    
+
     for (let i=0; i < values.length; i++) {
       alert.addTextField(keys ? (keys[i] || null) : null,values[i] + "")
     }
@@ -989,11 +989,11 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
   let settings
   if (typeof layout == "object") {
     settings = layout
-    
+
   } else {
     const prefPath = files.joinPath(files.libraryDirectory(), "weather-cal-preferences-" + name)
     settings = JSON.parse(files.readString(prefPath))
-    
+
     // Fix old preference files.
     if (settings.widget.units.val != undefined) {
       for (category in settings) {
@@ -1030,7 +1030,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
    * BACKGROUND DISPLAY
    * ==================
    */
-   
+
   // Read the background information from disk.
   const backgroundPath = files.joinPath(files.libraryDirectory(), "weather-cal-" + name)
   const backgroundRaw = files.readString(backgroundPath)
@@ -1055,14 +1055,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     const gradient = new LinearGradient()
     const initialColor = new Color(background.initialColor)
     const finalColor = new Color(background.finalColor)
-    
+
     gradient.colors = [initialColor, finalColor]
     gradient.locations = [0, 1]
 
     widget.backgroundGradient = gradient
 
   } else if (background.type == "image") {
-    
+
     // Determine if our image exists.
     const dirPath = files.joinPath(files.documentsDirectory(), "Weather Cal")
     const path = files.joinPath(dirPath, name + ".jpg")
@@ -1076,7 +1076,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // If it's missing when running in the widget, use a gray background.
     } else if (!exists && config.runsInWidget) {
       widget.backgroundColor = Color.gray() 
-    
+
     // But if we're running in app, prompt the user for the image.
     } else {
       const img = await Photos.fromLibrary()
@@ -1120,36 +1120,36 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Trim the input.
     const line = lineInput.trim()
-    
+
     // If it's blank, return.
     if (line == '') { return }
-    
+
     // If we have a row, we're not using ASCII.
     if (!foundASCII && line.includes('row')) { 
       foundASCII = true
       usingASCII = false 
-    
+
     // If we have a row of dashes, we're using ASCII.
     } else if (!foundASCII && line[0] == '-' && line[line.length-1] == '-') {
       foundASCII = true
       usingASCII = true 
     }
-    
+
     if (usingASCII) { await processASCIILine(line) }
     else { await processRegularLine(line) }
-    
+
   }
 
   // Process a single line of regular layout.
   async function processRegularLine(lineInput) {
-    
+
     let line = lineInput
-    
+
     // If it's using the old style, remove the comma.
     if (line[line.length-1] == ',') {
       line = line.slice(0, -1)
     }
-    
+
     // If there are no parentheses, run the function.
     let item = line.split('(')
     if (!item[1]) {
@@ -1157,7 +1157,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       await func(currentColumn)
       return
     }
-    
+
     // Otherwise, pass the parameter.
     const param = item[1].slice(0, -1)
     const func = provideFunction(item[0])(parseInt(param) || param)
@@ -1190,47 +1190,47 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Iterate through each item.
     for (var i=1; i < items.length-1; i++) {
-    
+
       // If the current column doesn't exist, make it.
       if (!currentColumns[i]) { currentColumns[i] = { items: [] } }
-    
+
       // Now we have a column to add the items to.
       const column = currentColumns[i].items
-    
+
       // Get the current item and its trimmed version.
       const item = items[i]
       const trim = item.trim()
-    
+
       // If it's not a function, figure out spacing.
       if (!provideFunction(trim)) { 
-      
+
         // If it's a setup row, whether or not we find the number, we keep going.
         if (setupRow) {
           const value = parseInt(trim, 10)
           if (value) { currentColumns[i].width = value }
           continue
         }
-      
+
         // If it's blank and we haven't already added a space, add one.
         const prevItem = column[column.length-1]
         if (trim == '' && (!prevItem || (prevItem && !prevItem.startsWith("space")))) {
           column.push("space")
         }
-      
+
         // Either way, we're done.
         continue
-    
+
       }
-    
+
       // Determine the alignment.
       const index = item.indexOf(trim)
       const length = item.slice(index,item.length).length
-    
+
       let align
       if (index > 0 && length > trim.length) { align = "center" }
       else if (index > 0) { align = "right" }
       else { align = "left" }
-    
+
       // Add the items to the column.
       column.push(align)
       column.push(trim)
@@ -1241,14 +1241,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
   async function enumerateColumns() {
     if (currentColumns.length > 0) {
       for (col of currentColumns) {
-        
+
         // If it's null, go to the next one.
         if (!col) { continue }
-      
+
         // If there's a width, use the width function.
         if (col.width) {
           column(col.width)(currentColumn)
-        
+
         // Otherwise, create the column normally.
         } else {
           column(currentColumn)
@@ -1276,7 +1276,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       currentRow.layoutHorizontally()
       currentRow.setPadding(0, 0, 0, 0)
       currentColumn.spacing = 0
-    
+
       // If input was given, make a row of that size.
       if (input > 0) { currentRow.size = new Size(0,input) }
     }
@@ -1290,13 +1290,13 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
   // Makes a new column on the widget.
   function column(input = null) {
- 
+
     function makeColumn() {
       currentColumn = currentRow.addStack()
       currentColumn.layoutVertically()
       currentColumn.setPadding(0, 0, 0, 0)
       currentColumn.spacing = 0
-    
+
       // If input was given, make a column of that size.
       if (input > 0) { currentColumn.size = new Size(input,0) }
     }
@@ -1304,7 +1304,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // If there's no input or it's a number, it's being called in the layout declaration.
     if (!input || typeof input == "number" || typeof input == "string" ) { 
     return makeColumn 
-    
+
     }
 
     // Otherwise, it's being called in the generator.
@@ -1354,7 +1354,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
       // If the input is null or zero, add a flexible spacer.
       if (!input || input == 0) { column.addSpacer() }
-    
+
       // Otherwise, add a space with the specified length.
       else { column.addSpacer(input) }
     }
@@ -1395,7 +1395,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       calSetting = calSetting.trim()
       calendars = calSetting.length > 0 ? calSetting.split(",") : []
     }
-    
+
     const numberOfEvents = parseInt(eventSettings.numberOfEvents)
 
     // Function to determine if an event should be shown.
@@ -1431,27 +1431,27 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // If there's room and we need to, show tomorrow's events.
     let multipleTomorrowEvents = false
     let showTomorrow = eventSettings.showTomorrow
-    
+
     // Determine if we're specifying an hour to show.
     if (!isNaN(parseInt(showTomorrow))) {
       showTomorrow = (currentDate.getHours() >= parseInt(showTomorrow))
     }
-    
+
     if (showTomorrow && shownEvents < numberOfEvents) {
 
       const tomorrowEvents = await CalendarEvent.tomorrow([])
       for (const event of tomorrowEvents) {
         if (shownEvents == numberOfEvents) { break }
         if (shouldShowEvent(event)) {
-      
+
           // Add the tomorrow label prior to the first tomorrow event.
           if (!multipleTomorrowEvents) { 
-          
+
             // The tomorrow label is pretending to be an event.
             futureEvents.push({ title: localizedText.tomorrowLabel.toUpperCase(), isLabel: true })
             multipleTomorrowEvents = true
           }
-        
+
           // Show the tomorrow event and increment the counter.
           futureEvents.push(event)
           shownEvents++
@@ -1469,7 +1469,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     data.reminders = {}
     const reminderSettings = settings.reminders 
-    
+
     let listSetting = reminderSettings.selectLists
     let lists = []
     if (Array.isArray(listSetting)) {
@@ -1485,40 +1485,40 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Function to determine if an event should be shown.
     function shouldShowReminder(reminder) {
-      
+
       // If reminders are filtered and the list isn't in the selected lists, return false.
       if (lists.length && !lists.includes(reminder.calendar.title)) { return false }
-    
+
       // If there's no due date, use the setting.
       if (!reminder.dueDate)  { return showWithoutDueDate }
-    
+
       // If it's overdue, use the setting.
       if (reminder.isOverdue) { return showOverdue }
-      
+
       // If we only want today and overdue, use the setting.
       if (reminderSettings.todayOnly) { 
         return sameDay(reminder.dueDate, currentDate)
       }
-      
+
       // Otherwise, return true.
       return true
     }
 
     // Determine which reminders to show.
     let reminders = await Reminder.allIncomplete()
-    
+
     // Sort in order of due date.
     reminders.sort(function(a, b) {
-    
+
       // Due dates are always picked first.
       if (!a.dueDate && b.dueDate) return 1
       if (a.dueDate && !b.dueDate) return -1
       if (!a.dueDate && !b.dueDate) return 0
-    
+
       // Otherwise, earlier due dates go first.
       const aTime = a.dueDate.getTime()
       const bTime = b.dueDate.getTime()
-      
+
       if (aTime > bTime) return 1
       if (aTime < bTime) return -1
       return 0 
@@ -1526,7 +1526,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Set the number of reminders shown.
     reminders = reminders.filter(shouldShowReminder).slice(0,numberOfReminders)
-    
+
     // Store the data.
     data.reminders.all = reminders
   }
@@ -1605,7 +1605,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     if (locationExists) {
       cachedLocation = JSON.parse(files.readString(locationPath))
     }
-    
+
     // If it's been more than an hour, ask iOS for location.
     let location, geocode
     const timeToCache = 60 * 60 * 1000
@@ -1617,10 +1617,10 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
         geocode = location ? await Location.reverseGeocode(location.latitude, location.longitude, locale) : false
       } catch {}
     }
-    
+
     // Store the possible location values in the data object.
     data.location = {}
-    
+
     if (location) {
       data.location.latitude = location.latitude
       data.location.longitude = location.longitude
@@ -1628,13 +1628,13 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       data.location.latitude = cachedLocation.latitude
       data.location.longitude = cachedLocation.longitude
     }
-    
+
     if (geocode) {
       data.location.locality = (geocode[0].locality || geocode[0].postalAddress.city) || geocode[0].administrativeArea
     } else {
       data.location.locality = cachedLocation.locality
     }
-    
+
     // If we have old location data, save it to disk.
     if (locationDataOld) {
       files.writeString(locationPath, JSON.stringify(data.location))
@@ -1675,7 +1675,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       tomorrowDate.setDate(currentDate.getDate() + 1)
       const tomorrowData = await getSunData(tomorrowDate)
       sunDataRaw.results.tomorrow = tomorrowData.results.sunrise
-    
+
       // Cache the file.
       files.writeString(sunCachePath, JSON.stringify(sunDataRaw))
     }
@@ -1689,7 +1689,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
   // Set up the weather data object.
   async function setupWeather() {
-    
+
     // Get the weather settings.
     const weatherSettings = settings.weather
 
@@ -1709,11 +1709,11 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Otherwise, use the API to get new weather data.
     } else {
-    
+
       // OpenWeather only supports a subset of language codes.
       const openWeatherLang = ["af","al","ar","az","bg","ca","cz","da","de","el","en","eu","fa","fi","fr","gl","he","hi","hr","hu","id","it","ja","kr","la","lt","mk","no","nl","pl","pt","pt_br","ro","ru","sv","se","sk","sl","sp","es","sr","th","tr","ua","uk","vi","zh_cn","zh_tw","zu"]
       var lang
-    
+
       // Find all possible language matches.
       const languages = [locale, locale.split("_")[0], Device.locale(), Device.locale().split("_")[0]]
 
@@ -1724,17 +1724,17 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
           break
         }
       }
-      
+
       const apiKeyPath = files.joinPath(files.libraryDirectory(), "weather-cal-api-key")
       const apiKey = files.readString(apiKeyPath)
-      
+
       try {
         const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + data.location.latitude + "&lon=" + data.location.longitude + "&exclude=minutely,alerts&units=" + settings.widget.units + lang + "&appid=" + apiKey
         weatherDataRaw = await new Request(weatherReq).loadJSON()
         files.writeString(cachePath, JSON.stringify(weatherDataRaw))
       } catch {}
     }
-    
+
     // If it's an error, treat it as a null value.
     if (weatherDataRaw.cod) { weatherDataRaw = null }
 
@@ -1749,7 +1749,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     data.weather.todayHigh = weatherDataRaw ? weatherDataRaw.daily[0].temp.max : null
     data.weather.todayLow = weatherDataRaw ? weatherDataRaw.daily[0].temp.min : null
     data.weather.forecast = [];
-    
+
     for (let i=0; i <= 7; i++) {
       data.weather.forecast[i] = weatherDataRaw ? ({High: weatherDataRaw.daily[i].temp.max, Low: weatherDataRaw.daily[i].temp.min, Condition: weatherDataRaw.daily[i].weather[0].id}) : { High: null, Low: null, Condition: 100 }
     }
@@ -1811,14 +1811,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
       df.dateFormat = dateSettings.smallDateFormat
       let dateText = provideText(df.string(currentDate), dateStack, textFormat.smallDate)
-    
+
     // Otherwise, show the large date.
     } else {
       let dateOneStack = align(column)
       df.dateFormat = dateSettings.largeDateLineOne
       let dateOne = provideText(df.string(currentDate), dateOneStack, textFormat.largeDate1)
       dateOneStack.setPadding(padding/2, padding, 0, padding)
-    
+
       let dateTwoStack = align(column)
       df.dateFormat = dateSettings.largeDateLineTwo
       let dateTwo = provideText(df.string(currentDate), dateTwoStack, textFormat.largeDate2)
@@ -1857,17 +1857,17 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // If no events are visible, figure out what to do.
     if (!data.events.eventsAreVisible) { 
       const display = eventSettings.noEventBehavior
-    
+
       // If it's a greeting, let the greeting function handle it.
       if (display == "greeting") { return await greeting(column) }
-    
+
       // If it's a message, get the localized text.
       if (display == "message" && localizedText.noEventMessage.length) {
         const messageStack = align(column)
         messageStack.setPadding(padding, padding, padding, padding)
         provideText(localizedText.noEventMessage, messageStack, textFormat.noEvents)
       }
-    
+
       // Whether or not we displayed something, return here.
       return
     }
@@ -1876,7 +1876,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     let eventStack = column.addStack()
     eventStack.layoutVertically()
     const todaySeconds = Math.floor(currentDate.getTime() / 1000) - 978307200
-    
+
     const defaultUrl = 'calshow:' + todaySeconds
     const settingUrlExists = (settings.events.url || "").length > 0
     eventStack.url = settingUrlExists ? settings.events.url : defaultUrl
@@ -1896,12 +1896,12 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     const futureEvents = data.events.futureEvents
     const showCalendarColor = eventSettings.showCalendarColor
     const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
-    
+
     for (let i = 0; i < futureEvents.length; i++) {
-    
+
       const event = futureEvents[i]
       const bottomPadding = (padding-10 < 0) ? 0 : padding-10
-    
+
       // If it's the tomorrow label, change to the tomorrow stack.
       if (event.isLabel) {
         let tomorrowStack = column.addStack()
@@ -1909,33 +1909,33 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
         const tomorrowSeconds = Math.floor(currentDate.getTime() / 1000) - 978220800
         tomorrowStack.url = settingUrlExists ? settings.events.url : 'calshow:' + tomorrowSeconds
         currentStack = tomorrowStack
-      
+
         // Mimic the formatting of an event title, mostly.
         const eventLabelStack = align(currentStack)
         const eventLabel = provideText(event.title, eventLabelStack, textFormat.eventLabel)
         eventLabelStack.setPadding(padding, padding, padding, padding)
         continue
       }
-    
+
       const titleStack = align(currentStack)
       titleStack.layoutHorizontally()
-    
+
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showCalendarColor.length && !showCalendarColor.includes("right")) {
         let colorItemText = provideTextSymbol(colorShape) + " "
         let colorItem = provideText(colorItemText, titleStack, textFormat.eventTitle)
         colorItem.textColor = event.calendar.color
       }
-      
+
       // Determine which elements will be shown.
       const showLocation = eventSettings.showLocation && event.location
       const showTime = !event.isAllDay
-      
+
       // Set up the title.
       const title = provideText(event.title.trim(), titleStack, textFormat.eventTitle)
       const titlePadding = (showLocation || showTime) ? padding/5 : padding
       titleStack.setPadding(padding, padding, titlePadding, padding)
-    
+
       // If we're showing a color on the right, show it.
       if (showCalendarColor.length && showCalendarColor.includes("right")) {
         let colorItemText = " " + provideTextSymbol(colorShape)
@@ -1945,7 +1945,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
       // If there are too many events, limit the line height.
       if (futureEvents.length >= 3) { title.lineLimit = 1 }
-      
+
       // Show the location if enabled.
       if (showLocation) {
         const locationStack = align(currentStack)
@@ -1956,14 +1956,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
       // If it's an all-day event, we don't need a time.
       if (event.isAllDay) { continue }
-    
+
       // Format the time information.
       let timeText = formatTime(event.startDate)
-    
+
       // If we show the length as time, add an en dash and the time.
       if (eventSettings.showEventLength == "time") { 
         timeText += "–" + formatTime(event.endDate) 
-      
+
       // If we should it as a duration, add the minutes.
       } else if (eventSettings.showEventLength == "duration") {
         const duration = (event.endDate.getTime() - event.startDate.getTime()) / (1000*60)
@@ -1992,7 +1992,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     let reminderStack = column.addStack()
     reminderStack.layoutVertically()
     reminderStack.setPadding(0, 0, 0, 0)
-    
+
     const defaultUrl = "x-apple-reminderkit://REMCDReminder/"
     const settingUrl = settings.reminders.url || ""
     reminderStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
@@ -2003,15 +2003,15 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     const colorShape = showListColor.includes("circle") ? "circle" : "rectangle"
 
     for (let i = 0; i < reminders.length; i++) {
-    
+
       const reminder = reminders[i]
       const bottomPadding = (padding-10 < 0) ? 0 : padding-10
-    
+
       const titleStack = align(reminderStack)
       titleStack.layoutHorizontally()
       const showCalendarColor = reminderSettings.showListColor
       const colorShape = showListColor.includes("circle") ? "circle" : "rectangle"
-    
+
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showListColor.length && !showListColor.includes("right")) {
         let colorItemText = provideTextSymbol(colorShape) + " "
@@ -2021,14 +2021,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
       const title = provideText(reminder.title.trim(), titleStack, textFormat.reminderTitle)
       titleStack.setPadding(padding, padding, padding/5, padding)
-    
+
       // If we're showing a color on the right, show it.
       if (showListColor.length && showListColor.includes("right")) {
         let colorItemText = " " + provideTextSymbol(colorShape)
         let colorItem = provideText(colorItemText, titleStack, textFormat.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
-    
+
       // If it doesn't have a due date, keep going.
       if (!reminder.dueDate) { continue }
 
@@ -2037,7 +2037,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
         title.textColor = Color.red()
         continue 
       }
-    
+
       // Format with the relative style if set.
       let timeText
       if (reminderSettings.useRelativeDueDate) {
@@ -2045,26 +2045,26 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
         rdf.locale = locale
         rdf.useNamedDateTimeStyle()
         timeText = rdf.string(reminder.dueDate, currentDate)
-      
+
       // Otherwise, use a normal date, time, or datetime format.
       } else {
         let df = new DateFormatter()
         df.locale = locale
-      
+
         // If it's due today and it has a time, don't show the date.
         if (sameDay(reminder.dueDate, currentDate) && reminder.dueDateIncludesTime) {
           df.useNoDateStyle()
         } else {
           df.useShortDateStyle()
         }
-      
+
         // Only show the time if it's available.
         if (reminder.dueDateIncludesTime) {
           df.useShortTimeStyle()
         } else {
           df.useNoTimeStyle()
         }
-      
+
         timeText = df.string(reminder.dueDate)
       }
 
@@ -2088,7 +2088,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     let currentWeatherStack = column.addStack()
     currentWeatherStack.layoutVertically()
     currentWeatherStack.setPadding(0, 0, 0, 0)
-    
+
     const defaultUrl = "https://weather.com/" + locale + "/weather/today/l/" + data.location.latitude + "," + data.location.longitude
     const settingUrl = settings.weather.urlCurrent || ""
     currentWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
@@ -2106,7 +2106,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     mainCondition.imageSize = new Size(22,22)
     tintIcon(mainCondition, textFormat.largeTemp)
     mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : padding, padding, 0, padding)
-    
+
     // Add the temp horizontally if enabled.
     if (weatherSettings.horizontalCondition) {
       mainConditionStack.addSpacer(5)
@@ -2122,7 +2122,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       let conditionText = provideText(data.weather.currentDescription, conditionTextStack, textFormat.smallTemp)
       conditionTextStack.setPadding(padding, padding, 0, padding)
     }
-    
+
     // Add the temp vertically if it's not horizontal.
     if (!weatherSettings.horizontalCondition) {
       const tempStack = align(currentWeatherStack)
@@ -2171,7 +2171,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     let futureWeatherStack = column.addStack()
     futureWeatherStack.layoutVertically()
     futureWeatherStack.setPadding(0, 0, 0, 0)
-    
+
     const defaultUrl = "https://weather.com/" + locale + "/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
     const settingUrl = settings.weather.urlFuture || ""
     futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
@@ -2213,14 +2213,14 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       const subTempText = displayNumber(data.weather.nextHourTemp,"--") + "°"
       const subTemp = provideText(subTempText, subConditionStack, textFormat.smallTemp)
       rainPercent = data.weather.nextHourRain
-    
+
     } else {
       let tomorrowLine = subConditionStack.addImage(drawVerticalLine(new Color((textFormat.tinyTemp && textFormat.tinyTemp.color) ? textFormat.tinyTemp.color : textFormat.defaultText.color, 0.5), 20))
       tomorrowLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       let tomorrowStack = subConditionStack.addStack()
       tomorrowStack.layoutVertically()
-    
+
       const tomorrowHighText = displayNumber(data.weather.forecast[1].High,"-")
       const tomorrowHigh = provideText(tomorrowHighText, tomorrowStack, textFormat.tinyTemp)
       tomorrowStack.addSpacer(4)
@@ -2228,7 +2228,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       const tomorrowLow = provideText(tomorrowLowText, tomorrowStack, textFormat.tinyTemp)
       rainPercent = (data.weather.tomorrowRain == null ? "--" : data.weather.tomorrowRain*100)
     }
-    
+
     // If we're showing rain percentage, add it.
     if (weatherSettings.showRain) {
       let subRainStack = align(futureWeatherStack)
@@ -2241,7 +2241,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       subRain.imageSize = new Size(subRainSize, subRainSize)
       subRain.tintColor = new Color((textFormat.smallTemp && textFormat.smallTemp.color) ? textFormat.smallTemp.color : textFormat.defaultText.color)
       subRainStack.addSpacer(5)
-      
+
       const subRainText = displayNumber(rainPercent,"--") + "%"
       provideText(subRainText, subRainStack, textFormat.smallTemp)
     }
@@ -2260,7 +2260,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     let startIndex = weatherSettings.showToday ? 1 : 2
     let endIndex = parseInt(weatherSettings.showDays) + startIndex
     if (endIndex > 9) { endIndex = 9 }
-    
+
     const defaultUrl = "https://weather.com/" + locale + "/weather/tenday/l/" + data.location.latitude + "," + data.location.longitude
     const settingUrl = settings.weather.urlForecast || ""
     const urlToUse = (settingUrl.length > 0) ? settingUrl : defaultUrl
@@ -2281,11 +2281,11 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
       var myDate = new Date();
       myDate.setDate(currentDate.getDate() + (i - 1));
       df.dateFormat = weatherSettings.showDaysFormat
-      
+
       let dateStack = subConditionStack.addStack()
       dateStack.layoutHorizontally()
       dateStack.setPadding(0, 0, 0, 0)
-      
+
       let dateText = provideText(df.string(myDate), dateStack, textFormat.smallTemp)
       dateText.lineLimit = 1
       dateText.minimumScaleFactor = 0.5
@@ -2328,7 +2328,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // Set up the battery icon.
     const batteryIcon = batteryStack.addImage(provideBatteryIcon())
     batteryIcon.imageSize = new Size(30,30)
-    
+
     // Change the battery icon to red if battery level is less than 20%.
     const batteryLevel = Math.round(Device.batteryLevel() * 100)
     if (batteryLevel > 20 || Device.isCharging() ) {
@@ -2336,7 +2336,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     } else {
       batteryIcon.tintColor = Color.red()
     }
-    
+
     // Format the rest of the item.
     batteryStack.addSpacer(padding * 0.6)
     provideText(batteryLevel + "%", batteryStack, textFormat.battery)
@@ -2363,7 +2363,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     // Otherwise, determine which time to show.
     let timeToShow, symbolName
     const halfHour = 30 * 60 * 1000
-    
+
     // Determine logic for when to show sunset for a combined element.
     const combinedSunset = current > sunrise + halfHour && current < sunset + halfHour
 
@@ -2453,7 +2453,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
   // Display Weeknumber for current Date
   async function week(column) {
-    
+
     // Set up the Stack.
     const weekStack = align(column)
     weekStack.setPadding(padding/2, padding, 0, padding)
@@ -2474,7 +2474,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
    * These functions perform duties for other functions.
    * ===================================================
    */
-   
+
   // Returns a rounded number string or the provided dummy text.
   function displayNumber(number,dummy = "-") {
     return (number == null ? dummy : Math.round(number).toString())
@@ -2578,29 +2578,29 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
 
     // Define our symbol equivalencies.
     let symbols = {
-    
+
       // Error
       "1": function() { return "exclamationmark.circle" },
 
       // Thunderstorm
       "2": function() { return "cloud.bolt.rain.fill" },
-    
+
       // Drizzle
       "3": function() { return "cloud.drizzle.fill" },
-    
+
       // Rain
       "5": function() { return (cond == 511) ? "cloud.sleet.fill" : "cloud.rain.fill" },
-    
+
       // Snow
       "6": function() { return (cond >= 611 && cond <= 613) ? "cloud.snow.fill" : "snow" },
-    
+
       // Atmosphere
       "7": function() {
         if (cond == 781) { return "tornado" }
         if (cond == 701 || cond == 741) { return "cloud.fog.fill" }
         return night ? "cloud.fog.fill" : "sun.haze.fill"
       },
-    
+
       // Clear and clouds
       "8": function() {
         if (cond == 800 || cond == 801) { return night ? "moon.stars.fill" : "sun.max.fill" }
@@ -2634,7 +2634,7 @@ async function makeWidget(layout, name, iCloudInUse, custom) {
     if (systemFont) { return systemFont() }
     return new Font(fontName, fontSize)
   }
- 
+
   // Add formatted text to a container.
   function provideText(string, container, format) {
     const textItem = container.addText(string)
