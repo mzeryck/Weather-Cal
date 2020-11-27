@@ -1,18 +1,50 @@
 # Weather Cal
-This is a Scriptable widget that lets you display, position, and format multiple elements, including dates and events, weather information, battery level, and more. If you want to write code to make your own custom widget item, head to "Technical details". Happy scripting! 
+
+<img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg" width="318" height="300" alt="Screenshot of a sample Weather Cal widget">
+
+This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom backgrounds and items](#custom-elements).
+
+## Table of contents
+- [Setup](#setup)
+- [Settings](#settings)
+- [Layout](#layout)
+  - [Widget items](#widget-items)
+  - [Spacing and alignment](#spacing-and-alignment)
+  - [ASCII](#ascii)
+- [Technical details](#technical-details)
+- [Custom elements](#custom-elements)
+  - [Custom backgrounds](#custom-backgrounds)
+  - [Custom items](#custom-items)
 
 ## Setup
-Setting up Weather Cal is easy. Add the code in weather-cal.js to Scriptable on your device by downloading the file into the Scriptable folder in iCloud Drive or copying and pasting the code into a new Scriptable script. When you run the script, it will walk you through each step of the setup process.
+Setting up Weather Cal is easy:
 
-If you want a transparent or translucent blurred widget, use [the Widget Blur script](https://github.com/mzeryck/Widget-Blur/blob/main/widget-blur.js) before you start. At the end of that script, select "Export to Photos", and then use the photo in the Weather Cal setup.
+1. Copy the code in [weather-cal.js](https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal.js). (You don't need to do anything with weather-cal-code.js.)
 
-## Preferences
-Once you've set up Weather Cal, run the widget script again to access the settings menu. From there, you can show a preview, change the background, edit preferences, re-enter your OpenWeather API key, update the Weather Cal code, or reset the widget.
+2. Paste the code into a new Scriptable script. This is the widget script.
 
-In the preferences menu, you can change the overall widget settings, customize and/or translate all text, adjust the font, size, and color of text, and adjust settings for each individual widget item.
+3. Run the script. It will download the code script in the background and walk you through each step of the setup process.
+
+![Screenshots showing how to set up Weather Cal](https://github.com/mzeryck/Weather-Cal/blob/main/images/setup.jpg)
+
+Once Weather Cal is set up, you can make multiple widgets by duplicating the widget script. You only need one copy of the Weather Cal code script.
+
+If you want a transparent or translucent widget, use [the Widget Blur script](https://github.com/mzeryck/Widget-Blur/). At the end of that script, select "Export to Photos", and then use the photo as your widget background.
+
+## Settings
+Once you've set up Weather Cal, run the widget script again to access the settings menu, where you can:
+
+- Show a preview in the Scriptable app
+- Change the background
+- Edit your preferences for the widget
+- Re-enter your OpenWeather API key
+- Update the backend code for Weather Cal
+- Reset your widget back to default settings
+
+In the preferences menu, you can change the overall widget settings, customize the font, size, color, and language of text, and adjust settings for each individual widget item.
 
 ## Layout
-The only aspect of the widget that you can't change in the settings menu is the layout. Luckily, it's easy to do. Near the top of the widget code, you'll see a section that looks similar to this:
+The only aspect of the widget that you can't change in the settings menu is the layout. Luckily, it's easy to do. In the widget script, you'll see a section that looks similar to this:
 ```
 row 
   column
@@ -26,7 +58,10 @@ row
     current
     future
 ```
-Each word is a __widget item__. You can add the following items to your widget:
+The layout is just a list of [widget items](#widget-items) and [layout items](#spacing-and-alignment). Keep reading to find out which items are available and how to position them on the widget.
+
+### Widget items
+You can add the following items to your widget:
  
 - `battery`
 - `covid`
@@ -42,7 +77,7 @@ Each word is a __widget item__. You can add the following items to your widget:
 	- customizable multi-day `forecast`
 - `week` - week number for current Date
 
-If you want to change how an item looks, scroll down to the `ITEM SETTINGS` section. Most items allow you to adjust how they display.
+If you want to change how an item looks, run the widget script and choose "Edit preferences". Most items allow you to adjust how they display.
 
 ### Spacing and alignment
 You can change the layout of the widget using the following __layout items__: 
@@ -64,26 +99,71 @@ If you want to [draw your widget using ASCII](https://twitter.com/mzeryck/status
  -------------------
  |           events|
  -------------------
- ```
+```
 A full line of `-` (dashes) starts and ends the widget, or makes a new row. Put `|` (pipes) around each column. The spaces around each element name will determine the alignment (left, right, or center). For example, `events` are aligned to the right in the example above. Adding a row with nothing in it will add a flexible space. Starting a column with a number will set it to that width. (The right-hand column in the example above has a width of 90.)
 
 ## Technical details
-Weather Cal consists of two scripts: the Weather Cal widget (weather-cal.js) and the Weather Cal code (weather-cal-code.js). When a user first runs the widget script, it downloads the code and saves it as a Scriptable script. It then imports that code as a module and runs it. The widget script is essentially a container for the widget settings, while the code script does the heavy lifting.
+Weather Cal consists of the following components:
 
-### Widget construction
-Users add and remove items from the `layout` string to determine what is shown in the widget. When the script runs, it parses this string and isolates each item, using the `provideFunction` function to get the corresponding widget item function. If an argument was provided using parentheses, the provided parameter is passed to the function, which acts as a generator. Finally, the item function is passed the current column (a WidgetStack) so it can run.
+- A container script (weather-cal.js) that houses the user's layout, settings, and any  customizations.
+- A modular code script (weather-cal-code.js) with the following elements:
+  - A layout generator that converts simple, text-based layout descriptions into logical `WidgetStack` structures.
+  - A collection of commonly-used widget items, including the date, upcoming events, and weather information.
+  - A preferences editor that lets users customize how each item looks and behaves.
+  - A set of helper functions for the built-in features that can also be used by custom elements.
+  
+Additional documentation will be in the wiki, once it is ready.
 
-### Creating a widget item
-Each widget item has the following required and optional elements:
+## Custom elements
+You can create custom backgrounds and widget items that are not deleted when you update the Weather Cal code script. You can even override any of the built-in widget items.
 
-* __Required:__ A function with the name of the widget item, for example: `function date(column)`. The name of the function is what gets entered by the user in the `LAYOUT` section. This function needs to have a single `column` argument, representing the WidgetStack that the function will be adding elements to. For padding around the element, use the global `padding` variable as a baseline.
+To begin, create a `custom` object in the widget script (weather-cal.js) after the `importModule` function:
 
-* __Required:__ Add a value to the `provideFunction` function so the parser knows it exists.
+```javascript
+const code = importModule(codeFilename)
+const custom = { /* Your code will go here. */ }
+```
 
-* __Optional:__ An entry in the preferences menu that allows the user to choose how the widget item is displayed. Match the format in the `defaultSettings` function, paying attention to the available data types. A small number of well-considered, powerful settings is best.
+Then, modify the `createWidget` function call to include your object as the final argument:
 
-### Getting data
-Many widget items need to perform asynchronous work to get the data they will display, like the user's location or weather information. The standard way of doing this is creating a setup function that stores data in the shared `data` variable. For example, `setupWeather` stores several data points in `data.weather`. In the `current` and `future` weather items, they begin by checking to see if the data exists: `if (!data.weather) { await setupWeather() }`. 
+```javascript
+const widget = await code.createWidget(layout, Script.name(), iCloudInUse, custom)
+```
 
-### Displaying text
-To display text, the `provideText` function takes a string, a stack, and a value in the `textFormat` object. If you need to display predefined strings like labels, they must be defined in the `localizedText` object. This allows users to easily translate text into their preferred language. 
+The "Update code" feature never modifies the weather-cal.js file, so your customizations will remain even after you update. Just make sure not to use the "Reset widget" feature, or it will overwrite your code.
+
+### Custom backgrounds
+If you want to write your own code for the widget background, just declare a `background` method in your `custom` object. This method must have a single `widget` argument, which Weather Cal uses to pass the `ListWidget` object. If this method exists, it will override the background setting of your widget. Here's a simple example:
+
+```javascript
+const custom = {
+  background(widget) {
+    widget.backgroundColor = Color.black()
+  },
+}
+```
+
+### Custom items
+You can create your own widget items or even override the functionality of a built-in item. Declare a method in the `custom` object with the name of the element you'd like to create or override. Give it has a single `column` argument, which represents the `WidgetStack` object that the item will be added to. For example:
+
+```javascript
+const custom = {
+  item(column) {
+    // Your code here
+  },
+}
+```
+
+You can use any of Weather Cal's shared objects and helper functions through the `code` object. For example, you can use the `provideText` function and the `format` object to display text using one of the built-in formats, like this:
+
+```javascript
+const custom = {
+  item(column) {
+    code.provideText("My text here", column, code.format.smallDate)
+  },
+}
+```
+
+This code will display "My text here" using the small date format that's specified in the preferences. 
+
+Documentation for Weather Cal's helper functions will be available in the wiki once it is ready.
