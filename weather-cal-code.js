@@ -954,10 +954,10 @@ const weatherCal = {
     this.locale = this.settings.widget.locale
     this.padding = parseInt(this.settings.widget.padding)
     this.tintIcons = this.settings.widget.tintIcons
-    this.localizedText = this.settings.localization
-    this.textFormat = this.settings.font
+    this.localization = this.settings.localization
+    this.format = this.settings.font
     this.data = {}
-    this.currentDate = new Date()
+    this.now = new Date()
     this.custom = custom
 
     // Make sure we have a locale value.
@@ -1054,7 +1054,7 @@ const weatherCal = {
 
     // Finish the widget and return.
     return this.widget
-    },
+  },
 
   // Execute a function for the layout generator.
   async executeFunction(functionName,parameter = null) {
@@ -1257,7 +1257,7 @@ const weatherCal = {
 
   /*
    * ALIGNMENT FUNCTIONS
-   * These functions manage the this.alignment.
+   * These functions manage the alignment.
    * =============================================
    */
 
@@ -1342,7 +1342,7 @@ const weatherCal = {
 
       // Otherwise, return the event if it's in the future or recently started.
       const minutesAfter = parseInt(eventSettings.minutesAfter) * 60000 || 0
-      return (event.startDate.getTime() + minutesAfter > this.currentDate.getTime())
+      return (event.startDate.getTime() + minutesAfter > this.now.getTime())
     }
 
     // Determine which events to show, and how many.
@@ -1364,7 +1364,7 @@ const weatherCal = {
 
     // Determine if we're specifying an hour to show.
     if (!isNaN(parseInt(showTomorrow))) {
-      showTomorrow = (this.currentDate.getHours() >= parseInt(showTomorrow))
+      showTomorrow = (this.now.getHours() >= parseInt(showTomorrow))
     }
 
     if (showTomorrow && shownEvents < numberOfEvents) {
@@ -1378,7 +1378,7 @@ const weatherCal = {
           if (!multipleTomorrowEvents) { 
 
             // The tomorrow label is pretending to be an event.
-            futureEvents.push({ title: this.localizedText.tomorrowLabel.toUpperCase(), isLabel: true })
+            futureEvents.push({ title: this.localization.tomorrowLabel.toUpperCase(), isLabel: true })
             multipleTomorrowEvents = true
           }
 
@@ -1427,7 +1427,7 @@ const weatherCal = {
 
       // If we only want today and overdue, use the setting.
       if (reminderSettings.todayOnly) { 
-        return this.sameDay(reminder.dueDate, this.currentDate)
+        return this.sameDay(reminder.dueDate, this.now)
       }
 
       // Otherwise, return true.
@@ -1512,14 +1512,14 @@ const weatherCal = {
     if (this.closeTo(sunset)<=15) { return gradient.sunset }
 
     // In the 30min before/after, use dawn/twilight.
-    if (this.closeTo(sunrise)<=45 && this.currentDate.getTime() < sunrise) { return gradient.dawn }
-    if (this.closeTo(sunset)<=45 && this.currentDate.getTime() > sunset) { return gradient.twilight }
+    if (this.closeTo(sunrise)<=45 && this.now.getTime() < sunrise) { return gradient.dawn }
+    if (this.closeTo(sunset)<=45 && this.now.getTime() > sunset) { return gradient.twilight }
 
     // Otherwise, if it's night, return night.
-    if (this.isNight(this.currentDate)) { return gradient.night }
+    if (this.isNight(this.now)) { return gradient.night }
 
     // If it's around noon, the sun is high in the sky.
-    if (this.currentDate.getHours() == 12) { return gradient.noon }
+    if (this.now.getHours() == 12) { return gradient.noon }
 
     // Otherwise, return the "typical" theme.
     return gradient.midday
@@ -1540,7 +1540,7 @@ const weatherCal = {
     let location, geocode
     const timeToCache = 60 * 60 * 1000
     const locationDate = locationExists ? this.fm.modificationDate(locationPath).getTime() : -(timeToCache+1)
-    const locationDataOld = (this.currentDate.getTime() - locationDate) > timeToCache
+    const locationDataOld = (this.now.getTime() - locationDate) > timeToCache
     if (locationDataOld) {
       try {
         location = await Location.current()
@@ -1591,7 +1591,7 @@ const weatherCal = {
     let sunDataRaw
 
     // If cache exists and was created today, use cached data.
-    if (sunCacheExists && this.sameDay(this.currentDate, sunCacheDate)) {
+    if (sunCacheExists && this.sameDay(this.now, sunCacheDate)) {
       const sunCache = this.fm.readString(sunCachePath)
       sunDataRaw = JSON.parse(sunCache)
     }
@@ -1599,11 +1599,11 @@ const weatherCal = {
     // Otherwise, get the data from the server.
     else {
 
-      sunDataRaw = await getSunData(this.currentDate)
+      sunDataRaw = await getSunData(this.now)
 
       // Calculate tomorrow's date and get tomorrow's data.
       let tomorrowDate = new Date()
-      tomorrowDate.setDate(this.currentDate.getDate() + 1)
+      tomorrowDate.setDate(this.now.getDate() + 1)
       const tomorrowData = await getSunData(tomorrowDate)
       sunDataRaw.results.tomorrow = tomorrowData.results.sunrise
 
@@ -1634,7 +1634,7 @@ const weatherCal = {
     let weatherDataRaw
 
     // If cache exists and it's been less than 60 seconds since last request, use cached data.
-    if (cacheExists && (this.currentDate.getTime() - cacheDate.getTime()) < 60000) {
+    if (cacheExists && (this.now.getTime() - cacheDate.getTime()) < 60000) {
       const cache = this.fm.readString(cachePath)
       weatherDataRaw = JSON.parse(cache)
 
@@ -1701,7 +1701,7 @@ const weatherCal = {
     let covidDataRaw
 
     // If cache exists and it's been less than 900 seconds (15min) since last request, use cached data.
-    if (cacheCovidExists && (this.currentDate.getTime() - cacheCovidDate.getTime()) < 900000) {
+    if (cacheCovidExists && (this.now.getTime() - cacheCovidDate.getTime()) < 900000) {
       const cacheCovid = this.fm.readString(cacheCovidPath)
       covidDataRaw = JSON.parse(cacheCovid)
 
@@ -1740,18 +1740,18 @@ const weatherCal = {
       dateStack.setPadding(this.padding, this.padding, this.padding, this.padding)
 
       df.dateFormat = dateSettings.smallDateFormat
-      let dateText = this.provideText(df.string(this.currentDate), dateStack, this.textFormat.smallDate)
+      let dateText = this.provideText(df.string(this.now), dateStack, this.format.smallDate)
 
     // Otherwise, show the large date.
     } else {
       let dateOneStack = this.align(column)
       df.dateFormat = dateSettings.largeDateLineOne
-      let dateOne = this.provideText(df.string(this.currentDate), dateOneStack, this.textFormat.largeDate1)
+      let dateOne = this.provideText(df.string(this.now), dateOneStack, this.format.largeDate1)
       dateOneStack.setPadding(this.padding/2, this.padding, 0, this.padding)
 
       let dateTwoStack = this.align(column)
       df.dateFormat = dateSettings.largeDateLineTwo
-      let dateTwo = this.provideText(df.string(this.currentDate), dateTwoStack, this.textFormat.largeDate2)
+      let dateTwo = this.provideText(df.string(this.now), dateTwoStack, this.format.largeDate2)
       dateTwoStack.setPadding(0, this.padding, this.padding, this.padding)
     }
   },
@@ -1760,20 +1760,20 @@ const weatherCal = {
   async greeting(column) {
 
     // This function makes a greeting based on the time of day.
-    const localizedText = this.localizedText
-    const hour = this.currentDate.getHours()
+    const localization = this.localization
+    const hour = this.now.getHours()
 
     function makeGreeting() {
-      if (hour    < 5)  { return localizedText.nightGreeting }
-      if (hour    < 12) { return localizedText.morningGreeting }
-      if (hour-12 < 5)  { return localizedText.afternoonGreeting }
-      if (hour-12 < 10) { return localizedText.eveningGreeting }
-      return localizedText.nightGreeting
+      if (hour    < 5)  { return localization.nightGreeting }
+      if (hour    < 12) { return localization.morningGreeting }
+      if (hour-12 < 5)  { return localization.afternoonGreeting }
+      if (hour-12 < 10) { return localization.eveningGreeting }
+      return localization.nightGreeting
     }
 
     // Set up the greeting.
     let greetingStack = this.align(column)
-    let greeting = this.provideText(makeGreeting(), greetingStack, this.textFormat.greeting)
+    let greeting = this.provideText(makeGreeting(), greetingStack, this.format.greeting)
     greetingStack.setPadding(this.padding, this.padding, this.padding, this.padding)
   },
 
@@ -1795,10 +1795,10 @@ const weatherCal = {
       if (display == "greeting") { return await greeting(column) }
 
       // If it's a message, get the localized text.
-      if (display == "message" && this.localizedText.noEventMessage.length) {
+      if (display == "message" && this.localization.noEventMessage.length) {
         const messageStack = this.align(column)
         messageStack.setPadding(this.padding, this.padding, this.padding, this.padding)
-        this.provideText(this.localizedText.noEventMessage, messageStack, this.textFormat.noEvents)
+        this.provideText(this.localization.noEventMessage, messageStack, this.format.noEvents)
       }
 
       // Whether or not we displayed something, return here.
@@ -1808,15 +1808,15 @@ const weatherCal = {
     // Set up the event stack.
     let eventStack = column.addStack()
     eventStack.layoutVertically()
-    const todaySeconds = Math.floor(this.currentDate.getTime() / 1000) - 978307200
+    const todaySeconds = Math.floor(this.now.getTime() / 1000) - 978307200
 
     const defaultUrl = 'calshow:' + todaySeconds
     const settingUrlExists = (eventSettings.url || "").length > 0
     eventStack.url = settingUrlExists ? eventSettings.url : defaultUrl
 
     // If there are no events and we have a message, show it and return.
-    if (!eventData.eventsAreVisible && this.localizedText.noEventMessage.length) {
-      let message = this.provideText(this.localizedText.noEventMessage, eventStack, this.textFormat.noEvents)
+    if (!eventData.eventsAreVisible && this.localization.noEventMessage.length) {
+      let message = this.provideText(this.localization.noEventMessage, eventStack, this.format.noEvents)
       eventStack.setPadding(this.padding, this.padding, this.padding, this.padding)
       return
     }
@@ -1839,13 +1839,13 @@ const weatherCal = {
       if (event.isLabel) {
         let tomorrowStack = column.addStack()
         tomorrowStack.layoutVertically()
-        const tomorrowSeconds = Math.floor(this.currentDate.getTime() / 1000) - 978220800
+        const tomorrowSeconds = Math.floor(this.now.getTime() / 1000) - 978220800
         tomorrowStack.url = settingUrlExists ? eventSettings.url : 'calshow:' + tomorrowSeconds
         currentStack = tomorrowStack
 
         // Mimic the formatting of an event title, mostly.
         const eventLabelStack = this.align(currentStack)
-        const eventLabel = this.provideText(event.title, eventLabelStack, this.textFormat.eventLabel)
+        const eventLabel = this.provideText(event.title, eventLabelStack, this.format.eventLabel)
         eventLabelStack.setPadding(this.padding, this.padding, this.padding, this.padding)
         continue
       }
@@ -1856,7 +1856,7 @@ const weatherCal = {
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showCalendarColor.length && !showCalendarColor.includes("right")) {
         let colorItemText = this.provideTextSymbol(colorShape) + " "
-        let colorItem = this.provideText(colorItemText, titleStack, this.textFormat.eventTitle)
+        let colorItem = this.provideText(colorItemText, titleStack, this.format.eventTitle)
         colorItem.textColor = event.calendar.color
       }
 
@@ -1865,14 +1865,14 @@ const weatherCal = {
       const showTime = !event.isAllDay
 
       // Set up the title.
-      const title = this.provideText(event.title.trim(), titleStack, this.textFormat.eventTitle)
+      const title = this.provideText(event.title.trim(), titleStack, this.format.eventTitle)
       const titlePadding = (showLocation || showTime) ? this.padding/5 : this.padding
       titleStack.setPadding(this.padding, this.padding, titlePadding, this.padding)
 
       // If we're showing a color on the right, show it.
       if (showCalendarColor.length && showCalendarColor.includes("right")) {
         let colorItemText = " " + this.provideTextSymbol(colorShape)
-        let colorItem = this.provideText(colorItemText, titleStack, this.textFormat.eventTitle)
+        let colorItem = this.provideText(colorItemText, titleStack, this.format.eventTitle)
         colorItem.textColor = event.calendar.color
       }
 
@@ -1882,7 +1882,7 @@ const weatherCal = {
       // Show the location if enabled.
       if (showLocation) {
         const locationStack = this.align(currentStack)
-        const location = this.provideText(event.location, locationStack, this.textFormat.eventLocation)
+        const location = this.provideText(event.location, locationStack, this.format.eventLocation)
         location.lineLimit = 1
         locationStack.setPadding(0, this.padding, showTime ? this.padding/5 : this.padding, this.padding)
       }
@@ -1902,14 +1902,14 @@ const weatherCal = {
         const duration = (event.endDate.getTime() - event.startDate.getTime()) / (1000*60)
         const hours = Math.floor(duration/60)
         const minutes = Math.floor(duration % 60)
-        const hourText = hours>0 ? hours + this.localizedText.durationHour : ""
-        const minuteText = minutes>0 ? minutes + this.localizedText.durationMinute : ""
+        const hourText = hours>0 ? hours + this.localization.durationHour : ""
+        const minuteText = minutes>0 ? minutes + this.localization.durationMinute : ""
         const showSpace = hourText.length && minuteText.length
         timeText += " \u2022 " + hourText + (showSpace ? " " : "") + minuteText
       }
 
       const timeStack = this.align(currentStack)
-      const time = this.provideText(timeText, timeStack, this.textFormat.eventTime)
+      const time = this.provideText(timeText, timeStack, this.format.eventTime)
       timeStack.setPadding(0, this.padding, this.padding, this.padding)
     }
   },
@@ -1951,17 +1951,17 @@ const weatherCal = {
       // If we're showing a color, and it's not shown on the right, add it to the left.
       if (showListColor.length && !showListColor.includes("right")) {
         let colorItemText = this.provideTextSymbol(colorShape) + " "
-        let colorItem = this.provideText(colorItemText, titleStack, this.textFormat.reminderTitle)
+        let colorItem = this.provideText(colorItemText, titleStack, this.format.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
 
-      const title = this.provideText(reminder.title.trim(), titleStack, this.textFormat.reminderTitle)
+      const title = this.provideText(reminder.title.trim(), titleStack, this.format.reminderTitle)
       titleStack.setPadding(this.padding, this.padding, this.padding/5, this.padding)
 
       // If we're showing a color on the right, show it.
       if (showListColor.length && showListColor.includes("right")) {
         let colorItemText = " " + this.provideTextSymbol(colorShape)
-        let colorItem = this.provideText(colorItemText, titleStack, this.textFormat.reminderTitle)
+        let colorItem = this.provideText(colorItemText, titleStack, this.format.reminderTitle)
         colorItem.textColor = reminder.calendar.color
       }
 
@@ -1980,7 +1980,7 @@ const weatherCal = {
         let rdf = new RelativeDateTimeFormatter()
         rdf.locale = this.locale
         rdf.useNamedDateTimeStyle()
-        timeText = rdf.string(reminder.dueDate, this.currentDate)
+        timeText = rdf.string(reminder.dueDate, this.now)
 
       // Otherwise, use a normal date, time, or datetime format.
       } else {
@@ -1988,7 +1988,7 @@ const weatherCal = {
         df.locale = this.locale
 
         // If it's due today and it has a time, don't show the date.
-        if (this.sameDay(reminder.dueDate, this.currentDate) && reminder.dueDateIncludesTime) {
+        if (this.sameDay(reminder.dueDate, this.now) && reminder.dueDateIncludesTime) {
           df.useNoDateStyle()
         } else {
           df.useShortDateStyle()
@@ -2005,7 +2005,7 @@ const weatherCal = {
       }
 
       const timeStack = this.align(reminderStack)
-      const time = this.provideText(timeText, timeStack, this.textFormat.eventTime)
+      const time = this.provideText(timeText, timeStack, this.format.eventTime)
       timeStack.setPadding(0, this.padding, this.padding, this.padding)
     }
   },
@@ -2034,15 +2034,15 @@ const weatherCal = {
     // If we're showing the location, add it.
     if (weatherSettings.showLocation) {
       let locationTextStack = this.align(currentWeatherStack)
-      let locationText = this.provideText(locationData.locality, locationTextStack, this.textFormat.smallTemp)
+      let locationText = this.provideText(locationData.locality, locationTextStack, this.format.smallTemp)
       locationTextStack.setPadding(this.padding, this.padding, this.padding, this.padding)
     }
 
     // Show the current condition symbol.
     let mainConditionStack = this.align(currentWeatherStack)
-    let mainCondition = mainConditionStack.addImage(this.provideConditionSymbol(weatherData.currentCondition,this.isNight(this.currentDate)))
+    let mainCondition = mainConditionStack.addImage(this.provideConditionSymbol(weatherData.currentCondition,this.isNight(this.now)))
     mainCondition.imageSize = new Size(22,22)
-    this.tintIcon(mainCondition, this.textFormat.largeTemp)
+    this.tintIcon(mainCondition, this.format.largeTemp)
     mainConditionStack.setPadding(weatherSettings.showLocation ? 0 : this.padding, this.padding, 0, this.padding)
 
     // Add the temp horizontally if enabled.
@@ -2051,13 +2051,13 @@ const weatherCal = {
       mainConditionStack.layoutHorizontally()
       mainConditionStack.centerAlignContent()
       const tempText = this.displayNumber(weatherData.currentTemp,"--") + "°"
-      const temp = this.provideText(tempText, mainConditionStack, this.textFormat.largeTemp)
+      const temp = this.provideText(tempText, mainConditionStack, this.format.largeTemp)
     }
 
     // If we're showing the description, add it.
     if (weatherSettings.showCondition) {
       let conditionTextStack = this.align(currentWeatherStack)
-      let conditionText = this.provideText(weatherData.currentDescription, conditionTextStack, this.textFormat.smallTemp)
+      let conditionText = this.provideText(weatherData.currentDescription, conditionTextStack, this.format.smallTemp)
       conditionTextStack.setPadding(this.padding, this.padding, 0, this.padding)
     }
 
@@ -2066,7 +2066,7 @@ const weatherCal = {
       const tempStack = this.align(currentWeatherStack)
       tempStack.setPadding(0, this.padding, 0, this.padding)
       const tempText = this.displayNumber(weatherData.currentTemp,"--") + "°"
-      const temp = this.provideText(tempText, tempStack, this.textFormat.largeTemp)
+      const temp = this.provideText(tempText, tempStack, this.format.largeTemp)
     }
 
     // If we're not showing the high and low, end it here.
@@ -2087,10 +2087,10 @@ const weatherCal = {
     highLowStack.layoutHorizontally()
 
     const mainLowText = this.displayNumber(weatherData.todayLow,"-")
-    const mainLow = this.provideText(mainLowText, highLowStack, this.textFormat.tinyTemp)
+    const mainLow = this.provideText(mainLowText, highLowStack, this.format.tinyTemp)
     highLowStack.addSpacer()
     const mainHighText = this.displayNumber(weatherData.todayHigh,"-")
-    const mainHigh = this.provideText(mainHighText, highLowStack, this.textFormat.tinyTemp)
+    const mainHigh = this.provideText(mainHighText, highLowStack, this.format.tinyTemp)
 
     tempBarStack.size = new Size(60,30)
   },
@@ -2117,12 +2117,12 @@ const weatherCal = {
     futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
 
     // Determine if we should show the next hour.
-    const showNextHour = (this.currentDate.getHours() < parseInt(weatherSettings.tomorrowShownAtHour))
+    const showNextHour = (this.now.getHours() < parseInt(weatherSettings.tomorrowShownAtHour))
 
     // Set the label value.
     const subLabelStack = this.align(futureWeatherStack)
-    const subLabelText = showNextHour ? this.localizedText.nextHourLabel : this.localizedText.tomorrowLabel
-    const subLabel = this.provideText(subLabelText, subLabelStack, this.textFormat.smallTemp)
+    const subLabelText = showNextHour ? this.localization.nextHourLabel : this.localization.tomorrowLabel
+    const subLabel = this.provideText(subLabelText, subLabelStack, this.format.smallTemp)
     subLabelStack.setPadding(0, this.padding, this.padding/2, this.padding)
 
     // Set up the sub condition stack.
@@ -2134,7 +2134,7 @@ const weatherCal = {
     // Determine if it will be night in the next hour.
     var nightCondition
     if (showNextHour) {
-      const addHour = this.currentDate.getTime() + (60*60*1000)
+      const addHour = this.now.getTime() + (60*60*1000)
       const newDate = new Date(addHour)
       nightCondition = this.isNight(newDate)
     } else {
@@ -2144,28 +2144,28 @@ const weatherCal = {
     let subCondition = subConditionStack.addImage(this.provideConditionSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.forecast[1].Condition,nightCondition))
     const subConditionSize = showNextHour ? 14 : 18
     subCondition.imageSize = new Size(subConditionSize, subConditionSize)
-    this.tintIcon(subCondition, this.textFormat.smallTemp)
+    this.tintIcon(subCondition, this.format.smallTemp)
     subConditionStack.addSpacer(5)
 
     // The next part of the display changes significantly for next hour vs tomorrow.
     let rainPercent
     if (showNextHour) {
       const subTempText = this.displayNumber(weatherData.nextHourTemp,"--") + "°"
-      const subTemp = this.provideText(subTempText, subConditionStack, this.textFormat.smallTemp)
+      const subTemp = this.provideText(subTempText, subConditionStack, this.format.smallTemp)
       rainPercent = weatherData.nextHourRain
 
     } else {
-      let tomorrowLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.textFormat.tinyTemp && this.textFormat.tinyTemp.color) ? this.textFormat.tinyTemp.color : this.textFormat.defaultText.color, 0.5), 20))
+      let tomorrowLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
       tomorrowLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       let tomorrowStack = subConditionStack.addStack()
       tomorrowStack.layoutVertically()
 
       const tomorrowHighText = this.displayNumber(weatherData.forecast[1].High,"-")
-      const tomorrowHigh = this.provideText(tomorrowHighText, tomorrowStack, this.textFormat.tinyTemp)
+      const tomorrowHigh = this.provideText(tomorrowHighText, tomorrowStack, this.format.tinyTemp)
       tomorrowStack.addSpacer(4)
       const tomorrowLowText = this.displayNumber(weatherData.forecast[1].Low,"-")
-      const tomorrowLow = this.provideText(tomorrowLowText, tomorrowStack, this.textFormat.tinyTemp)
+      const tomorrowLow = this.provideText(tomorrowLowText, tomorrowStack, this.format.tinyTemp)
       rainPercent = (weatherData.tomorrowRain == null ? "--" : weatherData.tomorrowRain*100)
     }
 
@@ -2179,11 +2179,11 @@ const weatherCal = {
       let subRain = subRainStack.addImage(SFSymbol.named("umbrella").image)
       const subRainSize = showNextHour ? 14 : 18
       subRain.imageSize = new Size(subRainSize, subRainSize)
-      subRain.tintColor = new Color((this.textFormat.smallTemp && this.textFormat.smallTemp.color) ? this.textFormat.smallTemp.color : this.textFormat.defaultText.color)
+      subRain.tintColor = new Color((this.format.smallTemp && this.format.smallTemp.color) ? this.format.smallTemp.color : this.format.defaultText.color)
       subRainStack.addSpacer(5)
 
       const subRainText = this.displayNumber(rainPercent,"--") + "%"
-      this.provideText(subRainText, subRainStack, this.textFormat.smallTemp)
+      this.provideText(subRainText, subRainStack, this.format.smallTemp)
     }
   },
 
@@ -2221,18 +2221,18 @@ const weatherCal = {
       // Set up the sub condition stack.
       let subConditionStack = this.align(weatherStack)
       var myDate = new Date();
-      myDate.setDate(this.currentDate.getDate() + (i - 1));
+      myDate.setDate(this.now.getDate() + (i - 1));
       df.dateFormat = weatherSettings.showDaysFormat
 
       let dateStack = subConditionStack.addStack()
       dateStack.layoutHorizontally()
       dateStack.setPadding(0, 0, 0, 0)
 
-      let dateText = this.provideText(df.string(myDate), dateStack, this.textFormat.smallTemp)
+      let dateText = this.provideText(df.string(myDate), dateStack, this.format.smallTemp)
       dateText.lineLimit = 1
       dateText.minimumScaleFactor = 0.5
       dateStack.addSpacer()
-      let fontSize = (this.textFormat.smallTemp && this.textFormat.smallTemp.size) ? this.textFormat.smallTemp.size : this.textFormat.defaultText.size
+      let fontSize = (this.format.smallTemp && this.format.smallTemp.size) ? this.format.smallTemp.size : this.format.defaultText.size
       dateStack.size = new Size(fontSize*2.64,0)
       subConditionStack.addSpacer(5)
       subConditionStack.layoutHorizontally()
@@ -2241,20 +2241,20 @@ const weatherCal = {
 
       let subCondition = subConditionStack.addImage(this.provideConditionSymbol(weatherData.forecast[i - 1].Condition, false))
       subCondition.imageSize = new Size(18, 18)
-      this.tintIcon(subCondition, this.textFormat.smallTemp)
+      this.tintIcon(subCondition, this.format.smallTemp)
       subConditionStack.addSpacer(5)
 
-      let tempLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.textFormat.tinyTemp && this.textFormat.tinyTemp.color) ? this.textFormat.tinyTemp.color : this.textFormat.defaultText.color, 0.5), 20))
+      let tempLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
       tempLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       let tempStack = subConditionStack.addStack()
       tempStack.layoutVertically()
 
       const tempHighText = this.displayNumber(weatherData.forecast[i - 1].High,"-")
-      const tempHigh = this.provideText(tempHighText, tempStack, this.textFormat.tinyTemp)
+      const tempHigh = this.provideText(tempHighText, tempStack, this.format.tinyTemp)
       tempStack.addSpacer(4)
       const tempLowText = this.displayNumber(weatherData.forecast[i - 1].Low,"-")
-      const tempLow = this.provideText(tempLowText, tempStack, this.textFormat.tinyTemp)
+      const tempLow = this.provideText(tempLowText, tempStack, this.format.tinyTemp)
     }
   },
 
@@ -2274,14 +2274,14 @@ const weatherCal = {
     // Change the battery icon to red if battery level is less than 20%.
     const batteryLevel = Math.round(Device.batteryLevel() * 100)
     if (batteryLevel > 20 || Device.isCharging() ) {
-      this.tintIcon(batteryIcon,this.textFormat.battery,true)
+      this.tintIcon(batteryIcon,this.format.battery,true)
     } else {
       batteryIcon.tintColor = Color.red()
     }
 
     // Format the rest of the item.
     batteryStack.addSpacer(this.padding * 0.6)
-    this.provideText(batteryLevel + "%", batteryStack, this.textFormat.battery)
+    this.provideText(batteryLevel + "%", batteryStack, this.format.battery)
   },
 
   // Show the sunrise or sunset time.
@@ -2297,7 +2297,7 @@ const weatherCal = {
     const sunrise = sunData.sunrise
     const sunset = sunData.sunset
     const tomorrow = sunData.tomorrow
-    const current = this.currentDate.getTime()
+    const current = this.now.getTime()
 
     const showWithin = parseInt(sunSettings.showWithin)
     const nearSunrise = this.closeTo(sunrise) <= showWithin
@@ -2336,13 +2336,13 @@ const weatherCal = {
     // Add the correct symbol.
     const symbol = sunriseStack.addImage(SFSymbol.named(symbolName).image)
     symbol.imageSize = new Size(22,22)
-    this.tintIcon(symbol, this.textFormat.sunrise)
+    this.tintIcon(symbol, this.format.sunrise)
 
     sunriseStack.addSpacer(this.padding)
 
     // Add the time.
     const timeText = this.formatTime(new Date(timeToShow))
-    const time = this.provideText(timeText, sunriseStack, this.textFormat.sunrise)
+    const time = this.provideText(timeText, sunriseStack, this.format.sunrise)
   },
 
   // Allow for either term to be used.
@@ -2359,7 +2359,7 @@ const weatherCal = {
     // Otherwise, add the text.
     const textStack = this.align(column)
     textStack.setPadding(this.padding, this.padding, this.padding, this.padding)
-    const textDisplay = this.provideText(input, textStack, this.textFormat.customText)
+    const textDisplay = this.provideText(input, textStack, this.format.customText)
 
   },
 
@@ -2385,18 +2385,18 @@ const weatherCal = {
     // Add the correct symbol.
     const symbol = covidStack.addImage(SFSymbol.named("bandage").image)
     symbol.imageSize = new Size(18,18)
-    this.tintIcon(symbol,this.textFormat.covid,true)
+    this.tintIcon(symbol,this.format.covid,true)
 
     covidStack.addSpacer(this.padding)
 
     // Add the COVID information.
     const locale = this.locale
-    const covidText = this.localizedText.covid.replace(/{(.*?)}/g, (match, $1) => {
+    const covidText = this.localization.covid.replace(/{(.*?)}/g, (match, $1) => {
       let val = covidData[$1]
       if (val) val = new Intl.NumberFormat(locale.replace('_','-')).format(val)
       return val || ""
     })
-    this.provideText(covidText, covidStack, this.textFormat.covid)
+    this.provideText(covidText, covidStack, this.format.covid)
 
   },
 
@@ -2410,12 +2410,12 @@ const weatherCal = {
     weekStack.centerAlignContent()
 
     // Add the week information.
-    var currentThursday = new Date(this.currentDate.getTime() +(3-((this.currentDate.getDay()+6) % 7)) * 86400000)
+    var currentThursday = new Date(this.now.getTime() +(3-((this.now.getDay()+6) % 7)) * 86400000)
     var yearOfThursday = currentThursday.getFullYear()
     var firstThursday = new Date(new Date(yearOfThursday,0,4).getTime() +(3-((new Date(yearOfThursday,0,4).getDay()+6) % 7)) * 86400000)
     var weekNumber = Math.floor(1 + 0.5 + (currentThursday.getTime() - firstThursday.getTime()) / 86400000/7) + ""
-    var weekText = this.localizedText.week + " " + weekNumber
-    this.provideText(weekText, weekStack, this.textFormat.week)
+    var weekText = this.localization.week + " " + weekNumber
+    this.provideText(weekText, weekStack, this.format.week)
   },
 
   /*
@@ -2433,7 +2433,7 @@ const weatherCal = {
   tintIcon(icon,format,force = false) {
     // Don't tint if the setting is off and we're not forced.
     if (!this.tintIcons && !force) { return }
-    icon.tintColor = new Color((format && format.color) ? format.color : this.textFormat.defaultText.color)
+    icon.tintColor = new Color((format && format.color) ? format.color : this.format.defaultText.color)
   },
 
   // Determines if the provided date is at night.
@@ -2451,7 +2451,7 @@ const weatherCal = {
 
   // Returns the number of minutes between now and the provided date.
   closeTo(time) {
-    return Math.abs(this.currentDate.getTime() - time) / 60000
+    return Math.abs(this.now.getTime() - time) / 60000
   },
 
   // Format the time for a Date input.
@@ -2587,7 +2587,7 @@ const weatherCal = {
 
   // Add formatted text to a container.
   provideText(string, container, format) {
-    const defaultText = this.textFormat.defaultText
+    const defaultText = this.format.defaultText
     const textItem = container.addText(string)
     const textFont = (format && format.font) ? format.font : defaultText.font
     const textSize = (format && format.size) ? format.size : defaultText.size
@@ -2660,7 +2660,7 @@ const weatherCal = {
     draw.addPath(barPath)
 
     // Determine the color.
-    const barColor = (this.textFormat.tinyTemp && this.textFormat.tinyTemp.color) ? this.textFormat.tinyTemp.color : this.textFormat.defaultText.color
+    const barColor = (this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color
     draw.setFillColor(new Color(barColor, 0.5))
     draw.fillPath()
 
