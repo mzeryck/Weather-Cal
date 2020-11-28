@@ -318,8 +318,14 @@ const weatherCal = {
         },
         padding: {
           val: "5",
-          name: "Padding",
-          description: "The padding around each item. Default is 5.",
+          name: "Item padding",
+          description: "The padding around each item. This also determines the approximate widget padding. Default is 5.",
+        },
+        widgetPadding: {
+          val: { top: "", left: "", bottom: "", right: "" },
+          name: "Custom widget padding",
+          type: "multival",
+          description: "The padding around the entire widget. By default, these values are blank and Weather Cal uses the item padding to determine these values. Transparent widgets often look best with these values at 0.",
         },
         tintIcons: {
           val: false,
@@ -665,6 +671,10 @@ const weatherCal = {
           name: "When to switch to tomorrow's weather",
           description: "Set the hour (in 24-hour time) to switch from the next hour to tomorrow's weather. Use 0 for always, 24 for never.",
         }, 
+        spacing: {
+          val: "0",
+          name: "Spacing between forecast items",
+        },
         showDays: {
           val: "3",
           name: "Number of days shown in the forecast item",
@@ -963,12 +973,22 @@ const weatherCal = {
     // Make sure we have a locale value.
     if (!this.locale || this.locale == "" || this.locale == null) { this.locale = Device.locale() }
 
-    // Set up the widget with padding.
+    // Set up the widget.
     this.widget = new ListWidget()
-    const horizontalPad = this.padding < 10 ? 10 - this.padding : 10
-    const verticalPad = this.padding < 15 ? 15 - this.padding : 15
-    this.widget.setPadding(horizontalPad, verticalPad, horizontalPad, verticalPad)
     this.widget.spacing = 0
+    
+    // Determine the default padding values.
+    const verticalPad = this.padding < 10 ? 10 - this.padding : 10
+    const horizontalPad = this.padding < 15 ? 15 - this.padding : 15
+    
+    // If we have custom widget padding, use it.
+    const widgetPad = this.settings.widget.widgetPadding || {}
+    const topPad    = widgetPad.top    ? parseInt(widgetPad.top)    : verticalPad
+    const leftPad   = widgetPad.left   ? parseInt(widgetPad.left)   : horizontalPad
+    const bottomPad = widgetPad.bottom ? parseInt(widgetPad.bottom) : verticalPad
+    const rightPad  = widgetPad.right  ? parseInt(widgetPad.right)  : horizontalPad
+    
+    this.widget.setPadding(topPad, leftPad, bottomPad, rightPad)
 
     /*
      * BACKGROUND DISPLAY
@@ -2210,12 +2230,13 @@ const weatherCal = {
     const defaultUrl = "https://weather.com/" + this.locale + "/weather/tenday/l/" + locationData.latitude + "," + locationData.longitude
     const settingUrl = weatherSettings.urlForecast || ""
     const urlToUse = (settingUrl.length > 0) ? settingUrl : defaultUrl
+    const spacing = weatherSettings.spacing ? parseInt(weatherSettings.spacing) : 0
 
     for (var i=startIndex; i < endIndex; i++) {
       // Set up the today weather stack.
       let weatherStack = column.addStack()
       weatherStack.layoutVertically()
-      weatherStack.setPadding(0, 0, 0, 0)
+      weatherStack.setPadding(spacing, 0, spacing, 0)
       weatherStack.url = urlToUse
 
       // Set up the date formatter and set its locale.
