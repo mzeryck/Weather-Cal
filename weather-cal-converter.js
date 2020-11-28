@@ -112,7 +112,7 @@ if (input.includes("args.widgetParameter")) {
 // Replace the widget declaration.
 let regex = /(.*?)([a-zA-Z_$][0-9a-zA-Z_$]*) *= *new ListWidget\(\)/
 let widgetName = input.match(regex)[2]
-input = input.replace(regex, `$1$2 = code.align(column)
+input = input.replace(regex, `$1$2 = column.addStack()
 $2.layoutVertically()
 $2.cornerRadius = ${cornerRadius}
 $2.setPadding(${padding}, ${padding}, ${padding}, ${padding})`)
