@@ -1,8 +1,8 @@
 # Weather Cal
 
-<img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg" width="318" height="300" alt="Screenshot of a sample Weather Cal widget">
+<img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg" width="350" height="330" alt="Screenshot of a sample Weather Cal widget">
 
-This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom items](#custom-elements), and you can even [embed existing widgets](#embed-existing-widgets) into Weather Cal items.
+This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom items](#custom-elements), and you can even [embed existing widgets](#embed-existing-widgets) into Weather Cal layouts.
 
 ## Table of contents
 - [Setup](#setup)
@@ -170,7 +170,7 @@ This code will display "My text here" using the small date format that's specifi
 Documentation for Weather Cal's helper functions will be available in the wiki once it is ready.
 
 ### Embed existing widgets
-Weather Cal supports embedding other Scriptable widgets. This allows you to position them alongisde other Weather Cal elements to create more flexible layouts. For example, showing Weather Cal, [PurpleAir Air Quality](https://github.com/jasonsnell/PurpleAir-AQI-Scriptable-Widget), and [Random Scriptable API](https://scriptable.app/gallery/random-scriptable-api) would normally take three separate widgets. By embedding the widgets into Weather Cal, we can acheive this with a single large widget and only one "Scriptable" label displayed:
+Weather Cal supports embedding other Scriptable widgets. This allows you to position them alongisde Weather Cal elements to create more flexible layouts. For example, showing Weather Cal, [PurpleAir Air Quality](https://github.com/jasonsnell/PurpleAir-AQI-Scriptable-Widget), and [Random Scriptable API](https://scriptable.app/gallery/random-scriptable-api) would normally take three separate widgets. By embedding the widgets into Weather Cal, we can acheive this with a single large widget and only one "Scriptable" label:
 
 <img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/custom.jpg" width="350" height="352" alt="Screenshot of a Weather Cal widget with multiple embedded widgets">
 
@@ -208,10 +208,10 @@ And the `custom` object is structured like this:
 ```javascript
 const custom = {
   aqi(column) {
-    // Converted code is here.
+    // More code is here.
   },
   scriptable(column) {
-    // Converted code is here.
+    // More code is here.
   },
 }
 ```
