@@ -2,7 +2,7 @@
 
 <img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/header.jpg" width="318" height="300" alt="Screenshot of a sample Weather Cal widget">
 
-This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom backgrounds and items](#custom-elements).
+This is a Scriptable widget that lets you display, position, and format multiple elements without writing any Javascript code. There are [many built-in widget items](#widget-items), including events, reminders, weather, battery, and much more. Weather Cal also fully supports [custom items](#custom-elements), and you can even [embed existing widgets](#embed-existing-widgets) into Weather Cal items.
 
 ## Table of contents
 - [Setup](#setup)
@@ -15,6 +15,7 @@ This is a Scriptable widget that lets you display, position, and format multiple
 - [Custom elements](#custom-elements)
   - [Custom backgrounds](#custom-backgrounds)
   - [Custom items](#custom-items)
+  - [Embed existing widgets](#embed-existing-widgets)
 
 ## Setup
 Setting up Weather Cal is easy:
@@ -115,16 +116,16 @@ Weather Cal consists of the following components:
 Additional documentation will be in the wiki, once it is ready.
 
 ## Custom elements
-You can create custom backgrounds and widget items that are not deleted when you update the Weather Cal code script. You can even override any of the built-in widget items.
+You can create custom backgrounds and widget items that are not deleted when you update the Weather Cal code script. You can override any of the built-in widget items, and you can even [embed existing widgets](#embed-existing-widgets).
 
-To begin, create a `custom` object in the widget script (weather-cal.js) after the `importModule` function:
+To begin, copy and paste `const custom = {  }` right after `const code` is declared. Your code should look like this:
 
 ```javascript
 const code = importModule(codeFilename)
-const custom = { /* Your code will go here. */ }
+const custom = {  }
 ```
 
-Then, modify the `createWidget` function call to include your object as the final argument:
+Then, modify the entire line that begins with `const widget` so it looks like this:
 
 ```javascript
 const widget = await code.createWidget(layout, Script.name(), iCloudInUse, custom)
@@ -167,3 +168,50 @@ const custom = {
 This code will display "My text here" using the small date format that's specified in the preferences. 
 
 Documentation for Weather Cal's helper functions will be available in the wiki once it is ready.
+
+### Embed existing widgets
+Weather Cal supports embedding other Scriptable widgets. This allows you to position them alongisde other Weather Cal elements to create more flexible layouts. For example, showing Weather Cal, [PurpleAir Air Quality](https://github.com/jasonsnell/PurpleAir-AQI-Scriptable-Widget), and [Random Scriptable API](https://scriptable.app/gallery/random-scriptable-api) would normally take three separate widgets. By embedding the widgets into Weather Cal, we can acheive this with a single large widget and only one "Scriptable" label displayed:
+
+<img src="https://github.com/mzeryck/Weather-Cal/blob/main/images/custom.jpg" width="350" height="352" alt="Screenshot of a Weather Cal widget with multiple embedded widgets">
+
+Here's how it works:
+- Before you start, [follow these directions](#custom-elements) to enable custom elements.
+- Copy weather-cal-converter.js into Scriptable and run it.
+- Choose a name. This is the word you'll be adding to the Weather Cal layout.
+- Select the file containing the widget script.
+- When it displays the code, use the share icon in the top right to copy the text.
+- Open a Weather Cal widget script and paste the code into the custom object after the comment. If you're pasting multiple items, make sure to paste it after the previous comma but before the final bracket.
+- In your Weather Cal layout, add the name of your new widget item.
+
+In the screenshot above, the layout code looks like this:
+```javascript
+const layout = `
+  row
+    column
+      date
+      space
+      aqi
+      space(15)
+    columns(110)
+      current
+      space(15)
+      future
+      space(15)
+      battery
+      sunset
+  row
+    column
+      scriptable
+`
+```
+And the `custom` object is structured like this:
+```javascript
+const custom = {
+  aqi(column) {
+    // Converted code is here.
+  },
+  scriptable(column) {
+    // Converted code is here.
+  },
+}
+```
