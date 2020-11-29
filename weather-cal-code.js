@@ -366,6 +366,11 @@ const weatherCal = {
           name: "No event message",
           description: "The message shown when there are no more events for the day, if that setting is active.",
         },
+        noRemindersMessage: {
+          val: "Tasks complete.",
+          name: "No reminders message",
+          description: "The message shown when there are no more reminders for the day, if that setting is active.",
+        },
         durationMinute: {
           val: "m",
           name: "Duration label for minutes",
@@ -448,6 +453,11 @@ const weatherCal = {
           name: "Reminder time",
           type: "multival",
         },
+        noReminders:    {
+          val: { size: "30", color: "", font: "semibold" },
+          name: "No reminders message",
+          type: "multival",
+        },
         largeTemp:   {
           val: { size: "34", color: "", font: "light" },
           name: "Large temperature label",
@@ -527,7 +537,7 @@ const weatherCal = {
         }, 
         minutesAfter: {
           val: "5",
-          name: "Minutes after event",
+          name: "Minutes after event begins",
           description: "Number of minutes after an event begins that it should still be shown.",
         }, 
         showAllDay: {
@@ -535,10 +545,19 @@ const weatherCal = {
           name: "Show all-day events",
           type: "bool",        
         },
+        numberOfDays: {
+          val: "1",
+          name: "How many future days of events to show",
+          description: "How many days to show into the future. Set to 0 to show today's events only. The maximum is 7.",
+        }, 
+        labelFormat: {
+          val: "EEEE, MMMM d",
+          name: "Date format for future event days",
+        }, 
         showTomorrow: {
           val: "20",
-          name: "Tomorrow's events shown at hour",
-          description: "The hour (in 24-hour time) to start showing tomorrow's events. Use 0 for always, 24 for never.",
+          name: "Future days shown at hour",
+          description: "The hour (in 24-hour time) to start showing events for tomorrow or beyond. Use 0 for always, 24 for never.",
         }, 
         showEventLength: {
           val: "duration",
@@ -616,6 +635,13 @@ const weatherCal = {
           description: "Choose the shape and location of the list color.",
           type: "enum",
           options: ["rectangle left","rectangle right","circle left","circle right","none"],
+        }, 
+        noRemindersBehavior: {
+          val: "none",
+          name: "Show when no reminders remain",
+          description: "When no reminders remain, show a hard-coded message, a time-based greeting, or nothing.",
+          type: "enum",
+          options: ["message","greeting","none"],
         }, 
         url: {
           val: "",
@@ -1337,6 +1363,7 @@ const weatherCal = {
     this.data.events = {}
     const eventSettings = this.settings.events
 
+    // Determine if calendars are being filtered.
     let calSetting = eventSettings.selectCalendars
     let calendars = []
     if (Array.isArray(calSetting)) {
@@ -1346,11 +1373,32 @@ const weatherCal = {
       calendars = calSetting.length > 0 ? calSetting.split(",") : []
     }
 
+    // Get the necessary settings.
     const numberOfEvents = parseInt(eventSettings.numberOfEvents)
-    const currentTime = this.now.getTime()
+    const minutesAfter = parseInt(eventSettings.minutesAfter) * 60000 || 0
+    
+    // Determine number of days to show. If no setting exists, use 1.
+    let numberOfDays = parseInt(eventSettings.numberOfDays)
+    numberOfDays = isNaN(numberOfDays) ? 1 : numberOfDays
+    
+    // Complex due to support for old boolean values.
+    let showFutureAt = parseInt(eventSettings.showTomorrow)
+    showFutureAt = isNaN(showFutureAt) ? (eventSettings.showTomorrow ? 0 : 24) : showFutureAt
+    
+    // Get the right scope.
+    const current = this.now
+    const dateDiff = this.dateDiff
 
     // Function to determine if an event should be shown.
     function shouldShowEvent(event) {
+    
+      const diff = dateDiff(current, event.startDate)
+      
+      // If it's in the past or too far in the future, don't show it.
+      if (diff < 0 || diff > numberOfDays) { return false }
+      
+      // Don't show if it's in the future before the right time of day.
+      if (diff > 0 && current.getHours() < showFutureAt) { return false }
 
       // If events are filtered and the calendar isn't in the selected calendars, return false.
       if (calendars.length && !calendars.includes(event.calendar.title)) { return false }
@@ -1363,56 +1411,19 @@ const weatherCal = {
 
       // Otherwise, return the event if it's in the future or recently started.
       const minutesAfter = parseInt(eventSettings.minutesAfter) * 60000 || 0
-      return (event.startDate.getTime() + minutesAfter > currentTime)
+      return (event.startDate.getTime() + minutesAfter > current.getTime())
     }
 
-    // Determine which events to show, and how many.
-    const todayEvents = await CalendarEvent.today([])
-    let shownEvents = 0
-    let futureEvents = []
+    // Get all relevant events.
+    let events = await CalendarEvent.thisWeek([])
+    const nextWeek = await CalendarEvent.nextWeek([])
+    events.push(...nextWeek)
+    
+    // Set the number of events shown.
+    events = events.filter(shouldShowEvent).slice(0,numberOfEvents)
 
-    for (const event of todayEvents) {
-      if (shownEvents == numberOfEvents) { break }
-      if (shouldShowEvent(event)) {
-        futureEvents.push(event)
-        shownEvents++
-      }
-    }
-
-    // If there's room and we need to, show tomorrow's events.
-    let multipleTomorrowEvents = false
-    let showTomorrow = eventSettings.showTomorrow
-
-    // Determine if we're specifying an hour to show.
-    if (!isNaN(parseInt(showTomorrow))) {
-      showTomorrow = (this.now.getHours() >= parseInt(showTomorrow))
-    }
-
-    if (showTomorrow && shownEvents < numberOfEvents) {
-
-      const tomorrowEvents = await CalendarEvent.tomorrow([])
-      for (const event of tomorrowEvents) {
-        if (shownEvents == numberOfEvents) { break }
-        if (shouldShowEvent(event)) {
-
-          // Add the tomorrow label prior to the first tomorrow event.
-          if (!multipleTomorrowEvents) { 
-
-            // The tomorrow label is pretending to be an event.
-            futureEvents.push({ title: this.localization.tomorrowLabel.toUpperCase(), isLabel: true })
-            multipleTomorrowEvents = true
-          }
-
-          // Show the tomorrow event and increment the counter.
-          futureEvents.push(event)
-          shownEvents++
-        }
-      }
-    }
-
-    // Store the future events, and whether or not any events are displayed.
-    this.data.events.futureEvents = futureEvents
-    this.data.events.eventsAreVisible = (futureEvents.length > 0) && (eventSettings.numberOfEvents > 0)
+    // Store the future events.
+    this.data.events.futureEvents = events
   },
 
   // Set up the reminders data object.
@@ -1754,28 +1765,20 @@ const weatherCal = {
     // Requirements: events (if dynamicDateSize is enabled)
     if (!this.data.events && dateSettings.dynamicDateSize) { await this.setupEvents() }
 
-    // Set up the date formatter and set its locale.
-    let df = new DateFormatter()
-    df.locale = this.locale
-
     // Show small if it's hard coded, or if it's dynamic and events are visible.
     if (dateSettings.dynamicDateSize ? this.data.events.eventsAreVisible : dateSettings.staticDateSize == "small") {
       let dateStack = this.align(column)
       dateStack.setPadding(this.padding, this.padding, this.padding, this.padding)
-
-      df.dateFormat = dateSettings.smallDateFormat
-      let dateText = this.provideText(df.string(this.now), dateStack, this.format.smallDate)
+      let dateText = this.provideText(this.formatDate(this.now,dateSettings.smallDateFormat), dateStack, this.format.smallDate)
 
     // Otherwise, show the large date.
     } else {
       let dateOneStack = this.align(column)
-      df.dateFormat = dateSettings.largeDateLineOne
-      let dateOne = this.provideText(df.string(this.now), dateOneStack, this.format.largeDate1)
+      let dateOne = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineOne), dateOneStack, this.format.largeDate1)
       dateOneStack.setPadding(this.padding/2, this.padding, 0, this.padding)
 
       let dateTwoStack = this.align(column)
-      df.dateFormat = dateSettings.largeDateLineTwo
-      let dateTwo = this.provideText(df.string(this.now), dateTwoStack, this.format.largeDate2)
+      let dateTwo = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineTwo), dateTwoStack, this.format.largeDate2)
       dateTwoStack.setPadding(0, this.padding, this.padding, this.padding)
     }
   },
@@ -1812,7 +1815,7 @@ const weatherCal = {
     const eventSettings = this.settings.events
 
     // If no events are visible, figure out what to do.
-    if (!eventData.eventsAreVisible) { 
+    if (eventData.futureEvents.length == 0) { 
       const display = eventSettings.noEventBehavior
 
       // If it's a greeting, let the greeting function handle it.
@@ -1839,7 +1842,7 @@ const weatherCal = {
     eventStack.url = settingUrlExists ? eventSettings.url : defaultUrl
 
     // If there are no events and we have a message, show it and return.
-    if (!eventData.eventsAreVisible && this.localization.noEventMessage.length) {
+    if (!eventData.futureEvents.length && this.localization.noEventMessage.length) {
       let message = this.provideText(this.localization.noEventMessage, eventStack, this.format.noEvents)
       eventStack.setPadding(this.padding, this.padding, this.padding, this.padding)
       return
@@ -1849,7 +1852,8 @@ const weatherCal = {
     eventStack.setPadding(0, 0, 0, 0)
 
     // Add each event to the stack.
-    var currentStack = eventStack
+    let currentStack = eventStack
+    let currentDiff = 0
     const futureEvents = eventData.futureEvents
     const showCalendarColor = eventSettings.showCalendarColor
     const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
@@ -1859,19 +1863,26 @@ const weatherCal = {
       const event = futureEvents[i]
       const bottomPadding = (this.padding-10 < 0) ? 0 : this.padding-10
 
-      // If it's the tomorrow label, change to the tomorrow stack.
-      if (event.isLabel) {
-        let tomorrowStack = column.addStack()
-        tomorrowStack.layoutVertically()
-        const tomorrowSeconds = Math.floor(this.now.getTime() / 1000) - 978220800
-        tomorrowStack.url = settingUrlExists ? eventSettings.url : 'calshow:' + tomorrowSeconds
-        currentStack = tomorrowStack
+      // If it's a new day, set it up.
+      const diff = this.dateDiff(this.now, event.startDate)
+      if (diff != currentDiff) {
+      
+        // Move the loop along.
+        currentDiff = diff
+      
+        // Make the stack and appropriate calendar link.
+        const futureStack = column.addStack()
+        futureStack.layoutVertically()
+        const futureSeconds = Math.floor(this.now.getTime() / 1000) - 978307200 + (diff * 86400)
+        futureStack.url = settingUrlExists ? eventSettings.url : 'calshow:' + futureSeconds
+        currentStack = futureStack
 
-        // Mimic the formatting of an event title, mostly.
+        // Make the label.
         const eventLabelStack = this.align(currentStack)
-        const eventLabel = this.provideText(event.title, eventLabelStack, this.format.eventLabel)
+        const tomorrowText = this.localization.tomorrowLabel
+        const eventLabelText = (diff == 1 && tomorrowText.length) ? tomorrowText : this.formatDate(event.startDate,eventSettings.labelFormat)
+        const eventLabel = this.provideText(eventLabelText.toUpperCase(), eventLabelStack, this.format.eventLabel)
         eventLabelStack.setPadding(this.padding, this.padding, this.padding, this.padding)
-        continue
       }
 
       const titleStack = this.align(currentStack)
@@ -1947,6 +1958,24 @@ const weatherCal = {
     // Get the reminders data and settings.
     const reminderData = this.data.reminders
     const reminderSettings = this.settings.reminders
+    
+    // If no reminders are visible, figure out what to do.
+    if (reminderData.all.length == 0) { 
+      const display = reminderSettings.noRemindersBehavior
+
+      // If it's a greeting, let the greeting function handle it.
+      if (display == "greeting") { return await greeting(column) }
+
+      // If it's a message, get the localized text.
+      if (display == "message" && this.localization.noRemindersMessage.length) {
+        const messageStack = this.align(column)
+        messageStack.setPadding(this.padding, this.padding, this.padding, this.padding)
+        this.provideText(this.localization.noRemindersMessage, messageStack, this.format.noReminders)
+      }
+
+      // Whether or not we displayed something, return here.
+      return
+    }
 
     // Set up the reminders stack.
     let reminderStack = column.addStack()
@@ -2238,22 +2267,17 @@ const weatherCal = {
       weatherStack.layoutVertically()
       weatherStack.setPadding(spacing, 0, spacing, 0)
       weatherStack.url = urlToUse
-
-      // Set up the date formatter and set its locale.
-      let df = new DateFormatter()
-      df.locale = this.locale
-
+      
       // Set up the sub condition stack.
       let subConditionStack = this.align(weatherStack)
       var myDate = new Date();
       myDate.setDate(this.now.getDate() + (i - 1));
-      df.dateFormat = weatherSettings.showDaysFormat
 
       let dateStack = subConditionStack.addStack()
       dateStack.layoutHorizontally()
       dateStack.setPadding(0, 0, 0, 0)
 
-      let dateText = this.provideText(df.string(myDate), dateStack, this.format.smallTemp)
+      let dateText = this.provideText(this.formatDate(myDate,weatherSettings.showDaysFormat), dateStack, this.format.smallTemp)
       dateText.lineLimit = 1
       dateText.minimumScaleFactor = 0.5
       dateStack.addSpacer()
@@ -2473,6 +2497,11 @@ const weatherCal = {
       d1.getMonth() === d2.getMonth() &&
       d1.getDate() === d2.getDate()
   },
+  
+  // Returns the difference in days between two dates. Thank you Miles on StackOverflow.
+  dateDiff(first, second) {
+    return Math.round((second-first)/(1000*60*60*24))
+  },
 
   // Returns the number of minutes between now and the provided date.
   closeTo(time) {
@@ -2481,10 +2510,18 @@ const weatherCal = {
 
   // Format the time for a Date input.
   formatTime(date) {
-    let df = new DateFormatter()
+    const df = new DateFormatter()
     df.locale = this.locale
     df.useNoDateStyle()
     df.useShortTimeStyle()
+    return df.string(date)
+  },
+  
+  // Format the date for a Date input and format string.
+  formatDate(date,format) {
+    const df = new DateFormatter()
+    df.locale = this.locale
+    df.dateFormat = format
     return df.string(date)
   },
 
@@ -2736,5 +2773,4 @@ module.exports = weatherCal
 // 
 // let w = await weatherCal.createWidget(layout, name, iCloudInUse)
 // w.presentLarge()
-
-Script.complete()
+// Script.complete()
