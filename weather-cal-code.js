@@ -699,19 +699,37 @@ const weatherCal = {
         }, 
         spacing: {
           val: "0",
-          name: "Spacing between forecast items",
+          name: "Spacing between daily or hourly forecast items",
+        },
+        horizontalHours: {
+          val: false,
+          name: "Display the hourly forecast horizontally",
+          type: "bool",
+        },
+        showHours: {
+          val: "3",
+          name: "Number of hours shown in the hourly forecast item",
+        }, 
+        showHoursFormat: {
+          val: "ha",
+          name: "Date format for the hourly forecast item",
+        }, 
+        horizontalForecast: {
+          val: false,
+          name: "Display the daily forecast horizontally",
+          type: "bool",
         },
         showDays: {
           val: "3",
-          name: "Number of days shown in the forecast item",
+          name: "Number of days shown in the daily forecast item",
         }, 
         showDaysFormat: {
           val: "E",
-          name: "Date format for the forecast item",
+          name: "Date format for the daily forecast item",
         }, 
         showToday: {
-          val: true,
-          name: "Show today's weather in the forecast item",
+          val: false,
+          name: "Show today's weather in the daily forecast item",
           type: "bool",
         },
         urlCurrent: {
@@ -721,12 +739,12 @@ const weatherCal = {
         }, 
         urlFuture: {
           val: "",
-          name: "URL to open when future weather is tapped",
+          name: "URL to open when hourly weather is tapped",
           description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
         }, 
         urlForecast: {
           val: "",
-          name: "URL to open when the forecast item is tapped",
+          name: "URL to open when daily weather is tapped",
           description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
         }, 
       },
@@ -827,19 +845,14 @@ const weatherCal = {
 
     table.reload()
   },
-
-  // Edit preferences of the widget.
-  async editPreferences() {
-
-    // Get the preferences object.
-    let settingsObject
+  
+  getSettings(forEditing = false) {
     if (!this.fm.fileExists(this.prefPath)) {
-      await this.generateAlert("No preferences file exists. If you're on an older version of Weather Cal, you need to reset your widget in order to use the preferences editor.",["OK"])
-      return
+      return false
 
     } else {
       const settingsFromFile = JSON.parse(this.fm.readString(this.prefPath))
-      settingsObject = this.defaultSettings()
+      let settingsObject = this.defaultSettings()
 
       // Iterate through the settings object.
       if (settingsFromFile.widget.units.val == undefined) {
@@ -847,10 +860,13 @@ const weatherCal = {
           for (item in settingsObject[category]) {
 
             // If the setting exists, use it. Otherwise, the default is used.
-            if (settingsFromFile[category][item] != undefined) {
-              settingsObject[category][item].val = settingsFromFile[category][item]
-            }
-
+            let value = settingsFromFile[category][item]
+            if (value == undefined) { value = settingsObject[category][item].val }
+            
+            // Format the object correctly depending on where it will be used.
+            if (forEditing) { settingsObject[category][item].val = value }
+            else { settingsObject[category][item] = value }
+            
           }
         }
 
@@ -858,6 +874,18 @@ const weatherCal = {
       } else {
         settingsObject = settingsFromFile
       }
+      return settingsObject
+    }
+  },
+
+  // Edit preferences of the widget.
+  async editPreferences() {
+
+    // Get the preferences object.
+    const settingsObject = this.getSettings(true)
+    if (!settingsObject) {
+      await this.generateAlert("No preferences file exists. If you're on an older version of Weather Cal, you need to reset your widget in order to use the preferences editor.",["OK"])
+      return
     }
 
     // Create the settings table.
@@ -972,17 +1000,7 @@ const weatherCal = {
       this.settings = layout
 
     } else {
-      this.prefPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-preferences-" + name)
-      this.settings = JSON.parse(this.fm.readString(this.prefPath))
-
-      // Fix old preference files.
-      if (this.settings.widget.units.val != undefined) {
-        for (category in this.settings) {
-          for (item in this.settings[category]) {
-            this.settings[category][item] = this.settings[category][item].val
-          }
-        }
-      }
+      this.settings = this.getSettings() || this.defaultSettings()
       this.settings.layout = layout
     }
 
@@ -1714,15 +1732,14 @@ const weatherCal = {
     this.data.weather.currentDescription = weatherDataRaw ? (english ? weatherDataRaw.current.weather[0].main : weatherDataRaw.current.weather[0].description) : "--"
     this.data.weather.todayHigh = weatherDataRaw ? weatherDataRaw.daily[0].temp.max : null
     this.data.weather.todayLow = weatherDataRaw ? weatherDataRaw.daily[0].temp.min : null
-    this.data.weather.forecast = [];
+    this.data.weather.forecast = []
+    this.data.weather.hourly = []
 
     for (let i=0; i <= 7; i++) {
       this.data.weather.forecast[i] = weatherDataRaw ? ({High: weatherDataRaw.daily[i].temp.max, Low: weatherDataRaw.daily[i].temp.min, Condition: weatherDataRaw.daily[i].weather[0].id}) : { High: null, Low: null, Condition: 100 }
+      this.data.weather.hourly[i] = weatherDataRaw ? ({Temp: weatherDataRaw.hourly[i].temp, Condition: weatherDataRaw.hourly[i].weather[0].id}) : { Temp: null, Condition: 100 }
     }
     this.data.weather.tomorrowRain = weatherDataRaw ? weatherDataRaw.daily[1].pop : null
-
-    this.data.weather.nextHourTemp = weatherDataRaw ? weatherDataRaw.hourly[1].temp : null
-    this.data.weather.nextHourCondition = weatherDataRaw ? weatherDataRaw.hourly[1].weather[0].id : 100
     this.data.weather.nextHourRain = weatherDataRaw ? weatherDataRaw.hourly[1].pop : null
   },
 
@@ -2164,13 +2181,13 @@ const weatherCal = {
     let futureWeatherStack = column.addStack()
     futureWeatherStack.layoutVertically()
     futureWeatherStack.setPadding(0, 0, 0, 0)
-
-    const defaultUrl = "https://weather.com/" + this.locale + "/weather/tenday/l/" + locationData.latitude + "," + locationData.longitude
-    const settingUrl = weatherSettings.urlFuture || ""
-    futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
-
+    
     // Determine if we should show the next hour.
     const showNextHour = (this.now.getHours() < parseInt(weatherSettings.tomorrowShownAtHour))
+
+    const defaultUrl = "https://weather.com/" + this.locale + "/weather/" + (showNextHour ? "today" : "tenday") +"/l/" + locationData.latitude + "," + locationData.longitude
+    const settingUrl = showNextHour ? (weatherSettings.urlFuture || "") : (weatherSettings.urlForecast || "")
+    futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
 
     // Set the label value.
     const subLabelStack = this.align(futureWeatherStack)
@@ -2194,7 +2211,7 @@ const weatherCal = {
       nightCondition = false 
     }
 
-    let subCondition = subConditionStack.addImage(this.provideConditionSymbol(showNextHour ? weatherData.nextHourCondition : weatherData.forecast[1].Condition,nightCondition))
+    let subCondition = subConditionStack.addImage(this.provideConditionSymbol(showNextHour ? weatherData.hourly[1].Condition : weatherData.forecast[1].Condition,nightCondition))
     const subConditionSize = showNextHour ? 14 : 18
     subCondition.imageSize = new Size(subConditionSize, subConditionSize)
     this.tintIcon(subCondition, this.format.smallTemp)
@@ -2203,7 +2220,7 @@ const weatherCal = {
     // The next part of the display changes significantly for next hour vs tomorrow.
     let rainPercent
     if (showNextHour) {
-      const subTempText = this.displayNumber(weatherData.nextHourTemp,"--") + "°"
+      const subTempText = this.displayNumber(weatherData.hourly[1].Temp,"--") + "°"
       const subTemp = this.provideText(subTempText, subConditionStack, this.format.smallTemp)
       rainPercent = weatherData.nextHourRain
 
@@ -2241,7 +2258,7 @@ const weatherCal = {
   },
 
   // Display forecast weather.
-  async forecast(column) {
+  async forecast(column, hourly = false) {
 
     // Requirements: location, weather, and sunrise
     if (!this.data.location) { await this.setupLocation() }
@@ -2252,59 +2269,141 @@ const weatherCal = {
     const [locationData, weatherData, sunData] = [this.data.location, this.data.weather, this.data.sun]
     const weatherSettings = this.settings.weather
 
-    let startIndex = weatherSettings.showToday ? 1 : 2
-    let endIndex = parseInt(weatherSettings.showDays) + startIndex
+    let startIndex = hourly ? 1 : (weatherSettings.showToday ? 1 : 2)
+    let endIndex = (hourly ? parseInt(weatherSettings.showHours) : parseInt(weatherSettings.showDays)) + startIndex
     if (endIndex > 9) { endIndex = 9 }
 
-    const defaultUrl = "https://weather.com/" + this.locale + "/weather/tenday/l/" + locationData.latitude + "," + locationData.longitude
-    const settingUrl = weatherSettings.urlForecast || ""
+    const defaultUrl = "https://weather.com/" + this.locale + "/weather/" + (hourly ? "today" : "tenday") + "/l/" + locationData.latitude + "," + locationData.longitude
+    const settingUrl = hourly ? (weatherSettings.urlFuture || "") : (weatherSettings.urlForecast || "")
     const urlToUse = (settingUrl.length > 0) ? settingUrl : defaultUrl
-    const spacing = weatherSettings.spacing ? parseInt(weatherSettings.spacing) : 0
+    const horizontal = hourly ? weatherSettings.horizontalHours : weatherSettings.horizontalForecast
+    const spacing = (weatherSettings.spacing ? parseInt(weatherSettings.spacing) : 0) + (horizontal ? 0 : 5)
+    
+    // Set up the overall container.
+    let weatherStack = this.align(column)
+    weatherStack.url = urlToUse
+    
+    const outsidePadding = this.padding > spacing ? this.padding - spacing : 0
+    if (horizontal) { 
+      weatherStack.layoutHorizontally()
+      weatherStack.setPadding(this.padding, outsidePadding, this.padding, outsidePadding)
+    } else {
+      weatherStack.layoutVertically()
+      weatherStack.setPadding(outsidePadding, this.padding, outsidePadding, this.padding)
+    }
+
+    let myDate = new Date()
+    if (!hourly && startIndex == 1) { myDate.setDate(myDate.getDate() - 1) }
+    const type = hourly ? "hourly" : "forecast"
+    const format = hourly ? weatherSettings.showHoursFormat : weatherSettings.showDaysFormat
 
     for (var i=startIndex; i < endIndex; i++) {
-      // Set up the today weather stack.
-      let weatherStack = column.addStack()
-      weatherStack.layoutVertically()
-      weatherStack.setPadding(spacing, 0, spacing, 0)
-      weatherStack.url = urlToUse
       
-      // Set up the sub condition stack.
-      let subConditionStack = this.align(weatherStack)
-      var myDate = new Date();
-      myDate.setDate(this.now.getDate() + (i - 1));
+      // Get the right date.
+      if (hourly) { myDate.setHours(myDate.getHours() + 1) }
+      else { myDate.setDate(myDate.getDate() + 1) }
+    
+      // Create the appropriate container stack.
+      let unitStack = weatherStack.addStack()
+      let dateStack = unitStack.addStack()
+      
+      // Get the right spacing.
+      const edgePadding = this.padding > spacing ? spacing : this.padding
+      const initialSpace = (i == startIndex) ? edgePadding : spacing
+      const finalSpace = (i == endIndex-1) ? edgePadding : spacing
+      
+      const fontSize = (this.format.smallTemp && this.format.smallTemp.size) ? this.format.smallTemp.size : this.format.defaultText.size
+      const stackSize = hourly ? new Size(fontSize*3,0) : new Size(fontSize*2.64,0)
+      
+      if (horizontal) {
+        unitStack.setPadding(0, initialSpace, 0, finalSpace)
+        unitStack.layoutVertically()
+        
+        dateStack.addSpacer()
+        this.provideText(this.formatDate(myDate,format), dateStack, this.format.smallTemp)
+        dateStack.addSpacer()
+        
+      } else {
+        unitStack.setPadding(initialSpace, 0, finalSpace, 0)
+        unitStack.layoutHorizontally()
+        
+        dateStack.layoutHorizontally()
+        dateStack.setPadding(0, 0, 0, 0)
+        dateStack.size = stackSize
+        
+        let dateText = this.provideText(this.formatDate(myDate,format), dateStack, this.format.smallTemp)
+        dateText.lineLimit = 1
+        dateText.minimumScaleFactor = 0.5
+        dateStack.addSpacer()
+      }
+      
+      unitStack.centerAlignContent()
+      unitStack.addSpacer(5)
+      
+      let conditionStack = unitStack.addStack()
+      conditionStack.centerAlignContent()
+      conditionStack.layoutHorizontally()
+      if (horizontal) { conditionStack.addSpacer() }
+      
+      // Now, set up the container for the condition.
+      if (hourly) {
+        let subCondition = conditionStack.addImage(this.provideConditionSymbol(weatherData.hourly[i - 1].Condition, this.isNight(myDate)))
+        subCondition.imageSize = new Size(18,18)
+        this.tintIcon(subCondition, this.format.smallTemp)
+        
+        if (horizontal) { conditionStack.addSpacer() }
+        unitStack.addSpacer(5)
+        
+        let tempStack = unitStack.addStack()
+        tempStack.centerAlignContent()
+        tempStack.layoutHorizontally()
+        
+        if (horizontal) { tempStack.addSpacer() }
+        const tempText = this.displayNumber(weatherData.hourly[i - 1].Temp,"--") + "°"
+        const temp = this.provideText(tempText, tempStack, this.format.smallTemp)
+        temp.lineLimit = 1
+        temp.minimumScaleFactor = 0.75
+        if (horizontal) { 
+          temp.size = stackSize
+          tempStack.addSpacer() 
+        }
+        
+      } else { 
+        const tinyFont = (this.format.tinyTemp && this.format.tinyTemp.size) ? this.format.tinyTemp.size : this.format.defaultText.size
+        conditionStack.size = new Size(0,tinyFont*2.64)
+      
+        let subCondition = conditionStack.addImage(this.provideConditionSymbol(weatherData.forecast[i - 1].Condition, false))
+        subCondition.imageSize = new Size(18,18)
+        this.tintIcon(subCondition, this.format.smallTemp)
+        conditionStack.addSpacer(5)
 
-      let dateStack = subConditionStack.addStack()
-      dateStack.layoutHorizontally()
-      dateStack.setPadding(0, 0, 0, 0)
+        let tempLine = conditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
+        tempLine.imageSize = new Size(3,28)
+        conditionStack.addSpacer(5)
+        let tempStack = conditionStack.addStack()
+        tempStack.layoutVertically()
+        
+        const tinyFontSize = (this.format.tinyTemp && this.format.tinyTemp.size) ? this.format.tinyTemp.size : this.format.defaultText.size
+        tempStack.size = hourly ? new Size(fontSize*1,0) : new Size(fontSize*1,0)
 
-      let dateText = this.provideText(this.formatDate(myDate,weatherSettings.showDaysFormat), dateStack, this.format.smallTemp)
-      dateText.lineLimit = 1
-      dateText.minimumScaleFactor = 0.5
-      dateStack.addSpacer()
-      let fontSize = (this.format.smallTemp && this.format.smallTemp.size) ? this.format.smallTemp.size : this.format.defaultText.size
-      dateStack.size = new Size(fontSize*2.64,0)
-      subConditionStack.addSpacer(5)
-      subConditionStack.layoutHorizontally()
-      subConditionStack.centerAlignContent()
-      subConditionStack.setPadding(0, this.padding, this.padding, this.padding)
-
-      let subCondition = subConditionStack.addImage(this.provideConditionSymbol(weatherData.forecast[i - 1].Condition, false))
-      subCondition.imageSize = new Size(18, 18)
-      this.tintIcon(subCondition, this.format.smallTemp)
-      subConditionStack.addSpacer(5)
-
-      let tempLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
-      tempLine.imageSize = new Size(3,28)
-      subConditionStack.addSpacer(5)
-      let tempStack = subConditionStack.addStack()
-      tempStack.layoutVertically()
-
-      const tempHighText = this.displayNumber(weatherData.forecast[i - 1].High,"-")
-      const tempHigh = this.provideText(tempHighText, tempStack, this.format.tinyTemp)
-      tempStack.addSpacer(4)
-      const tempLowText = this.displayNumber(weatherData.forecast[i - 1].Low,"-")
-      const tempLow = this.provideText(tempLowText, tempStack, this.format.tinyTemp)
+        const tempHighText = this.displayNumber(weatherData.forecast[i - 1].High,"-")
+        const tempHigh = this.provideText(tempHighText, tempStack, this.format.tinyTemp)
+        tempHigh.lineLimit = 1
+        tempHigh.minimumScaleFactor = 0.6
+        tempStack.addSpacer(4)
+        const tempLowText = this.displayNumber(weatherData.forecast[i - 1].Low,"-")
+        const tempLow = this.provideText(tempLowText, tempStack, this.format.tinyTemp)
+        tempLow.lineLimit = 1
+        tempLow.minimumScaleFactor = 0.6
+      
+        if (horizontal) { conditionStack.addSpacer() }
+      }
     }
+  },
+  
+  // Display an hourly forecast.
+  async hourly(column) {
+    await this.forecast(column, true)
   },
 
   // Add a battery element to the widget.
@@ -2751,24 +2850,10 @@ module.exports = weatherCal
 // const codeFilename = "Weather Cal code"
 // const gitHubUrl = "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js"
 // const layout = `
-//    row 
-//     column
-//       battery
-//       covid
-//       date
-//       events
-//       greeting
-//       reminders
-//       sunrise
-//       sunset
-//       text(Hello)
-//       week
-//     
-//     column(90)
-//       current
-//       future
-//       forecast `
-// 
+// row 
+//   column
+//
+// `
 // await weatherCal.runSetup(name, iCloudInUse, codeFilename, gitHubUrl)
 // 
 // let w = await weatherCal.createWidget(layout, name, iCloudInUse)
