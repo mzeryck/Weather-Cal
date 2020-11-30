@@ -2401,6 +2401,11 @@ const weatherCal = {
     }
   },
   
+  // Allow both terms to be used.
+  async daily(column) {
+    await this.forecast(column)
+  },
+  
   // Display an hourly forecast.
   async hourly(column) {
     await this.forecast(column, true)
