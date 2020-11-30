@@ -75,7 +75,8 @@ You can add the following items to your widget:
 - Weather items
 	- `current` conditions
 	- `future` weather (next hour or next day)
-	- customizable multi-day `forecast`
+	- `hourly` forecast list
+	- `daily` forecast list
 - `week` - week number for current Date
 
 If you want to change how an item looks, run the widget script and choose "Edit preferences". Most items allow you to adjust how they display.
