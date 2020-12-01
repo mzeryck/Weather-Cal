@@ -46,7 +46,7 @@ const weatherCal = {
 
     // Otherwise, we're setting up this particular widget.
     await this.generateAlert("Weather Cal is set up, but you need to choose a background for this widget.",["Continue"])
-    this.writePreference(this.prefName, this.defaultSettings())
+    this.writePreference(this.prefName, this.getSettings())
     return await this.setWidgetBackground() 
   },
 
@@ -847,35 +847,31 @@ const weatherCal = {
   },
   
   getSettings(forEditing = false) {
-    if (!this.fm.fileExists(this.prefPath)) {
-      return false
-
-    } else {
-      const settingsFromFile = JSON.parse(this.fm.readString(this.prefPath))
-      let settingsObject = this.defaultSettings()
-
-      // Iterate through the settings object.
-      if (settingsFromFile.widget.units.val == undefined) {
-        for (category in settingsObject) {
-          for (item in settingsObject[category]) {
-
-            // If the setting exists, use it. Otherwise, the default is used.
-            let value = settingsFromFile[category][item]
-            if (value == undefined) { value = settingsObject[category][item].val }
-            
-            // Format the object correctly depending on where it will be used.
-            if (forEditing) { settingsObject[category][item].val = value }
-            else { settingsObject[category][item] = value }
-            
-          }
-        }
-
-      // Fix for old preference files.
-      } else {
-        settingsObject = settingsFromFile
-      }
-      return settingsObject
+    
+    // Try to get the settings from file.
+    let settingsFromFile  
+    if (this.fm.fileExists(this.prefPath)) {
+      settingsFromFile = JSON.parse(this.fm.readString(this.prefPath))
     }
+    
+    // Start with the default settings.
+    let settingsObject = this.defaultSettings()
+    
+    // Iterate through the settings object.
+    for (category in settingsObject) {
+      for (item in settingsObject[category]) {
+
+        // If the setting exists, use it. Otherwise, the default is used.
+        let value = (settingsFromFile && settingsFromFile[category]) ? settingsFromFile[category][item] : undefined
+        if (value == undefined) { value = settingsObject[category][item].val }
+        
+        // Format the object correctly depending on where it will be used.
+        if (forEditing) { settingsObject[category][item].val = value }
+        else { settingsObject[category][item] = value }
+        
+      }
+    }
+    return settingsObject
   },
 
   // Edit preferences of the widget.
@@ -1000,7 +996,7 @@ const weatherCal = {
       this.settings = layout
 
     } else {
-      this.settings = this.getSettings() || this.defaultSettings()
+      this.settings = this.getSettings()
       this.settings.layout = layout
     }
 
@@ -1027,10 +1023,10 @@ const weatherCal = {
     
     // If we have custom widget padding, use it.
     const widgetPad = this.settings.widget.widgetPadding || {}
-    const topPad    = widgetPad.top    ? parseInt(widgetPad.top)    : verticalPad
-    const leftPad   = widgetPad.left   ? parseInt(widgetPad.left)   : horizontalPad
-    const bottomPad = widgetPad.bottom ? parseInt(widgetPad.bottom) : verticalPad
-    const rightPad  = widgetPad.right  ? parseInt(widgetPad.right)  : horizontalPad
+    const topPad    = (widgetPad.top && widgetPad.top.length) ? parseInt(widgetPad.top)    : verticalPad
+    const leftPad   = (widgetPad.left && widgetPad.left.length) ? parseInt(widgetPad.left)   : horizontalPad
+    const bottomPad = (widgetPad.bottom && widgetPad.bottom.length) ? parseInt(widgetPad.bottom) : verticalPad
+    const rightPad  = (widgetPad.right && widgetPad.right.length) ? parseInt(widgetPad.right)  : horizontalPad
     
     this.widget.setPadding(topPad, leftPad, bottomPad, rightPad)
 
