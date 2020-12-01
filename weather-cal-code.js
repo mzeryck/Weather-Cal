@@ -40,13 +40,12 @@ const weatherCal = {
     const setupPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-setup")
     if (!this.fm.fileExists(setupPath)) { return await this.initialSetup() }
 
-    // If a settings file exists for this widget, we're editing settings.
+    // If a background file exists for this widget, we're editing settings.
     const widgetpath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + name)
     if (this.fm.fileExists(widgetpath)) { return await this.editSettings(codeFilename, gitHubUrl) }
 
     // Otherwise, we're setting up this particular widget.
     await this.generateAlert("Weather Cal is set up, but you need to choose a background for this widget.",["Continue"])
-    this.writePreference(this.prefName, this.getSettings())
     return await this.setWidgetBackground() 
   },
 
@@ -109,9 +108,6 @@ const weatherCal = {
     // Set up background image.
     await this.setWidgetBackground()
 
-    // Write the default settings to disk.
-    this.writePreference(this.prefName, this.defaultSettings())
-
     // Record setup completion.
     this.writePreference("weather-cal-setup", "true")
 
@@ -126,35 +122,39 @@ const weatherCal = {
 
   // Edit the widget settings.
   async editSettings(codeFilename, gitHubUrl) {
+    const menu = { 
+      preview: "Show widget preview",
+      background: "Change background",
+      preferences: "Edit preferences",
+      update: "Update code",
+      share: "Export widget",
+      other: "Other settings",
+      exit: "Exit settings menu",
+    }
+      
     let message = "Widget Setup"
-    let options = ["Show widget preview", "Change background", "Edit preferences", "Re-enter API key", "Update code", "Reset widget", "Exit settings menu"]
-    const response = await this.generateAlert(message,options)
+    let options = [menu.preview, menu.background, menu.preferences, menu.update, menu.share, menu.other, menu.exit]
+    const response = options[await this.generateAlert(message,options)]
 
     // Return true to show the widget preview.
-    if (response == 0) {
+    if (response == menu.preview) {
       return this.previewValue()
     } 
 
     // Set the background and show a preview.
-    if (response == 1) {
+    if (response == menu.background) {
       await this.setWidgetBackground()
       return true
     }
 
     // Display the preferences panel.
-    if (response == 2) {
+    if (response == menu.preferences) {
       await this.editPreferences()
       return
     }
 
-    // Set the API key.
-    if (response == 3) {
-      await this.getWeatherKey()
-      return
-    }
-
-    if (response == 4) {
-      // Prompt the user for updates.
+    // Prompt the user for updates.
+    if (response == menu.update) {
       message = "Would you like to update the Weather Cal code? Your widgets will not be affected."
       options = ["Update", "Exit"]
       const updateResponse = await this.generateAlert(message,options)
@@ -170,25 +170,76 @@ const weatherCal = {
       await this.generateAlert(message,options)
       return
     }
+    
+    if (response == menu.share) {
+      const widgetPath = this.fm.joinPath(this.fm.documentsDirectory(), this.name + ".js")
+      const widgetCode = this.fm.readString(widgetPath)
+      const widgetData = Data.fromString(widgetCode).toBase64String()
+      const prefsData = JSON.stringify(this.getSettings())
 
-    // Reset the widget.
-    if (response == 5) {
-      const alert = new Alert()
-      alert.message = "Are you sure you want to completely reset this widget?"
-      alert.addDestructiveAction("Reset")
-      alert.addAction("Cancel")
-
-      const cancelReset = await alert.present()
-      if (cancelReset == 0) {
-        const bgPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + this.name)
-        if (this.fm.fileExists(bgPath)) { this.fm.remove(bgPath) }
-        if (this.fm.fileExists(this.prefPath)) { this.fm.remove(this.prefPath) }
-        const success = await this.downloadCode(this.name, this.widgetUrl)
-        message = success ? "This script has been reset. Close the script and reopen it for the change to take effect." : "The reset failed."
-        options = ["OK"]
-        await this.generateAlert(message,options)
+      const widgetExport = `const widget = '${widgetData}'
+      const prefs = '${prefsData}'
+      const nameAlert = new Alert()
+      nameAlert.message = "Do you want your widget to be named " + Script.name() + "?"
+      nameAlert.addAction("Yes, looks good")
+      nameAlert.addAction("No, let me change it")
+      const response = await nameAlert.present()
+      if (response == 0) {
+        let fm = FileManager.local()
+        fm = fm.isFileStoredIniCloud(module.filename) ? FileManager.iCloud() : fm
+        const path = fm.joinPath(fm.libraryDirectory(), "weather-cal-preferences-" + Script.name())
+        fm.writeString(path, prefs)
+        const alert = new Alert()
+        alert.message = "Close this script and re-run it to finish setup."
+        alert.addAction("OK")
+        const code = Data.fromBase64String(widget).toRawString()
+        fm.writeString(module.filename, code)
+        await alert.present()
       }
-      return
+      Script.complete()`
+      
+      message = "Your export is ready."
+      options = ["Save to Files", "Display as text to copy"]
+      const shouldUseQuickLook = await this.generateAlert(message,options)
+      
+      if (shouldUseQuickLook) {
+        const comment = '/*\n\n\n\nTap the Share icon in the top right.\nThen tap "Copy" to copy all of this code.\nNow you can paste into a new script.\n\n\n\n*/\n'
+        QuickLook.present(comment + widgetExport)
+      } else {
+        DocumentPicker.exportString(widgetExport, this.name + " export.js"
+      }
+    }
+    
+    if (response == menu.other) {
+      message = "Other settings"
+      options = ["Re-enter API key", "Completely reset widget", "Exit"]
+      const otherResponse = await this.generateAlert(message,options)
+    
+      // Set the API key.
+      if (otherResponse == 0) {
+        await this.getWeatherKey()
+        return
+      }
+
+      // Reset the widget.
+      if (otherResponse == 1) {
+        const alert = new Alert()
+        alert.message = "Are you sure you want to completely reset this widget?"
+        alert.addDestructiveAction("Reset")
+        alert.addAction("Cancel")
+
+        const cancelReset = await alert.present()
+        if (cancelReset == 0) {
+          const bgPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + this.name)
+          if (this.fm.fileExists(bgPath)) { this.fm.remove(bgPath) }
+          if (this.fm.fileExists(this.prefPath)) { this.fm.remove(this.prefPath) }
+          const success = await this.downloadCode(this.name, this.widgetUrl)
+          message = success ? "This script has been reset. Close the script and reopen it for the change to take effect." : "The reset failed."
+          options = ["OK"]
+          await this.generateAlert(message,options)
+        }
+        return
+      }
     }
 
     // If response was Exit, just return.
