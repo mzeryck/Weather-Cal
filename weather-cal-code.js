@@ -206,7 +206,7 @@ const weatherCal = {
         const comment = '/*\n\n\n\nTap the Share icon in the top right.\nThen tap "Copy" to copy all of this code.\nNow you can paste into a new script.\n\n\n\n*/\n'
         QuickLook.present(comment + widgetExport)
       } else {
-        DocumentPicker.exportString(widgetExport, this.name + " export.js"
+        DocumentPicker.exportString(widgetExport, this.name + " export.js")
       }
     }
     
