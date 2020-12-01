@@ -2598,9 +2598,11 @@ const weatherCal = {
       d1.getDate() === d2.getDate()
   },
   
-  // Returns the difference in days between two dates. Thank you Miles on StackOverflow.
+  // Returns the difference in days between two dates. Adapted from StackOverflow.
   dateDiff(first, second) {
-    return Math.round((second-first)/(1000*60*60*24))
+    const firstDate = new Date(first.getFullYear(), first.getMonth(), first.getDate(), 0, 0, 0)
+    const secondDate = new Date(second.getFullYear(), second.getMonth(), second.getDate(), 0, 0, 0)
+    return Math.round((secondDate-firstDate)/(1000*60*60*24))
   },
 
   // Returns the number of minutes between now and the provided date.
