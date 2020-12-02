@@ -37,12 +37,12 @@ const weatherCal = {
     if (!this.initialized) this.initialize(name, iCloudInUse)
 
     // If no setup file exists, this is the initial Weather Cal setup.
+    this.bgPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + name)
     const setupPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-setup")
     if (!this.fm.fileExists(setupPath)) { return await this.initialSetup() }
 
     // If a background file exists for this widget, we're editing settings.
-    const widgetpath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + name)
-    if (this.fm.fileExists(widgetpath)) { return await this.editSettings(codeFilename, gitHubUrl) }
+    if (this.fm.fileExists(this.bgPath)) { return await this.editSettings(codeFilename, gitHubUrl) }
 
     // Otherwise, we're setting up this particular widget.
     await this.generateAlert("Weather Cal is set up, but you need to choose a background for this widget.",["Continue"])
@@ -52,14 +52,17 @@ const weatherCal = {
   // Run the initial setup.
   async initialSetup() {
 
-    // Welcome the user and make sure they like the script name.
-    let message = "Welcome to Weather Cal. Make sure your script has the name you want before you begin."
-    let options = ['I like the name "' + this.name + '"', "Let me go change it"]
-    let shouldExit = await this.generateAlert(message,options)
-    if (shouldExit) return
+    // Welcome brand-new users and make sure they like the script name.
+    const imported = this.fm.fileExists(this.bgPath)
+    if (!imported) {
+      let message = "Welcome to Weather Cal. Make sure your script has the name you want before you begin."
+      let options = ['I like the name "' + this.name + '"', "Let me go change it"]
+      let shouldExit = await this.generateAlert(message,options)
+      if (shouldExit) return
+    }
 
     // Welcome the user and check for permissions.
-    message = "Next, we need to check if you've given permissions to the Scriptable app. This might take a few seconds."
+    message = (imported ? "Welcome to Weather Cal. We" : "Next, we") + "need to check if you've given permissions to the Scriptable app. This might take a few seconds."
     options = ["Check permissions"]
     await this.generateAlert(message,options)
 
@@ -106,7 +109,7 @@ const weatherCal = {
     }
 
     // Set up background image.
-    await this.setWidgetBackground()
+    if (!imported) { await this.setWidgetBackground() }
 
     // Record setup completion.
     this.writePreference("weather-cal-setup", "true")
@@ -172,48 +175,41 @@ const weatherCal = {
     }
     
     if (response == menu.share) {
-      const widgetPath = this.fm.joinPath(this.fm.documentsDirectory(), this.name + ".js")
-      const widgetCode = this.fm.readString(widgetPath)
-      const widgetData = Data.fromString(widgetCode).toBase64String()
-      const prefsData = JSON.stringify(this.getSettings())
-      const bgPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + this.name)
-      const bgData = this.fm.readString(bgPath)
+      const code = this.fm.readString(this.fm.joinPath(this.fm.documentsDirectory(), this.name + ".js"))
+      const layout = code.split('`')[1]
+      const prefs = JSON.stringify(this.getSettings())
+      const bg = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-" + this.name))
 
       const widgetExport = `async function importWidget() {
-        const widget = '${widgetData}'
-        const prefs = '${prefsData}'
-        const bg = '${bgData}'
 
-        function makeAlert(message,options) {
-          const a = new Alert()
-          a.message = message
-          for (const option of options) { a.addAction(option) }
-          return a
-        }
+      function makeAlert(message,options) {
+        const a = new Alert()
+        a.message = message
+        for (const option of options) { a.addAction(option) }
+        return a
+      }
 
-        let fm = FileManager.local()
-        fm = fm.isFileStoredIniCloud(module.filename) ? FileManager.iCloud() : fm
+      let fm = FileManager.local()
+      fm = fm.isFileStoredIniCloud(module.filename) ? FileManager.iCloud() : fm
 
-        const path = fm.joinPath(fm.documentsDirectory(), "Weather Cal code.js")
-        const exists = fm.fileExists(path)
-        const wc = exists ? fm.readString(path) : false
-        const version = wc ? parseInt(wc.slice(wc.lastIndexOf("//") + 2).trim()) : false
+      const path = fm.joinPath(fm.documentsDirectory(), "Weather Cal code.js")
+      const wc = fm.fileExists(path) ? fm.readString(path) : false
+      const version = wc ? parseInt(wc.slice(wc.lastIndexOf("//") + 2).trim()) : false
 
-        if (exists && (!version || version < 3)) { 
-          const exit = makeAlert("Please update Weather Cal before importing a widget.",["OK"])
-          return await exit.present()
-        }
+      if (wc && (!version || version < 3)) { return await makeAlert("Please update Weather Cal before importing a widget.",["OK"]).present() }
 
-        let alert = makeAlert("Do you want your widget to be named " + Script.name() + "?",["Yes, looks good","No, let me change it"])
-        if ((await alert.presentAlert()) == 1) { return }
+      if ((await makeAlert("Do you want your widget to be named " + Script.name() + "?",["Yes, looks good","No, let me change it"]).present()) == 1) { return }
 
-        fm.writeString(fm.joinPath(fm.libraryDirectory(), "weather-cal-preferences-" + Script.name()), prefs)
-        fm.writeString(fm.joinPath(fm.libraryDirectory(), "weather-cal-" + Script.name()), bg)
+      fm.writeString(fm.joinPath(fm.libraryDirectory(), "weather-cal-preferences-" + Script.name()), '${prefs}')
+      fm.writeString(fm.joinPath(fm.libraryDirectory(), "weather-cal-" + Script.name()), '${bg}')
 
-        alert = makeAlert("Close this script and re-run it to finish setup.",["OK"])
-        const code = Data.fromBase64String(widget).toRawString()
-        fm.writeString(module.filename, code)
-        await alert.present()
+      let code = await new Request('${this.widgetUrl}').loadString()
+      let arr = code.split('\`')
+      arr[1] = \`${layout}\`
+
+      alert = makeAlert("Close this script and re-run it to finish setup.",["OK"])
+      fm.writeString(module.filename, arr.join('\`'))
+      await alert.present()
       }
       await importWidget()
       Script.complete()`
@@ -2927,7 +2923,7 @@ const weatherCal = {
 // const layout = `
 // row 
 //   column
-//
+// 
 // `
 // await weatherCal.runSetup(name, iCloudInUse, codeFilename, gitHubUrl)
 // 
