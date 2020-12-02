@@ -537,7 +537,7 @@ const weatherCal = {
       const codeString = await req.loadString()
       if (codeString.indexOf("// Variables used by Scriptable.") < 0) {
         return false
-      }
+      } else {
         this.fm.writeString(pathToCode, codeString)
         return true
       }
