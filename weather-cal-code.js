@@ -342,479 +342,6 @@ const weatherCal = {
     return this.previewValue() 
   },
 
-  // Return the default widget settings.
-  defaultSettings() {
-    const settings = {
-
-      widget: {
-        name: "Overall settings",
-        locale: {
-          val: "",
-          name: "Locale code",
-          description: "Leave blank to match the device's locale.",
-        },
-        units: {
-          val: "imperial",
-          name: "Units",
-          description: "Use imperial for Fahrenheit or metric for Celsius.",
-          type: "enum",
-          options: ["imperial","metric"],
-        },
-        preview: {
-          val: "large",
-          name: "Widget preview size",
-          description: "Set the size of the widget preview displayed in the app.",
-          type: "enum",
-          options: ["small","medium","large"],
-        },
-        padding: {
-          val: "5",
-          name: "Item padding",
-          description: "The padding around each item. This also determines the approximate widget padding. Default is 5.",
-        },
-        widgetPadding: {
-          val: { top: "", left: "", bottom: "", right: "" },
-          name: "Custom widget padding",
-          type: "multival",
-          description: "The padding around the entire widget. By default, these values are blank and Weather Cal uses the item padding to determine these values. Transparent widgets often look best with these values at 0.",
-        },
-        tintIcons: {
-          val: false,
-          name: "Icons match text color",
-          description: "Decide if icons should match the color of the text around them.",
-          type: "bool",
-        },
-      },
-
-      localization: {
-        name: "Localization and text customization",
-        morningGreeting: {
-          val: "Good morning.",
-          name: "Morning greeting",
-        },
-        afternoonGreeting: {
-          val: "Good afternoon.",
-          name: "Afternoon greeting",
-        },
-        eveningGreeting: {
-          val: "Good evening.",
-          name: "Evening greeting",
-        },
-        nightGreeting: {
-          val: "Good night.",
-          name: "Night greeting",
-        },
-        nextHourLabel: {
-          val: "Next hour",
-          name: "Label for next hour of weather",
-        },
-        tomorrowLabel: {
-          val: "Tomorrow",
-          name: "Label for tomorrow",
-        },
-        noEventMessage: {
-          val: "Enjoy the rest of your day.",
-          name: "No event message",
-          description: "The message shown when there are no more events for the day, if that setting is active.",
-        },
-        noRemindersMessage: {
-          val: "Tasks complete.",
-          name: "No reminders message",
-          description: "The message shown when there are no more reminders for the day, if that setting is active.",
-        },
-        durationMinute: {
-          val: "m",
-          name: "Duration label for minutes",
-        },
-        durationHour: {
-          val: "h",
-          name: "Duration label for hours",
-        },
-        covid: {
-          val: "{cases} cases, {deaths} deaths, {recovered} recoveries",
-          name: "COVID data text",
-          description: "Each {token} is replaced with the number from the data. The available tokens are: cases, todayCases, deaths, todayDeaths, recovered, active, critical, casesPerOneMillion, deathsPerOneMillion, totalTests, testsPerOneMillion"
-        },
-        week: {
-          val: "Week",
-          name: "Label for the week number",
-        },
-      },
-
-      font: {
-        name: "Text sizes, colors, and fonts",
-        defaultText: {
-          val: { size: "14", color: "ffffff", font: "regular" },
-          name: "Default font settings",
-          description: "These settings apply to all text on the widget that doesn't have a customized value.",
-          type: "multival",
-        },
-        smallDate:   {
-          val: { size: "17", color: "", font: "semibold" },
-          name: "Small date",
-          type: "multival",
-        },
-        largeDate1:  {
-          val: { size: "30", color: "", font: "light" },
-          name: "Large date, line 1",
-          type: "multival",
-        },
-        largeDate2:  {
-          val: { size: "30", color: "", font: "light" },
-          name: "Large date, line 2",
-          type: "multival",
-        },
-        greeting:    {
-          val: { size: "30", color: "", font: "semibold" },
-          name: "Greeting",
-          type: "multival",
-        },
-        eventLabel:  {
-          val: { size: "14", color: "", font: "semibold" },
-          name: "Event heading (used for the TOMORROW label)",
-          type: "multival",
-        },
-        eventTitle:  {
-          val: { size: "14", color: "", font: "semibold" },
-          name: "Event title",
-          type: "multival",
-        },
-        eventLocation:   {
-          val: { size: "14", color: "", font: "" },
-          name: "Event location",
-          type: "multival",
-        },
-        eventTime:   {
-          val: { size: "14", color: "ffffffcc", font: "" },
-          name: "Event time",
-          type: "multival",
-        },
-        noEvents:    {
-          val: { size: "30", color: "", font: "semibold" },
-          name: "No events message",
-          type: "multival",
-        },
-        reminderTitle:  {
-          val: { size: "14", color: "", font: "" },
-          name: "Reminder title",
-          type: "multival",
-        },
-        reminderTime:   {
-          val: { size: "14", color: "ffffffcc", font: "" },
-          name: "Reminder time",
-          type: "multival",
-        },
-        noReminders:    {
-          val: { size: "30", color: "", font: "semibold" },
-          name: "No reminders message",
-          type: "multival",
-        },
-        largeTemp:   {
-          val: { size: "34", color: "", font: "light" },
-          name: "Large temperature label",
-          type: "multival",
-        },
-        smallTemp:   {
-          val: { size: "14", color: "", font: "" },
-          name: "Most text used in weather items",
-          type: "multival",
-        },
-        tinyTemp:    {
-          val: { size: "12", color: "", font: "" },
-          name: "Small text used in weather items",
-          type: "multival",
-        },
-        customText:  {
-          val: { size: "14", color: "", font: "" },
-          name: "User-defined text items",
-          type: "multival",
-        },
-        battery:     {
-          val: { size: "14", color: "", font: "medium" },
-          name: "Battery percentage",
-          type: "multival",
-        },
-        sunrise:     {
-          val: { size: "14", color: "", font: "medium" },
-          name: "Sunrise and sunset",
-          type: "multival",
-        },
-        covid:       {
-          val: { size: "14", color: "", font: "medium" },
-          name: "COVID data",
-          type: "multival",
-        },
-        week:        {
-          val: { size: "14", color: "", font: "light" },
-          name: "Week label",
-          type: "multival",
-        },
-      },
-
-      date: {
-        name: "Date",
-        dynamicDateSize: {
-          val: true,
-          name: "Dynamic date size",
-          description: "If set to true, the date will become smaller when events are displayed.",
-          type: "bool",
-        },
-        staticDateSize: {
-          val: "small",
-          name: "Static date size",
-          description: "Set the date size shown when dynamic date size is not enabled.",
-          type: "enum",
-          options: ["small","large"],
-        },
-        smallDateFormat: {
-          val: "EEEE, MMMM d",
-          name: "Small date format",
-        },
-        largeDateLineOne: {
-          val: "EEEE,",
-          name: "Large date format, line 1",
-        }, 
-        largeDateLineTwo: {
-          val: "MMMM d",
-          name: "Large date format, line 2",
-        }, 
-      },
-
-      events: {
-        name: "Events",
-        numberOfEvents: {
-          val: "3",
-          name: "Maximum number of events shown",
-        }, 
-        minutesAfter: {
-          val: "5",
-          name: "Minutes after event begins",
-          description: "Number of minutes after an event begins that it should still be shown.",
-        }, 
-        showAllDay: {
-          val: false,
-          name: "Show all-day events",
-          type: "bool",        
-        },
-        numberOfDays: {
-          val: "1",
-          name: "How many future days of events to show",
-          description: "How many days to show into the future. Set to 0 to show today's events only. The maximum is 7.",
-        }, 
-        labelFormat: {
-          val: "EEEE, MMMM d",
-          name: "Date format for future event days",
-        }, 
-        showTomorrow: {
-          val: "20",
-          name: "Future days shown at hour",
-          description: "The hour (in 24-hour time) to start showing events for tomorrow or beyond. Use 0 for always, 24 for never.",
-        }, 
-        showEventLength: {
-          val: "duration",
-          name: "Event length display style",
-          description: "Choose whether to show the duration, the end time, or no length information.",
-          type: "enum",
-          options: ["duration","time","none"],
-        }, 
-        showLocation: {
-          val: false,
-          name: "Show event location",
-          type: "bool",        
-        },
-        selectCalendars: {
-          val: "",
-          name: "Calendars to show",
-          description: "Write the names of each calendar separated by commas, like this: Home,Work,Personal. Leave blank to show events from all calendars.",
-        }, 
-        showCalendarColor: {
-          val: "rectangle left",
-          name: "Display calendar color",
-          description: "Choose the shape and location of the calendar color.",
-          type: "enum",
-          options: ["rectangle left","rectangle right","circle left","circle right","none"],
-        }, 
-        noEventBehavior: {
-          val: "message",
-          name: "Show when no events remain",
-          description: "When no events remain, show a hard-coded message, a time-based greeting, or nothing.",
-          type: "enum",
-          options: ["message","greeting","none"],
-        }, 
-        url: {
-          val: "",
-          name: "URL to open when tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Calendar app.",
-        }, 
-      },
-
-      reminders: {
-        name: "Reminders",
-        numberOfReminders: {
-          val: "3",
-          name: "Maximum number of reminders shown",
-        }, 
-        useRelativeDueDate: {
-          val: false,
-          name: "Use relative dates",
-          description: "Set to true for a relative due date (in 3 hours) instead of absolute (3:00 PM).",
-          type: "bool",
-        },
-        showWithoutDueDate: {
-          val: false,
-          name: "Show reminders without a due date",
-          type: "bool",
-        },
-        showOverdue: {
-          val: false,
-          name: "Show overdue reminders",
-          type: "bool",
-        },
-        todayOnly: {
-          val: false,
-          name: "Hide reminders due after today",
-          type: "bool",
-        },
-        selectLists: {
-          val: "",
-          name: "Lists to show",
-          description: "Write the names of each list separated by commas, like this: Home,Work,Personal. Leave blank to show reminders from all lists.",
-        }, 
-        showListColor: {
-          val: "rectangle left",
-          name: "Display list color",
-          description: "Choose the shape and location of the list color.",
-          type: "enum",
-          options: ["rectangle left","rectangle right","circle left","circle right","none"],
-        }, 
-        noRemindersBehavior: {
-          val: "none",
-          name: "Show when no reminders remain",
-          description: "When no reminders remain, show a hard-coded message, a time-based greeting, or nothing.",
-          type: "enum",
-          options: ["message","greeting","none"],
-        }, 
-        url: {
-          val: "",
-          name: "URL to open when tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Reminders app.",
-        }, 
-      },
-
-      sunrise: {
-        name: "Sunrise and sunset",
-        showWithin: {
-          val: "",
-          name: "Limit times displayed",
-          description: "Set how many minutes before/after sunrise or sunset to show this element. Leave blank to always show.",
-        }, 
-        separateElements: {
-          val: false,
-          name: "Use separate sunrise and sunset elements",
-          description: "By default, the sunrise element changes between sunrise and sunset times automatically. Set to true for individual, hard-coded sunrise and sunset elements.",
-          type: "bool",
-        },
-      },
-
-      weather: {
-        name: "Weather",
-        showLocation: {
-          val: false,
-          name: "Show location name",
-          type: "bool",
-        },
-        horizontalCondition: {
-          val: false,
-          name: "Display the condition and temperature horizontally",
-          type: "bool",
-        },
-        showCondition: {
-          val: false,
-          name: "Show text value of the current condition",
-          type: "bool",
-        },
-        showHighLow: {
-          val: true,
-          name: "Show today's high and low temperatures",
-          type: "bool",
-        },
-        showRain: {
-          val: false,
-          name: "Show percent chance of rain",
-          type: "bool",
-        },
-        tomorrowShownAtHour: {
-          val: "20",
-          name: "When to switch to tomorrow's weather",
-          description: "Set the hour (in 24-hour time) to switch from the next hour to tomorrow's weather. Use 0 for always, 24 for never.",
-        }, 
-        spacing: {
-          val: "0",
-          name: "Spacing between daily or hourly forecast items",
-        },
-        horizontalHours: {
-          val: false,
-          name: "Display the hourly forecast horizontally",
-          type: "bool",
-        },
-        showHours: {
-          val: "3",
-          name: "Number of hours shown in the hourly forecast item",
-        }, 
-        showHoursFormat: {
-          val: "ha",
-          name: "Date format for the hourly forecast item",
-        }, 
-        horizontalForecast: {
-          val: false,
-          name: "Display the daily forecast horizontally",
-          type: "bool",
-        },
-        showDays: {
-          val: "3",
-          name: "Number of days shown in the daily forecast item",
-        }, 
-        showDaysFormat: {
-          val: "E",
-          name: "Date format for the daily forecast item",
-        }, 
-        showToday: {
-          val: false,
-          name: "Show today's weather in the daily forecast item",
-          type: "bool",
-        },
-        urlCurrent: {
-          val: "",
-          name: "URL to open when current weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
-        }, 
-        urlFuture: {
-          val: "",
-          name: "URL to open when hourly weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
-        }, 
-        urlForecast: {
-          val: "",
-          name: "URL to open when daily weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
-        }, 
-      },
-
-      covid: {
-        name: "COVID data",
-        country: {
-          val: "USA",
-          name: "Country for COVID information",
-        }, 
-        url: {
-          val: "https://covid19.who.int",
-          name: "URL to open when the COVID data is tapped",
-        }, 
-      },
-    }
-    return settings
-  },
-
   // Load or reload a table full of preferences.
   async loadTable(table,category,settingsObject) {
     table.removeAllRows()
@@ -2887,6 +2414,479 @@ const weatherCal = {
     draw.fillPath()
 
     return draw.getImage()
+  },
+  
+  // Return the default widget settings.
+  defaultSettings() {
+    const settings = {
+
+      widget: {
+        name: "Overall settings",
+        locale: {
+          val: "",
+          name: "Locale code",
+          description: "Leave blank to match the device's locale.",
+        },
+        units: {
+          val: "imperial",
+          name: "Units",
+          description: "Use imperial for Fahrenheit or metric for Celsius.",
+          type: "enum",
+          options: ["imperial","metric"],
+        },
+        preview: {
+          val: "large",
+          name: "Widget preview size",
+          description: "Set the size of the widget preview displayed in the app.",
+          type: "enum",
+          options: ["small","medium","large"],
+        },
+        padding: {
+          val: "5",
+          name: "Item padding",
+          description: "The padding around each item. This also determines the approximate widget padding. Default is 5.",
+        },
+        widgetPadding: {
+          val: { top: "", left: "", bottom: "", right: "" },
+          name: "Custom widget padding",
+          type: "multival",
+          description: "The padding around the entire widget. By default, these values are blank and Weather Cal uses the item padding to determine these values. Transparent widgets often look best with these values at 0.",
+        },
+        tintIcons: {
+          val: false,
+          name: "Icons match text color",
+          description: "Decide if icons should match the color of the text around them.",
+          type: "bool",
+        },
+      },
+
+      localization: {
+        name: "Localization and text customization",
+        morningGreeting: {
+          val: "Good morning.",
+          name: "Morning greeting",
+        },
+        afternoonGreeting: {
+          val: "Good afternoon.",
+          name: "Afternoon greeting",
+        },
+        eveningGreeting: {
+          val: "Good evening.",
+          name: "Evening greeting",
+        },
+        nightGreeting: {
+          val: "Good night.",
+          name: "Night greeting",
+        },
+        nextHourLabel: {
+          val: "Next hour",
+          name: "Label for next hour of weather",
+        },
+        tomorrowLabel: {
+          val: "Tomorrow",
+          name: "Label for tomorrow",
+        },
+        noEventMessage: {
+          val: "Enjoy the rest of your day.",
+          name: "No event message",
+          description: "The message shown when there are no more events for the day, if that setting is active.",
+        },
+        noRemindersMessage: {
+          val: "Tasks complete.",
+          name: "No reminders message",
+          description: "The message shown when there are no more reminders for the day, if that setting is active.",
+        },
+        durationMinute: {
+          val: "m",
+          name: "Duration label for minutes",
+        },
+        durationHour: {
+          val: "h",
+          name: "Duration label for hours",
+        },
+        covid: {
+          val: "{cases} cases, {deaths} deaths, {recovered} recoveries",
+          name: "COVID data text",
+          description: "Each {token} is replaced with the number from the data. The available tokens are: cases, todayCases, deaths, todayDeaths, recovered, active, critical, casesPerOneMillion, deathsPerOneMillion, totalTests, testsPerOneMillion"
+        },
+        week: {
+          val: "Week",
+          name: "Label for the week number",
+        },
+      },
+
+      font: {
+        name: "Text sizes, colors, and fonts",
+        defaultText: {
+          val: { size: "14", color: "ffffff", font: "regular" },
+          name: "Default font settings",
+          description: "These settings apply to all text on the widget that doesn't have a customized value.",
+          type: "multival",
+        },
+        smallDate:   {
+          val: { size: "17", color: "", font: "semibold" },
+          name: "Small date",
+          type: "multival",
+        },
+        largeDate1:  {
+          val: { size: "30", color: "", font: "light" },
+          name: "Large date, line 1",
+          type: "multival",
+        },
+        largeDate2:  {
+          val: { size: "30", color: "", font: "light" },
+          name: "Large date, line 2",
+          type: "multival",
+        },
+        greeting:    {
+          val: { size: "30", color: "", font: "semibold" },
+          name: "Greeting",
+          type: "multival",
+        },
+        eventLabel:  {
+          val: { size: "14", color: "", font: "semibold" },
+          name: "Event heading (used for the TOMORROW label)",
+          type: "multival",
+        },
+        eventTitle:  {
+          val: { size: "14", color: "", font: "semibold" },
+          name: "Event title",
+          type: "multival",
+        },
+        eventLocation:   {
+          val: { size: "14", color: "", font: "" },
+          name: "Event location",
+          type: "multival",
+        },
+        eventTime:   {
+          val: { size: "14", color: "ffffffcc", font: "" },
+          name: "Event time",
+          type: "multival",
+        },
+        noEvents:    {
+          val: { size: "30", color: "", font: "semibold" },
+          name: "No events message",
+          type: "multival",
+        },
+        reminderTitle:  {
+          val: { size: "14", color: "", font: "" },
+          name: "Reminder title",
+          type: "multival",
+        },
+        reminderTime:   {
+          val: { size: "14", color: "ffffffcc", font: "" },
+          name: "Reminder time",
+          type: "multival",
+        },
+        noReminders:    {
+          val: { size: "30", color: "", font: "semibold" },
+          name: "No reminders message",
+          type: "multival",
+        },
+        largeTemp:   {
+          val: { size: "34", color: "", font: "light" },
+          name: "Large temperature label",
+          type: "multival",
+        },
+        smallTemp:   {
+          val: { size: "14", color: "", font: "" },
+          name: "Most text used in weather items",
+          type: "multival",
+        },
+        tinyTemp:    {
+          val: { size: "12", color: "", font: "" },
+          name: "Small text used in weather items",
+          type: "multival",
+        },
+        customText:  {
+          val: { size: "14", color: "", font: "" },
+          name: "User-defined text items",
+          type: "multival",
+        },
+        battery:     {
+          val: { size: "14", color: "", font: "medium" },
+          name: "Battery percentage",
+          type: "multival",
+        },
+        sunrise:     {
+          val: { size: "14", color: "", font: "medium" },
+          name: "Sunrise and sunset",
+          type: "multival",
+        },
+        covid:       {
+          val: { size: "14", color: "", font: "medium" },
+          name: "COVID data",
+          type: "multival",
+        },
+        week:        {
+          val: { size: "14", color: "", font: "light" },
+          name: "Week label",
+          type: "multival",
+        },
+      },
+
+      date: {
+        name: "Date",
+        dynamicDateSize: {
+          val: true,
+          name: "Dynamic date size",
+          description: "If set to true, the date will become smaller when events are displayed.",
+          type: "bool",
+        },
+        staticDateSize: {
+          val: "small",
+          name: "Static date size",
+          description: "Set the date size shown when dynamic date size is not enabled.",
+          type: "enum",
+          options: ["small","large"],
+        },
+        smallDateFormat: {
+          val: "EEEE, MMMM d",
+          name: "Small date format",
+        },
+        largeDateLineOne: {
+          val: "EEEE,",
+          name: "Large date format, line 1",
+        }, 
+        largeDateLineTwo: {
+          val: "MMMM d",
+          name: "Large date format, line 2",
+        }, 
+      },
+
+      events: {
+        name: "Events",
+        numberOfEvents: {
+          val: "3",
+          name: "Maximum number of events shown",
+        }, 
+        minutesAfter: {
+          val: "5",
+          name: "Minutes after event begins",
+          description: "Number of minutes after an event begins that it should still be shown.",
+        }, 
+        showAllDay: {
+          val: false,
+          name: "Show all-day events",
+          type: "bool",        
+        },
+        numberOfDays: {
+          val: "1",
+          name: "How many future days of events to show",
+          description: "How many days to show into the future. Set to 0 to show today's events only. The maximum is 7.",
+        }, 
+        labelFormat: {
+          val: "EEEE, MMMM d",
+          name: "Date format for future event days",
+        }, 
+        showTomorrow: {
+          val: "20",
+          name: "Future days shown at hour",
+          description: "The hour (in 24-hour time) to start showing events for tomorrow or beyond. Use 0 for always, 24 for never.",
+        }, 
+        showEventLength: {
+          val: "duration",
+          name: "Event length display style",
+          description: "Choose whether to show the duration, the end time, or no length information.",
+          type: "enum",
+          options: ["duration","time","none"],
+        }, 
+        showLocation: {
+          val: false,
+          name: "Show event location",
+          type: "bool",        
+        },
+        selectCalendars: {
+          val: "",
+          name: "Calendars to show",
+          description: "Write the names of each calendar separated by commas, like this: Home,Work,Personal. Leave blank to show events from all calendars.",
+        }, 
+        showCalendarColor: {
+          val: "rectangle left",
+          name: "Display calendar color",
+          description: "Choose the shape and location of the calendar color.",
+          type: "enum",
+          options: ["rectangle left","rectangle right","circle left","circle right","none"],
+        }, 
+        noEventBehavior: {
+          val: "message",
+          name: "Show when no events remain",
+          description: "When no events remain, show a hard-coded message, a time-based greeting, or nothing.",
+          type: "enum",
+          options: ["message","greeting","none"],
+        }, 
+        url: {
+          val: "",
+          name: "URL to open when tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Calendar app.",
+        }, 
+      },
+
+      reminders: {
+        name: "Reminders",
+        numberOfReminders: {
+          val: "3",
+          name: "Maximum number of reminders shown",
+        }, 
+        useRelativeDueDate: {
+          val: false,
+          name: "Use relative dates",
+          description: "Set to true for a relative due date (in 3 hours) instead of absolute (3:00 PM).",
+          type: "bool",
+        },
+        showWithoutDueDate: {
+          val: false,
+          name: "Show reminders without a due date",
+          type: "bool",
+        },
+        showOverdue: {
+          val: false,
+          name: "Show overdue reminders",
+          type: "bool",
+        },
+        todayOnly: {
+          val: false,
+          name: "Hide reminders due after today",
+          type: "bool",
+        },
+        selectLists: {
+          val: "",
+          name: "Lists to show",
+          description: "Write the names of each list separated by commas, like this: Home,Work,Personal. Leave blank to show reminders from all lists.",
+        }, 
+        showListColor: {
+          val: "rectangle left",
+          name: "Display list color",
+          description: "Choose the shape and location of the list color.",
+          type: "enum",
+          options: ["rectangle left","rectangle right","circle left","circle right","none"],
+        }, 
+        noRemindersBehavior: {
+          val: "none",
+          name: "Show when no reminders remain",
+          description: "When no reminders remain, show a hard-coded message, a time-based greeting, or nothing.",
+          type: "enum",
+          options: ["message","greeting","none"],
+        }, 
+        url: {
+          val: "",
+          name: "URL to open when tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Reminders app.",
+        }, 
+      },
+
+      sunrise: {
+        name: "Sunrise and sunset",
+        showWithin: {
+          val: "",
+          name: "Limit times displayed",
+          description: "Set how many minutes before/after sunrise or sunset to show this element. Leave blank to always show.",
+        }, 
+        separateElements: {
+          val: false,
+          name: "Use separate sunrise and sunset elements",
+          description: "By default, the sunrise element changes between sunrise and sunset times automatically. Set to true for individual, hard-coded sunrise and sunset elements.",
+          type: "bool",
+        },
+      },
+
+      weather: {
+        name: "Weather",
+        showLocation: {
+          val: false,
+          name: "Show location name",
+          type: "bool",
+        },
+        horizontalCondition: {
+          val: false,
+          name: "Display the condition and temperature horizontally",
+          type: "bool",
+        },
+        showCondition: {
+          val: false,
+          name: "Show text value of the current condition",
+          type: "bool",
+        },
+        showHighLow: {
+          val: true,
+          name: "Show today's high and low temperatures",
+          type: "bool",
+        },
+        showRain: {
+          val: false,
+          name: "Show percent chance of rain",
+          type: "bool",
+        },
+        tomorrowShownAtHour: {
+          val: "20",
+          name: "When to switch to tomorrow's weather",
+          description: "Set the hour (in 24-hour time) to switch from the next hour to tomorrow's weather. Use 0 for always, 24 for never.",
+        }, 
+        spacing: {
+          val: "0",
+          name: "Spacing between daily or hourly forecast items",
+        },
+        horizontalHours: {
+          val: false,
+          name: "Display the hourly forecast horizontally",
+          type: "bool",
+        },
+        showHours: {
+          val: "3",
+          name: "Number of hours shown in the hourly forecast item",
+        }, 
+        showHoursFormat: {
+          val: "ha",
+          name: "Date format for the hourly forecast item",
+        }, 
+        horizontalForecast: {
+          val: false,
+          name: "Display the daily forecast horizontally",
+          type: "bool",
+        },
+        showDays: {
+          val: "3",
+          name: "Number of days shown in the daily forecast item",
+        }, 
+        showDaysFormat: {
+          val: "E",
+          name: "Date format for the daily forecast item",
+        }, 
+        showToday: {
+          val: false,
+          name: "Show today's weather in the daily forecast item",
+          type: "bool",
+        },
+        urlCurrent: {
+          val: "",
+          name: "URL to open when current weather is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
+        urlFuture: {
+          val: "",
+          name: "URL to open when hourly weather is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
+        urlForecast: {
+          val: "",
+          name: "URL to open when daily weather is tapped",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+        }, 
+      },
+
+      covid: {
+        name: "COVID data",
+        country: {
+          val: "USA",
+          name: "Country for COVID information",
+        }, 
+        url: {
+          val: "https://covid19.who.int",
+          name: "URL to open when the COVID data is tapped",
+        }, 
+      },
+    }
+    return settings
   },
 }
 
