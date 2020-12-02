@@ -1434,7 +1434,7 @@ const weatherCal = {
       const display = eventSettings.noEventBehavior
 
       // If it's a greeting, let the greeting function handle it.
-      if (display == "greeting") { return await greeting(column) }
+      if (display == "greeting") { return await this.greeting(column) }
 
       // If it's a message, get the localized text.
       if (display == "message" && this.localization.noEventMessage.length) {
@@ -1579,7 +1579,7 @@ const weatherCal = {
       const display = reminderSettings.noRemindersBehavior
 
       // If it's a greeting, let the greeting function handle it.
-      if (display == "greeting") { return await greeting(column) }
+      if (display == "greeting") { return await this.greeting(column) }
 
       // If it's a message, get the localized text.
       if (display == "message" && this.localization.noRemindersMessage.length) {
