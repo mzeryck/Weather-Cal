@@ -196,7 +196,7 @@ const weatherCal = {
       const wc = fm.fileExists(path) ? fm.readString(path) : false
       const version = wc ? parseInt(wc.slice(wc.lastIndexOf("//") + 2).trim()) : false
 
-      if (wc && (!version || version < 3)) { return await makeAlert("Please update Weather Cal before importing a widget.",["OK"]).present() }
+      if (wc && (!version || version < 4)) { return await makeAlert("Please update Weather Cal before importing a widget.",["OK"]).present() }
 
       if ((await makeAlert("Do you want your widget to be named " + Script.name() + "?",["Yes, looks good","No, let me change it"]).present()) == 1) { return }
 
@@ -1500,7 +1500,7 @@ const weatherCal = {
       titleStack.layoutHorizontally()
 
       // If we're showing a color, and it's not shown on the right, add it to the left.
-      if (showCalendarColor.length && !showCalendarColor.includes("right")) {
+      if (showCalendarColor.length && showCalendarColor != "none" && !showCalendarColor.includes("right")) {
         let colorItemText = this.provideTextSymbol(colorShape) + " "
         let colorItem = this.provideText(colorItemText, titleStack, this.format.eventTitle)
         colorItem.textColor = event.calendar.color
@@ -1516,7 +1516,7 @@ const weatherCal = {
       titleStack.setPadding(this.padding, this.padding, titlePadding, this.padding)
 
       // If we're showing a color on the right, show it.
-      if (showCalendarColor.length && showCalendarColor.includes("right")) {
+      if (showCalendarColor.length && showCalendarColor != "none" && showCalendarColor.includes("right")) {
         let colorItemText = " " + this.provideTextSymbol(colorShape)
         let colorItem = this.provideText(colorItemText, titleStack, this.format.eventTitle)
         colorItem.textColor = event.calendar.color
@@ -1613,7 +1613,7 @@ const weatherCal = {
       const colorShape = showListColor.includes("circle") ? "circle" : "rectangle"
 
       // If we're showing a color, and it's not shown on the right, add it to the left.
-      if (showListColor.length && !showListColor.includes("right")) {
+      if (showListColor.length && showListColor != "none" && !showListColor.includes("right")) {
         let colorItemText = this.provideTextSymbol(colorShape) + " "
         let colorItem = this.provideText(colorItemText, titleStack, this.format.reminderTitle)
         colorItem.textColor = reminder.calendar.color
@@ -1623,7 +1623,7 @@ const weatherCal = {
       titleStack.setPadding(this.padding, this.padding, this.padding/5, this.padding)
 
       // If we're showing a color on the right, show it.
-      if (showListColor.length && showListColor.includes("right")) {
+      if (showListColor.length && showListColor != "none" && showListColor.includes("right")) {
         let colorItemText = " " + this.provideTextSymbol(colorShape)
         let colorItem = this.provideText(colorItemText, titleStack, this.format.reminderTitle)
         colorItem.textColor = reminder.calendar.color
@@ -2163,6 +2163,26 @@ const weatherCal = {
     var weekNumber = Math.floor(1 + 0.5 + (currentThursday.getTime() - firstThursday.getTime()) / 86400000/7) + ""
     var weekText = this.localization.week + " " + weekNumber
     this.provideText(weekText, weekStack, this.format.week)
+  },
+  
+  symbol(column, name) {
+
+    if (!name || !SFSymbol.named(name)) { return }
+
+    const symSettings = this.settings.symbol
+    const symbolPad = symSettings.padding || {}
+    const topPad    = (symbolPad.top && symbolPad.top.length) ? parseInt(symbolPad.top) : this.padding
+    const leftPad   = (symbolPad.left && symbolPad.left.length) ? parseInt(symbolPad.left) : this.padding
+    const bottomPad = (symbolPad.bottom && symbolPad.bottom.length) ? parseInt(symbolPad.bottom) : this.padding
+    const rightPad  = (symbolPad.right && symbolPad.right.length) ? parseInt(symbolPad.right) : this.padding
+    
+    const stack = this.align(column)
+    stack.setPadding(topPad, leftPad, bottomPad, rightPad)
+
+    const symbol = stack.addImage(SFSymbol.named(name).image)
+    const size = symSettings.size.length > 0 ? parseInt(symSettings.size) : column.size.width - (this.padding * 4)
+    symbol.imageSize = new Size(size, size)
+    if (symSettings.tintColor.length > 0) { symbol.tintColor = new Color(symSettings.tintColor) }
   },
 
   /*
@@ -2905,6 +2925,26 @@ const weatherCal = {
           name: "URL to open when the COVID data is tapped",
         }, 
       },
+      
+      symbol: {
+        name: "Symbols",
+        size: {
+          val: "18",
+          name: "Size",
+          description: "Size of each symbol. Leave blank to fill the width of the column.",
+        }, 
+        padding: {
+          val: { top: "", left: "", bottom: "", right: "" },
+          name: "Padding",
+          type: "multival",
+          description: "The padding around each symbol. Leave blank to use the default padding.",
+        },
+        tintColor: {
+          val: "ffffff",
+          name: "Tint color",
+          description: "The hex code color value to tint the symbols. Leave blank for the default tint.",
+        }, 
+      },
     }
     return settings
   },
@@ -2937,4 +2977,4 @@ const weatherCal = {
  * =======================================
  */
 module.exports = weatherCal
-//3
+//4
