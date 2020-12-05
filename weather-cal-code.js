@@ -1353,8 +1353,22 @@ const weatherCal = {
 
     // Otherwise, use the API to get new data.
     } else {
-      const covidReq = "https://coronavirus-19-api.herokuapp.com/countries/" + this.settings.covid.country
-      covidDataRaw = await new Request(covidReq).loadJSON()
+      // Get yesterday's data using a different API with a history
+      const covidReqYesterday = "https://api.covidtracking.com/v1/us/daily.json"  // TODO: make country a variable
+      let covidDataRawYesterday = await new Request(covidReqYesterday).loadJSON()
+      covidDataRawYesterday = covidDataRawYesterday[0]
+      covidDataRawYesterday = (({ positiveIncrease, deathIncrease }) => ({ positiveIncrease, deathIncrease }))(covidDataRawYesterday)
+      // Get today's data using the original API used by this script
+      const covidReqToday = "https://coronavirus-19-api.herokuapp.com/countries/" + this.settings.covid.country
+      let covidDataRawToday = await new Request(covidReqToday).loadJSON()
+      // Combine today's data with a few fields from yesterday's data
+      const covidDataRaw = {
+        ...covidDataRawToday,
+        ...{
+          yesterdayCases: covidDataRawYesterday['positiveIncrease'],
+          yesterdayDeaths: covidDataRawYesterday['deathIncrease']
+        }
+      }
       this.fm.writeString(cacheCovidPath, JSON.stringify(covidDataRaw))
     }
 
@@ -2547,7 +2561,7 @@ const weatherCal = {
         covid: {
           val: "{cases} cases, {deaths} deaths, {recovered} recoveries",
           name: "COVID data text",
-          description: "Each {token} is replaced with the number from the data. The available tokens are: cases, todayCases, deaths, todayDeaths, recovered, active, critical, casesPerOneMillion, deathsPerOneMillion, totalTests, testsPerOneMillion"
+          description: "Each {token} is replaced with the number from the data. The available tokens are: cases, todayCases, yesterdayCases, deaths, todayDeaths, yesterdayDeaths, recovered, active, critical, casesPerOneMillion, deathsPerOneMillion, totalTests, testsPerOneMillion"
         },
         week: {
           val: "Week",
