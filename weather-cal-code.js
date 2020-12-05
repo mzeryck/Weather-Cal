@@ -1362,7 +1362,7 @@ const weatherCal = {
       const covidReqToday = "https://coronavirus-19-api.herokuapp.com/countries/" + this.settings.covid.country
       let covidDataRawToday = await new Request(covidReqToday).loadJSON()
       // Combine today's data with a few fields from yesterday's data
-      const covidDataRaw = {
+      covidDataRaw = {
         ...covidDataRawToday,
         ...{
           yesterdayCases: covidDataRawYesterday['positiveIncrease'],
