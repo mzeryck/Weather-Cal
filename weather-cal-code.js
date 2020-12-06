@@ -2030,7 +2030,7 @@ const weatherCal = {
 
     // Set up the battery icon.
     const batteryIcon = batteryStack.addImage(this.provideBatteryIcon(Device.batteryLevel(),Device.isCharging()))
-    batteryIcon.imageSize = new Size(30,30)
+    batteryIcon.imageSize = new Size(30,18)
 
     // Change the battery icon to red if battery level is less than 20%.
     const batteryLevel = Math.round(Device.batteryLevel() * 100)
@@ -2096,7 +2096,7 @@ const weatherCal = {
 
     // Add the correct symbol.
     const symbol = sunriseStack.addImage(SFSymbol.named(symbolName).image)
-    symbol.imageSize = new Size(22,22)
+    symbol.imageSize = new Size(18,18)
     this.tintIcon(symbol, this.format.sunrise)
 
     sunriseStack.addSpacer(this.padding)
