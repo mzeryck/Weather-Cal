@@ -1377,7 +1377,7 @@ const weatherCal = {
     if (!this.data.events && dateSettings.dynamicDateSize) { await this.setupEvents() }
 
     // Show small if it's hard coded, or if it's dynamic and events are visible.
-    if (dateSettings.dynamicDateSize ? this.data.events.eventsAreVisible : dateSettings.staticDateSize == "small") {
+    if (dateSettings.dynamicDateSize ? this.data.events.futureEvents.length : dateSettings.staticDateSize == "small") {
       let dateStack = this.align(column)
       dateStack.setPadding(this.padding, this.padding, this.padding, this.padding)
       let dateText = this.provideText(this.formatDate(this.now,dateSettings.smallDateFormat), dateStack, this.format.smallDate)
