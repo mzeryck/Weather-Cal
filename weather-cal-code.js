@@ -727,7 +727,7 @@ const weatherCal = {
   // Set up the location data object.
   async setupLocation() {
     const locationPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-location")
-    const locationCache = this.getCache(locationPath, parseInt(this.settings.updateLocation))
+    const locationCache = this.getCache(locationPath, this.settings ? parseInt(this.settings.updateLocation) : null)
     let location
     
     if (!locationCache || locationCache.cacheExpired) {
