@@ -727,23 +727,23 @@ const weatherCal = {
   // Set up the location data object.
   async setupLocation() {
     const locationPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-location")
-    const locationCache = this.getCache(locationPath, parseInt(this.settings.updateLocation) || -1)
+    const locationCache = this.getCache(locationPath, parseInt(this.settings.updateLocation))
     let location
     
-    if (locationCache.cacheExpired) {
+    if (!locationCache || locationCache.cacheExpired) {
       try { location = await Location.current() }
-      catch { location = locationCache }
+      catch { location = locationCache || {} }
 
       try {
         const geocode = await Location.reverseGeocode(location.latitude, location.longitude, this.locale)
         location.locality = (geocode[0].locality || geocode[0].postalAddress.city) || geocode[0].administrativeArea
       } catch {
-        location.locality = locationCache.locality || ""
+        location.locality = locationCache ? locationCache.locality : null
       }
-      if (!location.latitude) return false
-      this.fm.writeString(locationPath, JSON.stringify(location))
+      if (location && location.locality) this.fm.writeString(locationPath, JSON.stringify(location))
     }
     this.data.location = location || locationCache
+    if (!this.data.location.latitude) return false
     return true
   },
 
@@ -754,9 +754,9 @@ const weatherCal = {
     async function getSunData(date) { return await new Request("https://api.sunrise-sunset.org/json?lat=" + location.latitude + "&lng=" + location.longitude + "&formatted=0&date=" + date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate()).loadJSON() }
 
     const sunPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-sunrise")
-    let sunData = this.getCache(sunPath, 60)
+    let sunData = this.getCache(sunPath, 60, 1440)
 
-    if (sunData.cacheExpired) { 
+    if (!sunData || sunData.cacheExpired || !sunData.results || sunData.results.length == 0) { 
       try {
         sunData = await getSunData(this.now)
 
@@ -769,9 +769,9 @@ const weatherCal = {
       } catch {}
     }
     this.data.sun = {}
-    this.data.sun.sunrise = new Date(sunData.results.sunrise).getTime()
-    this.data.sun.sunset = new Date(sunData.results.sunset).getTime()
-    this.data.sun.tomorrow = new Date(sunData.results.tomorrow).getTime()
+    this.data.sun.sunrise = sunData ? new Date(sunData.results.sunrise).getTime() : null
+    this.data.sun.sunset = sunData ? new Date(sunData.results.sunset).getTime() : null
+    this.data.sun.tomorrow = sunData ? new Date(sunData.results.tomorrow).getTime() : null
   },
 
   // Set up the weather data object.
@@ -779,7 +779,7 @@ const weatherCal = {
     if (!this.data.location) { await this.setupLocation() }
 
     const weatherPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-cache")
-    let weatherData = this.getCache(weatherPath, 1)
+    let weatherData = this.getCache(weatherPath, 1, 60)
     
     function getLocale(locale) {
       const openWeatherLang = ["af","al","ar","az","bg","ca","cz","da","de","el","en","eu","fa","fi","fr","gl","he","hi","hr","hu","id","it","ja","kr","la","lt","mk","no","nl","pl","pt","pt_br","ro","ru","sv","se","sk","sl","sp","es","sr","th","tr","ua","uk","vi","zh_cn","zh_tw","zu"]
@@ -787,7 +787,7 @@ const weatherCal = {
       for (item of languages) { if (openWeatherLang.includes(item)) return item }
     }
 
-    if (weatherData.cacheExpired) {
+    if (!weatherData || weatherData.cacheExpired) {
       try {
         const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key"))
         const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + getLocale(this.locale) + "&appid=" + apiKey
@@ -821,23 +821,23 @@ const weatherCal = {
   // Set up the COVID data object.
   async setupCovid() {
     const covidPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-covid")
-    let covidData = this.getCache(covidPath, 15)
+    let covidData = this.getCache(covidPath, 15, 1440)
 
-    if (covidData.cacheExpired) {
+    if (!covidData || covidData.cacheExpired) {
       try {
         covidData = await new Request("https://coronavirus-19-api.herokuapp.com/countries/" + this.settings.covid.country.trim()).loadJSON()
         this.fm.writeString(covidPath, JSON.stringify(covidData))
       } catch {}
     }
-    this.data.covid = covidData
+    this.data.covid = covidData || {}
   },
   
   // Set up the news.
   async setupNews() {
     const newsPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-news")
-    let newsData = this.getCache(newsPath, 0)
+    let newsData = this.getCache(newsPath, 1, 1440)
 
-    if (newsData.cacheExpired) {
+    if (!newsData || newsData.cacheExpired) {
       try {
         let rawData = await new Request(this.settings.news.url).loadString()
         rawData = getTag(rawData, "item", parseInt(this.settings.news.numberOfItems))
@@ -854,7 +854,7 @@ const weatherCal = {
         this.fm.writeString(newsPath, JSON.stringify(newsData))
       } catch {}
     }
-    this.data.news = newsData
+    this.data.news = newsData || []
     
     // Get one or many tags from a string.
     function getTag(string, tag, number = 1) {
@@ -1352,7 +1352,7 @@ const weatherCal = {
   async hourly(column) { await this.forecast(column, true) },
 
   // Show the sunrise or sunset time.
-  async sunrise(column, displaySunset = false) {
+  async sunrise(column, forceSunset = false) {
     if (!this.data.sun) { await this.setupSunrise() }
     const [sunrise, sunset, tomorrow, current, sunSettings] = [this.data.sun.sunrise, this.data.sun.sunset, this.data.sun.tomorrow, this.now.getTime(), this.settings.sunrise]
 
@@ -1360,9 +1360,9 @@ const weatherCal = {
     if (showWithin > 0 && !(Math.abs(this.now.getTime() - sunrise) / 60000 <= showWithin) && !(Math.abs(this.now.getTime() - sunset) / 60000 <= showWithin)) { return }
 
     let timeToShow, symbolName
-    const isDaytime = current > sunrise + 30*60*1000 && current < sunset + 30*60*1000
+    const showSunset = current > sunrise + 30*60*1000 && current < sunset + 30*60*1000
 
-    if (sunSettings.separateElements ? displaySunset : isDaytime) {
+    if (sunSettings.separateElements ? forceSunset : showSunset) {
       symbolName = "sunset.fill"
       timeToShow = sunset
     } else {
@@ -1383,7 +1383,7 @@ const weatherCal = {
 
     sunriseStack.addSpacer(this.padding)
 
-    const time = this.provideText(this.formatTime(new Date(timeToShow)), sunriseStack, this.format.sunrise)
+    const time = this.provideText(timeToShow == null ? "--" : this.formatTime(new Date(timeToShow)), sunriseStack, this.format.sunrise)
   },
 
   // Allow for either term to be used.
@@ -1519,11 +1519,14 @@ const weatherCal = {
  * Helper functions
  * -------------------------------------------- */
 
-  // Gets the cache if it's under a certain age in minutes.
-  getCache(path, age) {
-    if (!this.fm.fileExists(path)) return { cacheExpired: true }
-    if (age > 0 && this.now.getTime() - this.fm.modificationDate(path).getTime() > age*60000) return { cacheExpired: true }
-    return JSON.parse(this.fm.readString(path))
+  // Gets the cache.
+  getCache(path, minAge, maxAge) {
+    if (!this.fm.fileExists(path)) return null
+    let cache = JSON.parse(this.fm.readString(path))
+    const age = (this.now.getTime() - this.fm.modificationDate(path).getTime())/60000
+    if (maxAge && age > maxAge) return null
+    if (minAge && age > minAge) cache.cacheExpired = true
+    return cache
   },
 
   // Returns a rounded number string or the provided dummy text.
@@ -2263,7 +2266,7 @@ if (moduleName == Script.name()) {
       column
     `
     const name = "Weather Cal widget"
-    await weatherCal.runSetup(name, true, "Weather Cal code", "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js")
+    //await weatherCal.runSetup(name, true, "Weather Cal code", "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js")
     const w = await weatherCal.createWidget(layout, name, true)
     w.presentLarge()
     Script.complete()
