@@ -19,6 +19,7 @@ const weatherCal = {
     this.prefPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-preferences-" + name)
     this.widgetUrl = "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal.js"
     this.now = new Date()
+    this.data = {}
     this.initialized = true
   },
 
@@ -429,7 +430,6 @@ const weatherCal = {
     this.tintIcons = this.settings.widget.tintIcons
     this.localization = this.settings.localization
     this.format = this.settings.font
-    this.data = {}
     this.custom = custom
 
     if (!this.locale || this.locale == "" || this.locale == null) { this.locale = Device.locale() }
