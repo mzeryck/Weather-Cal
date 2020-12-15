@@ -45,7 +45,7 @@ const weatherCal = {
     await this.generateAlert(message,["Check permissions"])
 
     let errors = []
-    if (!(await setupLocation())) { errors.push("location") }
+    if (!(await this.setupLocation())) { errors.push("location") }
     try { await CalendarEvent.today() } catch { errors.push("calendar") }
     try { await Reminder.all() } catch { errors.push("reminders") }
 
