@@ -515,7 +515,7 @@ const weatherCal = {
   async executeItem(item) {
     const itemArray = item.replace(/[.,]$/,"").split('(')
     const functionName = itemArray[0]
-    const parameter = itemArray[1] : itemArray[1].slice(0, -1) : null
+    const parameter = itemArray[1] ? itemArray[1].slice(0, -1) : null
 
     if (this.custom && this.custom[functionName]) { return await this.custom[functionName](this.currentColumn, parameter) }
     if (this[functionName]) { return await this[functionName](this.currentColumn, parameter) }
