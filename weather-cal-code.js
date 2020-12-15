@@ -513,8 +513,8 @@ const weatherCal = {
 
   // Execute an item in the layout generator.
   async executeItem(item) {
-    const itemArray = item.split('(')
-    const functionName = itemArray[0].replace(/[.,]$/,"")
+    const itemArray = item.replace(/[.,]$/,"").split('(')
+    const functionName = itemArray[0]
     const parameter = itemArray[1] : itemArray[1].slice(0, -1) : null
 
     if (this.custom && this.custom[functionName]) { return await this.custom[functionName](this.currentColumn, parameter) }
