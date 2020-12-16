@@ -404,7 +404,8 @@ const weatherCal = {
 
   // Write the value of a preference to disk.
   writePreference(name, value, inputPath = null) {
-    this.fm.writeString(inputPath || this.fm.joinPath(this.fm.libraryDirectory(), name), JSON.stringify(value))
+    const preference = typeof value == "string" ? value : JSON.stringify(value)
+    this.fm.writeString(inputPath || this.fm.joinPath(this.fm.libraryDirectory(), name), preference)
   },
   
 /* 
@@ -781,16 +782,24 @@ const weatherCal = {
     const weatherPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-cache")
     let weatherData = this.getCache(weatherPath, 1, 60)
     
-    function getLocale(locale) {
-      const openWeatherLang = ["af","al","ar","az","bg","ca","cz","da","de","el","en","eu","fa","fi","fr","gl","he","hi","hr","hu","id","it","ja","kr","la","lt","mk","no","nl","pl","pt","pt_br","ro","ru","sv","se","sk","sl","sp","es","sr","th","tr","ua","uk","vi","zh_cn","zh_tw","zu"]
-      const languages = [locale, locale.split("_")[0], Device.locale(), Device.locale().split("_")[0]]
-      for (item of languages) { if (openWeatherLang.includes(item)) return item }
+    const forcedLocale = this.settings.weather.locale || ""
+    let locale = forcedLocale.length ? forcedLocale : this.locale
+    
+    const safeLocales = this.getOpenWeatherLocaleCodes()
+    if (!forcedLocale.length && !safeLocales.includes(locale)) {
+      const languages = [locale, ...locale.split("_"), ...locale.split("-"), Device.locale(), ...Device.locale().split("_"), ...Device.locale().split("-")]
+      for (item of languages) { 
+        if (safeLocales.includes(item)) {
+          locale = item
+          break
+        }
+      }
     }
 
     if (!weatherData || weatherData.cacheExpired) {
       try {
-        const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key"))
-        const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + getLocale(this.locale) + "&appid=" + apiKey
+        const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key")).replace(/\"/g,"")
+        const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale + "&appid=" + apiKey
         weatherData = await new Request(weatherReq).loadJSON()
         if (weatherData.cod) { weatherData = null }
         if (weatherData) { this.fm.writeString(weatherPath, JSON.stringify(weatherData)) }
@@ -798,7 +807,7 @@ const weatherCal = {
     }
 
     // English continues using the "main" weather description.
-    const english = (this.locale.split("_")[0] == "en")
+    const english = (locale.split("_")[0] == "en")
 
     this.data.weather = {}
     this.data.weather.currentTemp = weatherData ? weatherData.current.temp : null
@@ -1519,6 +1528,11 @@ const weatherCal = {
  * Helper functions
  * -------------------------------------------- */
 
+  // Returns the supported OpenWeather locale codes.
+  getOpenWeatherLocaleCodes() {
+    return ["af","al","ar","az","bg","ca","cz","da","de","el","en","eu","fa","fi","fr","gl","he","hi","hr","hu","id","it","ja","kr","la","lt","mk","no","nl","pl","pt","pt_br","ro","ru","sv","se","sk","sl","sp","es","sr","th","tr","ua","uk","vi","zh_cn","zh_tw","zu"]
+  },
+  
   // Gets the cache.
   getCache(path, minAge, maxAge) {
     if (!this.fm.fileExists(path)) return null
@@ -2103,6 +2117,13 @@ const weatherCal = {
       },
       weather: {
         name: "Weather",
+        locale: {
+          val: "",
+          name: "OpenWeather locale",
+          description: "If you are encountering issues with your weather data, try choosing an OpenWeather locale code.",
+          type: "enum",
+          options: this.getOpenWeatherLocaleCodes(),
+        },
         showLocation: {
           val: false,
           name: "Show location name",
