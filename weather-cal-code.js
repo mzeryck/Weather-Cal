@@ -1500,27 +1500,28 @@ const weatherCal = {
       if (!newsSettings.showDate) { continue }
       
       const dateStack = this.align(newsStack)
+      let dateValue = new Date(newsItem.date)
       let dateText
       switch (newsSettings.showDate) {
         case "relative":
           const rdf = new RelativeDateTimeFormatter()
           rdf.locale = this.locale
           rdf.useNamedDateTimeStyle()
-          dateText = rdf.string(newsItem.date, this.now)
+          dateText = rdf.string(dateValue, this.now)
           break
         case "date":
-          dateText = this.formatDate(newsItem.date)
+          dateText = this.formatDate(dateValue)
           break
         case "time":
-          dateText = dateText = this.formatTime(newsItem.date)
+          dateText = dateText = this.formatTime(dateValue)
           break
         case "datetime":
-          dateText = this.formatDatetime(newsItem.date)
+          dateText = this.formatDatetime(dateValue)
           break
         case "custom":
-          dateText = this.formatDate(newsItem.date, newsSettings.dateFormat)
+          dateText = this.formatDate(dateValue, newsSettings.dateFormat)
       }
-      this.provideText(dateText, dateStack, this.format.newsDate)
+      if (dateText) this.provideText(dateText, dateStack, this.format.newsDate)
     }
   },
   
