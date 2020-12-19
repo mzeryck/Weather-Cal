@@ -1028,7 +1028,7 @@ const weatherCal = {
     const reminderSettings = this.settings.reminders
 
     if (this.data.reminders.length == 0) {
-      if (reminderSettings.noRemindersBehavior == "message" && this.localization.noRemindersMessage.length) { return this.provideText(this.localization.noRemindersMessage, messageStack, this.format.noReminders, true) }
+      if (reminderSettings.noRemindersBehavior == "message" && this.localization.noRemindersMessage.length) { return this.provideText(this.localization.noRemindersMessage, column, this.format.noReminders, true) }
       if (this[reminderSettings.noRemindersBehavior]) { return await this[reminderSettings.noRemindersBehavior](column) }
     }
 
