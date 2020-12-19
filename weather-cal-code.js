@@ -478,7 +478,7 @@ const weatherCal = {
       const imagePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), name + ".jpg")
 
       if (this.fm.fileExists(imagePath)) {
-        await this.fm.downloadFileFromiCloud(imagePath)
+        if (this.fm.isFileStoredIniCloud(imagePath)) { await this.fm.downloadFileFromiCloud(imagePath) }
         this.widget.backgroundImage = this.fm.readImage(imagePath)
 
       } else if (config.runsInWidget) {
@@ -1028,7 +1028,7 @@ const weatherCal = {
     const reminderSettings = this.settings.reminders
 
     if (this.data.reminders.length == 0) {
-      if (reminderSettings.noRemindersBehavior == "message" && this.localization.noRemindersMessage.length) { return this.provideText(this.localization.noRemindersMessage, column, this.format.noReminders, true) }
+      if (reminderSettings.noRemindersBehavior == "message" && this.localization.noRemindersMessage.length) { return this.provideText(this.localization.noRemindersMessage, messageStack, this.format.noReminders, true) }
       if (this[reminderSettings.noRemindersBehavior]) { return await this[reminderSettings.noRemindersBehavior](column) }
     }
 
