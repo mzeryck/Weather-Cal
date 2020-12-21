@@ -171,6 +171,20 @@ const weatherCal = {
         if ((await alert.present()) == 0) {
           if (this.fm.fileExists(this.bgPath)) { this.fm.remove(this.bgPath) }
           if (this.fm.fileExists(this.prefPath)) { this.fm.remove(this.prefPath) }
+          let locationPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-location")
+          if (this.fm.fileExists(locationPath)) { this.fm.remove(locationPath) }
+          let sunrisePath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-sunrise")
+          if (this.fm.fileExists(sunrisePath)) { this.fm.remove(sunrisePath) }
+          let cachePath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-cache")
+          if (this.fm.fileExists(cachePath)) { this.fm.remove(cachePath) }
+          let covidPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-covid")
+          if (this.fm.fileExists(covidPath)) { this.fm.remove(covidPath) }
+          let newsPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-news")
+          if (this.fm.fileExists(newsPath)) { this.fm.remove(newsPath) }
+          let imagePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), this.name + ".jpg")
+          if (this.fm.fileExists(imagePath)) { this.fm.remove(imagePath) }
+          let dupePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), this.name + " 2.jpg")
+          if (this.fm.fileExists(dupePath)) { this.fm.remove(dupePath) }
           const success = await this.downloadCode(this.name, this.widgetUrl)
           const message = success ? "This script has been reset. Close the script and reopen it for the change to take effect." : "The reset failed."
           await this.generateAlert(message)
@@ -728,7 +742,7 @@ const weatherCal = {
   // Set up the location data object.
   async setupLocation() {
     const locationPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-location")
-    const locationCache = this.getCache(locationPath, this.settings ? parseInt(this.settings.updateLocation) : null)
+    const locationCache = this.getCache(locationPath, this.settings ? parseInt(this.settings.widget.updateLocation) : null)
     let location
     
     if (!locationCache || locationCache.cacheExpired) {
