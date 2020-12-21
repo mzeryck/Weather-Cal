@@ -478,7 +478,7 @@ const weatherCal = {
       const imagePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), name + ".jpg")
 
       if (this.fm.fileExists(imagePath)) {
-        await this.fm.downloadFileFromiCloud(imagePath)
+        if (this.fm.isFileStoredIniCloud(imagePath)) { await this.fm.downloadFileFromiCloud(imagePath) }
         this.widget.backgroundImage = this.fm.readImage(imagePath)
 
       } else if (config.runsInWidget) {
