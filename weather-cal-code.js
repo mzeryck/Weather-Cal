@@ -170,7 +170,7 @@ const weatherCal = {
 
         if ((await alert.present()) == 0) {
           for (item of this.fm.listContents(this.fm.libraryDirectory())) {
-            if (item.startsWith("weather-cal-") && item != "weather-cal-api-key") {
+            if (item.startsWith("weather-cal-") && item != "weather-cal-api-key" && item != "weather-cal-setup") {
               this.fm.remove(this.fm.joinPath(this.fm.libraryDirectory(), item))
             }
           }
