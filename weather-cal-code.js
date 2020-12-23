@@ -169,8 +169,11 @@ const weatherCal = {
         alert.addAction("Cancel")
 
         if ((await alert.present()) == 0) {
-          if (this.fm.fileExists(this.bgPath)) { this.fm.remove(this.bgPath) }
-          if (this.fm.fileExists(this.prefPath)) { this.fm.remove(this.prefPath) }
+          for (item of this.fm.listContents(f.libraryDirectory())) {
+            if (item.startsWith("weather-cal-") && item != "weather-cal-api-key") {
+              this.fm.remove(this.fm.joinPath(this.fm.libraryDirectory(), item))
+            }
+          }
           const success = await this.downloadCode(this.name, this.widgetUrl)
           const message = success ? "This script has been reset. Close the script and reopen it for the change to take effect." : "The reset failed."
           await this.generateAlert(message)
@@ -269,7 +272,7 @@ const weatherCal = {
       if (!setting.type) {
         row.onSelect = async () => {
           const returnVal = await this.promptForText(setting.name,[setting.val],[],setting.description)
-          setting.val = returnVal.textFieldValue(0)
+          setting.val = returnVal.textFieldValue(0).trim()
           await this.loadTable(table,category,settingsObject)
         }
 
@@ -295,7 +298,7 @@ const weatherCal = {
           const keys = Array.from(map.keys())
           const returnVal = await this.promptForText(setting.name,Array.from(map.values()),keys,setting.description)
           for (let i=0; i < keys.length; i++) {
-            setting.val[keys[i]] = returnVal.textFieldValue(i)
+            setting.val[keys[i]] = returnVal.textFieldValue(i).trim()
           }
           await this.loadTable(table,category,settingsObject)
         }
@@ -728,12 +731,12 @@ const weatherCal = {
   // Set up the location data object.
   async setupLocation() {
     const locationPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-location")
-    const locationCache = this.getCache(locationPath, this.settings ? parseInt(this.settings.updateLocation) : null)
+    const locationCache = this.getCache(locationPath, this.settings ? parseInt(this.settings.widget.updateLocation) : null)
     let location
     
     if (!locationCache || locationCache.cacheExpired) {
       try { location = await Location.current() }
-      catch { location = locationCache || {} }
+      catch { location = locationCache || { cacheExpired: true } }
 
       try {
         const geocode = await Location.reverseGeocode(location.latitude, location.longitude, this.locale)
@@ -741,7 +744,9 @@ const weatherCal = {
       } catch {
         location.locality = locationCache ? locationCache.locality : null
       }
-      if (location && location.locality) this.fm.writeString(locationPath, JSON.stringify(location))
+      
+      // If (and only if) we have new data, write it to disk.
+      if (!location.cacheExpired) this.fm.writeString(locationPath, JSON.stringify(location))
     }
     this.data.location = location || locationCache
     if (!this.data.location.latitude) return false
@@ -1535,12 +1540,16 @@ const weatherCal = {
   },
   
   // Gets the cache.
-  getCache(path, minAge, maxAge) {
+  getCache(path, minAge = -1, maxAge) {
     if (!this.fm.fileExists(path)) return null
-    let cache = JSON.parse(this.fm.readString(path))
+    const cache = JSON.parse(this.fm.readString(path))
     const age = (this.now.getTime() - this.fm.modificationDate(path).getTime())/60000
-    if (maxAge && age > maxAge) return null
-    if (minAge && age > minAge) cache.cacheExpired = true
+    
+    // Maximum ages must be explicitly defined.
+    if (Number.isInteger(maxAge) && age > maxAge) return null
+    
+    // The cache is always expired if there's no acceptable minimum age.
+    if (minAge != -1 && (!minAge || age > minAge)) cache.cacheExpired = true
     return cache
   },
 
@@ -1779,7 +1788,7 @@ const weatherCal = {
         updateLocation: {
           val: "60",
           name: "Location update frequency",
-          description: "How often, in minutes, to update the current location. Set to 0 to never update.",
+          description: "How often, in minutes, to update the current location. Set to 0 to constantly update, or -1 to never update.",
         },
       },
       localization: {
