@@ -337,7 +337,7 @@ const weatherCal = {
       row.height = 55
       
       const isSelected = selected.has(item.identifier)
-      row.backgroundColor = isSelected ? new Color("d8d8d8") : Color.white()
+      row.backgroundColor = isSelected ? Color.dynamic(new Color("d8d8de"), new Color("2c2c2c")) : Color.dynamic(Color.white(), new Color("151517"))
       
       if (item.color) {
         const colorCell = row.addText(isSelected ? "\u25CF" : "\u25CB")
