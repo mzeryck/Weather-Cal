@@ -208,20 +208,23 @@ const weatherCal = {
     const options = ["Solid color", "Automatic gradient", "Custom gradient", "Image from Photos"]
     const backgroundType = await this.generateAlert("What type of background would you like for your widget?",options)
 
-    const background = {}
+    const background = this.fm.fileExists(this.bgPath) ? JSON.parse(this.fm.readString(this.bgPath)) : {}
     if (backgroundType == 0) {
       background.type = "color"
-      const returnVal = await this.promptForText("Enter the hex value of the background color you want.",[""],["#007030"])
+      const returnVal = await this.promptForText("Background Color",[background.color,background.dark],["Default color","Dark mode color (optional)"],"Enter the hex value of the background color you want. You can optionally choose a different background color for dark mode.")
       background.color = returnVal.textFieldValue(0)
+      background.dark = returnVal.textFieldValue(1)
 
     } else if (backgroundType == 1) {
       background.type = "auto"
 
     } else if (backgroundType == 2) {
       background.type = "gradient"
-      const returnVal = await this.promptForText("Enter the hex values of the gradient colors.",["",""],["#000000","#ffffff"])
+      const returnVal = await this.promptForText("Gradient Colors",[background.initialColor,background.finalColor,background.initialDark,background.finalDark],["Top default color","Bottom default color","Top dark mode color","Bottom dark mode color"],"Enter the hex values of the colors for your gradient. You can optionally choose different background colors for dark mode.")
       background.initialColor = returnVal.textFieldValue(0)
       background.finalColor = returnVal.textFieldValue(1)
+      background.initialDark = returnVal.textFieldValue(2)
+      background.finalDark = returnVal.textFieldValue(3)
 
     } else if (backgroundType == 3) {
       background.type = "image"
@@ -229,15 +232,10 @@ const weatherCal = {
       const directoryPath = this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal")
       if (!this.fm.fileExists(directoryPath) || !this.fm.isDirectory(directoryPath)) { this.fm.createDirectory(directoryPath) }
       
-      // If the "dupe" already exists, it's not a dupe.
-      const dupePath = this.fm.joinPath(directoryPath, this.name + " 2.jpg")
-      const dupeAlreadyExists = this.fm.fileExists(dupePath)
-
       this.fm.writeImage(this.fm.joinPath(directoryPath, this.name + ".jpg"), await Photos.fromLibrary())
-
-      if (!dupeAlreadyExists && this.fm.fileExists(dupePath)) {
-        return await this.generateAlert("Weather Cal detected a duplicate image. Please open the Files app, navigate to Scriptable > Weather Cal, and make sure the file named " + this.name + ".jpg is correct.")
-      }
+      
+      background.dark = !(await this.generateAlert("Would you like to use a different image in dark mode?",["Yes","No"]))
+      if (background.dark) this.fm.writeImage(this.fm.joinPath(directoryPath, this.name + " (Dark).jpg"), await Photos.fromLibrary())
     }
 
     this.writePreference(null, background, this.bgPath)
@@ -260,6 +258,14 @@ const weatherCal = {
       if (Array.isArray(setting.val)) {
         valText = setting.val.map(a => a.title).join(", ")
         
+      } else if (setting.type == "fonts") {
+        const item = setting.val
+        const size = item.size.length ? `size ${item.size}` : ""
+        const font = item.font.length ? ` ${item.font}` : ""
+        const color = item.color.length ? ` (${item.color}${item.dark.length ? "/" + item.dark : ""})` : ""
+        const caps = item.caps.length && item.caps != this.enum.caps.none ? ` - ${item.caps}` : ""
+        valText = size + font + color + caps
+
       } else if (typeof setting.val == "object") {
         for (subItem in setting.val) {
           const setupText = subItem + ": " + setting.val[subItem]
@@ -295,6 +301,28 @@ const weatherCal = {
           await this.loadPrefsTable(table,category)
         }
 
+      } else if (setting.type == "fonts") {
+        row.onSelect = async () => {
+          const keys = ["size","color","dark","font"]
+          const values = []
+          for (key of keys) values.push(setting.val[key])
+          
+          const options = ["Capitalization","Save and Close"]
+          const prompt = await this.generatePrompt(setting.name,setting.description,options,values,keys)
+          const returnVal = await prompt.present()
+          
+          if (returnVal) {
+            for (let i=0; i < keys.length; i++) {
+              setting.val[keys[i]] = prompt.textFieldValue(i).trim()
+            }
+          } else {
+            const capOptions = [this.enum.caps.upper,this.enum.caps.lower,this.enum.caps.title,this.enum.caps.none]
+            setting.val["caps"] = capOptions[await this.generateAlert("Capitalization",capOptions)]
+          }
+
+          await this.loadPrefsTable(table,category)
+        }
+      
       } else if (setting.type == "multival") {
         row.onSelect = async () => {
 
@@ -434,24 +462,31 @@ const weatherCal = {
   },
 
   // Generate an alert with the provided array of options.
-  async generateAlert(title,options = ["OK"],message = null) {
-    const alert = new Alert()
-    alert.title = title
-    if (message) alert.message = message
-
-    for (const option of options) { alert.addAction(option) }
-    return await alert.presentAlert()
+  async generateAlert(title,options,message) {
+    return await this.generatePrompt(title,message,options)
   },
 
-  // Prompt for one or more text field values.
-  async promptForText(title,values,keys,message = null) {
+  // Default prompt for text field values.
+  async promptForText(title,values,keys,message) {
+    return await this.generatePrompt(title,message,null,values,keys)
+  },
+  
+  // Generic implementation of an alert.
+  async generatePrompt(title,message,options,textvals,placeholders) {
     const alert = new Alert()
     alert.title = title
     if (message) alert.message = message
+    
+    const buttons = options || ["OK"]
+    for (button of buttons) { alert.addAction(button) }
 
-    for (i=0; i < values.length; i++) { alert.addTextField(keys && keys[i] ? keys[i] : null,values[i] + "") }
-    alert.addAction("OK")
-    await alert.present()
+    if (!textvals) { return await alert.presentAlert() }
+
+    for (i=0; i < textvals.length; i++) { 
+      alert.addTextField(placeholders && placeholders[i] ? placeholders[i] : null,(textvals[i] || "") + "")
+    }
+    
+    if (!options) await alert.present()
     return alert
   },
 
@@ -481,10 +516,10 @@ const weatherCal = {
     // Shared values.
     this.locale = this.settings.widget.locale
     this.padding = parseInt(this.settings.widget.padding)
-    this.tintIcons = this.settings.widget.tintIcons
     this.localization = this.settings.localization
     this.format = this.settings.font
     this.custom = custom
+    this.darkMode = !(Color.dynamic(Color.white(),Color.black()).red)
 
     if (!this.locale || this.locale == "" || this.locale == null) { this.locale = Device.locale() }
     
@@ -510,7 +545,7 @@ const weatherCal = {
       await custom.background(this.widget)
 
     } else if (background.type == "color") {
-      this.widget.backgroundColor = new Color(background.color)
+      this.widget.backgroundColor = this.provideColor(background)
 
     } else if (background.type == "auto") {
       const gradient = new LinearGradient()
@@ -522,13 +557,16 @@ const weatherCal = {
 
     } else if (background.type == "gradient") {
       const gradient = new LinearGradient()
+      const initialColor = this.provideColor({ color: background.initialColor, dark: background.initialDark })
+      const finalColor = this.provideColor({ color: background.finalColor, dark: background.finalDark })
 
-      gradient.colors = [new Color(background.initialColor), new Color(background.finalColor)]
+      gradient.colors = [initialColor, finalColor]
       gradient.locations = [0, 1]
       this.widget.backgroundGradient = gradient
 
     } else if (background.type == "image") {
-      const imagePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), name + ".jpg")
+      const extension = (this.darkMode && background.dark && !this.settings.widget.instantDark ? " (Dark)" : "") + ".jpg"
+      const imagePath = this.fm.joinPath(this.fm.joinPath(this.fm.documentsDirectory(), "Weather Cal"), name + extension)
 
       if (this.fm.fileExists(imagePath)) {
         if (this.fm.isFileStoredIniCloud(imagePath)) { await this.fm.downloadFileFromiCloud(imagePath) }
@@ -538,9 +576,7 @@ const weatherCal = {
         this.widget.backgroundColor = Color.gray() 
 
       } else {
-        const img = await Photos.fromLibrary()
-        this.widget.backgroundImage = img
-        this.fm.writeImage(imagePath, img)
+        this.generateAlert("Please choose a background image in the settings menu.")
       }
     }
 
@@ -1206,6 +1242,7 @@ const weatherCal = {
     tempBarStack.size = new Size(60,30)
 
     const tempBar = tempBarStack.addImage(this.provideTempBar())
+    if (this.settings.widget.instantDark) this.tintIcon(tempBar, this.format.tinyTemp, true)
     tempBar.size = new Size(50,0)
 
     tempBarStack.addSpacer(1)
@@ -1258,7 +1295,8 @@ const weatherCal = {
       this.provideText(this.displayNumber(weatherData.hourly[1].Temp,"--") + "°", subConditionStack, this.format.smallTemp)
 
     } else {
-      const tomorrowLine = subConditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
+      const tomorrowLine = subConditionStack.addImage(this.drawVerticalLine(this.provideColor(this.format.tinyTemp, 0.5), 20))
+      if (this.settings.widget.instantDark) this.tintIcon(tomorrowLine, this.format.tinyTemp, true)
       tomorrowLine.imageSize = new Size(3,28)
       subConditionStack.addSpacer(5)
       const tomorrowStack = subConditionStack.addStack()
@@ -1391,7 +1429,8 @@ const weatherCal = {
         this.tintIcon(conditionIcon, this.format.smallTemp)
         conditionStack.addSpacer(5)
 
-        const tempLine = conditionStack.addImage(this.drawVerticalLine(new Color((this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color, 0.5), 20))
+        const tempLine = conditionStack.addImage(this.drawVerticalLine(this.provideColor(this.format.tinyTemp, 0.5), 20))
+        if (this.settings.widget.instantDark) this.tintIcon(tempLine, this.format.tinyTemp, true)
         tempLine.imageSize = new Size(3,28)
         conditionStack.addSpacer(5)
 
@@ -1611,8 +1650,12 @@ const weatherCal = {
 
   // Tints icons if needed or forced.
   tintIcon(icon,format,force = false) {
-    if (!this.tintIcons && !force) { return }
-    icon.tintColor = new Color((format && format.color) ? format.color : this.format.defaultText.color)
+    const tintIcons = this.settings.widget.tintIcons
+    const never = tintIcons == this.enum.icons.never || !tintIcons
+    const notDark = tintIcons == this.enum.icons.dark && !this.darkMode && !this.settings.widget.instantDark
+    const notLight = tintIcons == this.enum.icons.light && this.darkMode && !this.settings.widget.instantDark
+    if (!force && (never || notDark || notLight)) { return }
+    icon.tintColor = this.provideColor(format)
   },
 
   // Determines if the provided date is at night.
@@ -1733,14 +1776,44 @@ const weatherCal = {
       container = this.align(stack)
       container.setPadding(this.padding, this.padding, this.padding, this.padding)
     }
-    const defaultText = this.format.defaultText
-    const textItem = container.addText(string)
-    const textFont = (format && format.font && format.font.length) ? format.font : defaultText.font
-    const textSize = (format && format.size && parseInt(format.size)) ? format.size : defaultText.size
-    const textColor = (format && format.color && format.color.length) ? format.color : defaultText.color
+    
+    const capsEnum = this.enum.caps
+    function capitalize(text,caps) {
+      switch (caps) {
+        case (capsEnum.upper):
+          return text.toUpperCase()
+        
+        case (capsEnum.lower):
+          return text.toLowerCase()
+        
+        case (capsEnum.title):
+          return text.replace(/\w\S*/g,function(a) {
+            return a.charAt(0).toUpperCase() + a.substr(1).toLowerCase()
+          })
+      }
+      return text
+    }
+    
+    const capFormat = (format && format.caps && format.caps.length) ? format.caps : this.format.defaultText.caps
+    const textItem = container.addText(capitalize(string,capFormat))
+    
+    const textFont = (format && format.font && format.font.length) ? format.font : this.format.defaultText.font
+    const textSize = (format && format.size && parseInt(format.size)) ? format.size : this.format.defaultText.size
     textItem.font = this.provideFont(textFont, parseInt(textSize))
-    textItem.textColor = new Color(textColor)
+    textItem.textColor = this.provideColor(format)
+
     return textItem
+  },
+  
+  // Provide a color based on a format and the current dark mode state.
+  provideColor(format, alpha) {
+    const defaultText = this.format.defaultText
+    const lightColor = (format && format.color && format.color.length) ? format.color : defaultText.color
+    const defaultDark = (defaultText.dark && defaultText.dark.length) ? defaultText.dark : defaultText.color
+    const darkColor = (format && format.dark && format.dark.length) ? format.dark : defaultDark
+
+    if (this.settings.widget.instantDark) return Color.dynamic(new Color(lightColor, alpha), new Color(darkColor, alpha))
+    return new Color(this.darkMode && darkColor ? darkColor : lightColor, alpha)
   },
 
   // Draw the vertical line in the tomorrow view. - TODO: delete
@@ -1784,14 +1857,13 @@ const weatherCal = {
     barPath.addRoundedRect(new Rect(0, 5, tempBarWidth, barHeight), barHeight / 2, barHeight / 2)
     draw.addPath(barPath)
 
-    const barColor = (this.format.tinyTemp && this.format.tinyTemp.color) ? this.format.tinyTemp.color : this.format.defaultText.color
-    draw.setFillColor(new Color(barColor, 0.5))
+    draw.setFillColor(this.provideColor(this.format.tinyTemp, 0.5))
     draw.fillPath()
 
     const currPath = new Path()
     currPath.addEllipse(new Rect((tempBarWidth - tempBarHeight) * percent, 0, tempBarHeight, tempBarHeight))
     draw.addPath(currPath)
-    draw.setFillColor(new Color(barColor, 1))
+    draw.setFillColor(this.provideColor(this.format.tinyTemp, 1))
     draw.fillPath()
 
     return draw.getImage()
@@ -1833,15 +1905,22 @@ const weatherCal = {
           description: "The padding around the entire widget. By default, these values are blank and Weather Cal uses the item padding to determine these values. Transparent widgets often look best with these values at 0.",
         },
         tintIcons: {
-          val: false,
+          val: this.enum.icons.never,
           name: "Icons match text color",
-          description: "Decide if icons should match the color of the text around them.",
-          type: "bool",
+          description: "Decide when icons should match the color of the text around them.",
+          type: "enum",
+          options: [this.enum.icons.never,this.enum.icons.always,this.enum.icons.dark,this.enum.icons.light,],
         },
         updateLocation: {
           val: "60",
           name: "Location update frequency",
           description: "How often, in minutes, to update the current location. Set to 0 to constantly update, or -1 to never update.",
+        },
+        instantDark: {
+          val: false,
+          name: "Instant dark mode (experimental)",
+          type: "bool",
+          description: "Instantly switch to dark mode. \u26A0\uFE0F This DOES NOT support dark mode image backgrounds or custom icon tint settings. \u26A0\uFE0F",
         },
       },
       localization: {
@@ -1904,117 +1983,117 @@ const weatherCal = {
           val: { size: "14", color: "ffffff", dark: "", font: "regular", caps: "" },
           name: "Default font settings",
           description: "These settings apply to all text on the widget that doesn't have a customized value.",
-          type: "multival",
+          type: "fonts",
         },
         smallDate:   {
           val: { size: "17", color: "", dark: "", font: "semibold", caps: "" },
           name: "Small date",
-          type: "multival",
+          type: "fonts",
         },
         largeDate1:  {
           val: { size: "30", color: "", dark: "", font: "light", caps: "" },
           name: "Large date, line 1",
-          type: "multival",
+          type: "fonts",
         },
         largeDate2:  {
           val: { size: "30", color: "", dark: "", font: "light", caps: "" },
           name: "Large date, line 2",
-          type: "multival",
+          type: "fonts",
         },
         greeting:    {
           val: { size: "30", color: "", dark: "", font: "semibold", caps: "" },
           name: "Greeting",
-          type: "multival",
+          type: "fonts",
         },
         eventLabel:  {
           val: { size: "14", color: "", dark: "", font: "semibold", caps: "" },
           name: "Event heading (used for the TOMORROW label)",
-          type: "multival",
+          type: "fonts",
         },
         eventTitle:  {
           val: { size: "14", color: "", dark: "", font: "semibold", caps: "" },
           name: "Event title",
-          type: "multival",
+          type: "fonts",
         },
         eventLocation:   {
           val: { size: "14", color: "", dark: "", font: "", caps: "" },
           name: "Event location",
-          type: "multival",
+          type: "fonts",
         },
         eventTime:   {
           val: { size: "14", color: "ffffffcc", dark: "", font: "", caps: "" },
           name: "Event time",
-          type: "multival",
+          type: "fonts",
         },
         noEvents:    {
           val: { size: "30", color: "", dark: "", font: "semibold", caps: "" },
           name: "No events message",
-          type: "multival",
+          type: "fonts",
         },
         reminderTitle:  {
           val: { size: "14", color: "", dark: "", font: "", caps: "" },
           name: "Reminder title",
-          type: "multival",
+          type: "fonts",
         },
         reminderTime:   {
           val: { size: "14", color: "ffffffcc", dark: "", font: "", caps: "" },
           name: "Reminder time",
-          type: "multival",
+          type: "fonts",
         },
         noReminders:    {
           val: { size: "30", color: "", dark: "", font: "semibold", caps: "" },
           name: "No reminders message",
-          type: "multival",
+          type: "fonts",
         },
         newsTitle:  {
           val: { size: "14", color: "", dark: "", font: "", caps: "" },
           name: "News item title",
-          type: "multival",
+          type: "fonts",
         },
         newsDate:   {
           val: { size: "14", color: "ffffffcc", dark: "", font: "", caps: "" },
           name: "News item date",
-          type: "multival",
+          type: "fonts",
         },
         largeTemp:   {
           val: { size: "34", color: "", dark: "", font: "light", caps: "" },
           name: "Large temperature label",
-          type: "multival",
+          type: "fonts",
         },
         smallTemp:   {
           val: { size: "14", color: "", dark: "", font: "", caps: "" },
           name: "Most text used in weather items",
-          type: "multival",
+          type: "fonts",
         },
         tinyTemp:    {
           val: { size: "12", color: "", dark: "", font: "", caps: "" },
           name: "Small text used in weather items",
-          type: "multival",
+          type: "fonts",
         },
         customText:  {
           val: { size: "14", color: "", dark: "", font: "", caps: "" },
           name: "User-defined text items",
-          type: "multival",
+          type: "fonts",
         },
         battery:     {
           val: { size: "14", color: "", dark: "", font: "medium", caps: "" },
           name: "Battery percentage",
-          type: "multival",
+          type: "fonts",
         },
         sunrise:     {
           val: { size: "14", color: "", dark: "", font: "medium", caps: "" },
           name: "Sunrise and sunset",
-          type: "multival",
+          type: "fonts",
         },
         covid:       {
           val: { size: "14", color: "", dark: "", font: "medium", caps: "" },
           name: "COVID data",
-          type: "multival",
+          type: "fonts",
         },
         week:        {
           val: { size: "14", color: "", dark: "", font: "light", caps: "" },
           name: "Week label",
-          type: "multival",
+          type: "fonts",
         },
       },
       date: {
@@ -2291,7 +2370,7 @@ const weatherCal = {
         padding: {
           val: { top: "", left: "", bottom: "", right: "" },
           name: "Padding",
-          type: "multival",
+          type: "fonts",
           description: "The padding around each symbol. Leave blank to use the default padding.",
         },
         tintColor: {
@@ -2339,6 +2418,21 @@ const weatherCal = {
 
     return settings
   },
+  
+  enum: {
+    caps: {
+      upper: "ALL CAPS",
+      lower: "all lowercase",
+      title: "Title Case",
+      none: "None (Default)",
+    },
+    icons: {
+      never: "Never",
+      always: "Always",
+      dark: "In dark mode",
+      light: "In light mode",
+    }
+  },
 }
 
 module.exports = weatherCal
@@ -2357,8 +2451,8 @@ if (moduleName == Script.name()) {
     row
       column
     `
-    const name = "Weather Cal widget"
-    //await weatherCal.runSetup(name, true, "Weather Cal code", "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js")
+    const name = "Weather Cal Widget Builder"
+    await weatherCal.runSetup(name, true, "Weather Cal code", "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js")
     const w = await weatherCal.createWidget(layout, name, true)
     w.presentLarge()
     Script.complete()
