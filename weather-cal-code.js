@@ -745,7 +745,8 @@ const weatherCal = {
     const nextWeek = await CalendarEvent.nextWeek([])
     events.push(...nextWeek)
 
-    this.data.events = events.filter((event) => {
+    this.data.events = events.filter((event, index, array) => {
+      if (!(index == array.findIndex(t => t.identifier == event.identifier && t.startDate.getTime() == event.startDate.getTime()))) { return false }
 
       const diff = this.dateDiff(this.now, event.startDate)
       if (diff < 0 || diff > numberOfDays) { return false }
