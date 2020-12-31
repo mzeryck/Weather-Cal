@@ -2371,7 +2371,7 @@ const weatherCal = {
         padding: {
           val: { top: "", left: "", bottom: "", right: "" },
           name: "Padding",
-          type: "fonts",
+          type: "multival",
           description: "The padding around each symbol. Leave blank to use the default padding.",
         },
         tintColor: {
