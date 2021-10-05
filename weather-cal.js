@@ -42,7 +42,7 @@ const layout = `
  */
 
 // Names of Weather Cal elements.
-const codeFilename = "Weather Cal code"
+const codeFilename = "weather-cal-code"
 const gitHubUrl = "https://raw.githubusercontent.com/mzeryck/Weather-Cal/main/weather-cal-code.js"
 
 // Determine if the user is using iCloud.
