@@ -741,9 +741,9 @@ const weatherCal = {
     let showFutureAt = parseInt(eventSettings.showTomorrow)
     showFutureAt = isNaN(showFutureAt) ? (eventSettings.showTomorrow ? 0 : 24) : showFutureAt
 
-    const events = await CalendarEvent.thisWeek([])
-    const nextWeek = await CalendarEvent.nextWeek([])
-    events.push(...nextWeek)
+    const endDate = new Date()
+    endDate.setDate(this.now.getDate() + numberOfDays)
+    const events = await CalendarEvent.between(this.now, endDate)
 
     this.data.events = events.filter((event, index, array) => {
       if (!(index == array.findIndex(t => t.identifier == event.identifier && t.startDate.getTime() == event.startDate.getTime()))) { return false }
@@ -929,7 +929,7 @@ const weatherCal = {
 
     if (!covidData || covidData.cacheExpired) {
       try {
-        covidData = await new Request("https://coronavirus-19-api.herokuapp.com/countries/" + this.settings.covid.country.trim()).loadJSON()
+        covidData = await new Request("https://coronavirus-19-api.herokuapp.com/countries/" + encodeURIComponent(this.settings.covid.country.trim())).loadJSON()
         this.fm.writeString(covidPath, JSON.stringify(covidData))
       } catch {}
     }
@@ -938,21 +938,22 @@ const weatherCal = {
   
   // Set up the news.
   async setupNews() {
-    const newsPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-news")
+    const newsPath = this.fm.joinPath(this.fm.libraryDirectory(), this.settings.news.url)
     let newsData = this.getCache(newsPath, 1, 1440)
 
     if (!newsData || newsData.cacheExpired) {
       try {
         let rawData = await new Request(this.settings.news.url).loadString()
-        rawData = getTag(rawData, "item", parseInt(this.settings.news.numberOfItems))
+        const isRss = rawData.includes("<rss")
+        rawData = getTag(rawData, isRss ? "item" : "entry", parseInt(this.settings.news.numberOfItems))
         if (!rawData || rawData.length == 0) { throw 0 }
         
         newsData = []
         for (item of rawData) {
           const listing = {}
           listing.title = scrubString(getTag(item, "title")[0])
-          listing.link = getTag(item, "link")[0]
-          listing.date = new Date(getTag(item, "pubDate")[0])
+          listing.link = scrubString(getTag(item, "link")[0])
+          listing.date = new Date(getTag(item, isRss ? "pubDate" : "published")[0])
           newsData.push(listing)
         }
         this.fm.writeString(newsPath, JSON.stringify(newsData))
@@ -962,16 +963,22 @@ const weatherCal = {
     
     // Get one or many tags from a string.
     function getTag(string, tag, number = 1) {
-      const open = "<" + tag + ">"
+      const open = "<" + tag
       const close = "</" + tag + ">"
       let returnVal = []
       let data = string
   
       for (i = 0; i < number; i++) {
-        const closeIndex = data.indexOf(close)
-        if (closeIndex < 0) break
-        returnVal.push(data.slice(data.indexOf(open)+open.length, closeIndex))
-        data = data.slice(closeIndex + close.length)
+        const openIndex = data.indexOf(open)+open.length+1
+        const closeIndex = data.indexOf(close) 
+        if (closeIndex >= 0) {
+          returnVal.push(data.slice(openIndex, closeIndex))
+          data = data.slice(closeIndex + close.length)
+        } else {
+          const hrefMatches = [...data.matchAll(/<link.+?href=\"(.+?)\".+?>/g)]
+          if (hrefMatches && hrefMatches[0] && hrefMatches[0][1]) returnVal.push(hrefMatches[0][1])
+          data = data.slice(openIndex)
+        } 
       }
       return returnVal
     }
@@ -1347,7 +1354,7 @@ const weatherCal = {
       weatherStack.setPadding(outsidePadding, this.padding, outsidePadding, this.padding)
     }
     
-    let startIndex = hourly ? 1 : (weatherSettings.showToday ? 1 : 2)
+    let startIndex = hourly ? 0 : (weatherSettings.showToday ? 1 : 2)
     let endIndex = (hourly ? parseInt(weatherSettings.showHours) : parseInt(weatherSettings.showDays)) + startIndex
     if (endIndex > 9) { endIndex = 9 }
 
@@ -1361,8 +1368,7 @@ const weatherCal = {
     const stackSize = hourly ? new Size(smallFontSize*3,0) : new Size(smallFontSize*2.64,0)
 
     for (var i=startIndex; i < endIndex; i++) {
-      if (hourly) { myDate.setHours(myDate.getHours() + 1) }
-      else { myDate.setDate(myDate.getDate() + 1) }
+      if (!hourly) { myDate.setDate(myDate.getDate() + 1) }
 
       const unitStack = weatherStack.addStack()
       const dateStack = unitStack.addStack()
@@ -1401,7 +1407,7 @@ const weatherCal = {
       
       // Set up the container for the condition.
       if (hourly) {
-        const subCondition = conditionStack.addImage(this.provideConditionSymbol(weatherData.hourly[i - 1].Condition, this.isNight(myDate)))
+        const subCondition = conditionStack.addImage(this.provideConditionSymbol(weatherData.hourly[i].Condition, this.isNight(myDate)))
         subCondition.imageSize = new Size(18,18)
         this.tintIcon(subCondition, this.format.smallTemp)
         
@@ -1413,7 +1419,7 @@ const weatherCal = {
         tempStack.layoutHorizontally()
         
         if (horizontal) { tempStack.addSpacer() }
-        const temp = this.provideText(this.displayNumber(weatherData.hourly[i - 1].Temp,"--") + "°", tempStack, this.format.smallTemp)
+        const temp = this.provideText(this.displayNumber(weatherData.hourly[i].Temp,"--") + "°", tempStack, this.format.smallTemp)
         temp.lineLimit = 1
         temp.minimumScaleFactor = 0.75
         if (horizontal) { 
@@ -1449,6 +1455,7 @@ const weatherCal = {
       
         if (horizontal) { conditionStack.addSpacer() }
       }
+      if (hourly) { myDate.setHours(myDate.getHours() + 1) }
     }
   },
   
@@ -2144,7 +2151,7 @@ const weatherCal = {
         numberOfDays: {
           val: "1",
           name: "How many future days of events to show",
-          description: "How many days to show into the future. Set to 0 to show today's events only. The maximum is 7.",
+          description: "How many days to show into the future. Set to 0 to show today's events only.",
         }, 
         labelFormat: {
           val: "EEEE, MMMM d",
