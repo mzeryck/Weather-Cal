@@ -1888,7 +1888,7 @@ const weatherCal = {
           description: "Leave blank to match the device's locale.",
         },
         units: {
-          val: "imperial",
+          val: "metric",
           name: "Units",
           description: "Use imperial for Fahrenheit or metric for Celsius.",
           type: "enum",
