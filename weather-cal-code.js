@@ -1172,7 +1172,7 @@ const weatherCal = {
         colorItem.textColor = reminder.calendar.color
       }
 
-      if (reminder.isOverdue) { title.textColor = Color.red() }
+      if (reminder.isOverdue) { title.textColor = new Color(reminderSettings.overdueColor || "ff3b30") }
       if (reminder.isOverdue || !reminder.dueDate) { continue }
 
       let timeText
@@ -2237,6 +2237,11 @@ const weatherCal = {
           name: "Show overdue reminders",
           type: "bool",
         },
+		overdueColor: {
+			val: "ff3b30",
+			name: "Overdue Color",
+			description: "The hex code color value for overdue reminders. Leave blank for the default red.",
+		},
         todayOnly: {
           val: false,
           name: "Hide reminders due after today",
