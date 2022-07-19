@@ -999,17 +999,22 @@ const weatherCal = {
   async date(column) {
     const dateSettings = this.settings.date
     if (!this.data.events && dateSettings.dynamicDateSize) { await this.setupEvents() }
+	
+	const secondsForToday = Math.floor(new Date().getTime() / 1000) - 978307200
+	const defaultUrl = "calshow:" + secondsForToday
+	const settingUrl = dateSettings.url || ""
+	if (settingUrl.trim() != "none") { dateSettings.url = (settingUrl.length > 0) ? settingUrl : defaultUrl }
 
     if (dateSettings.dynamicDateSize ? this.data.events.length : dateSettings.staticDateSize == "small") {
-      this.provideText(this.formatDate(this.now,dateSettings.smallDateFormat), column, this.format.smallDate, true)
+      this.provideText(this.formatDate(this.now,dateSettings.smallDateFormat), column, this.format.smallDate, true, dateSettings.url)
 
     } else {
       const dateOneStack = this.align(column)
-      const dateOne = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineOne), dateOneStack, this.format.largeDate1)
+      const dateOne = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineOne), dateOneStack, this.format.largeDate1, false, dateSettings.url)
       dateOneStack.setPadding(this.padding/2, this.padding, 0, this.padding)
 
       const dateTwoStack = this.align(column)
-      const dateTwo = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineTwo), dateTwoStack, this.format.largeDate2)
+      const dateTwo = this.provideText(this.formatDate(this.now,dateSettings.largeDateLineTwo), dateTwoStack, this.format.largeDate2, false, dateSettings.url)
       dateTwoStack.setPadding(0, this.padding, this.padding, this.padding)
     }
   },
@@ -1208,7 +1213,7 @@ const weatherCal = {
     currentWeatherStack.layoutVertically()
     currentWeatherStack.setPadding(0, 0, 0, 0)
 
-    const defaultUrl = "https://weather.com/" + this.locale + "/weather/today/l/" + locationData.latitude + "," + locationData.longitude
+    const defaultUrl = "weather://"
     const settingUrl = weatherSettings.urlCurrent || ""
     if (settingUrl.trim() != "none") { currentWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl }
     
@@ -1276,7 +1281,7 @@ const weatherCal = {
 
     const showNextHour = (this.now.getHours() < parseInt(weatherSettings.tomorrowShownAtHour))
 
-    const defaultUrl = "https://weather.com/" + this.locale + "/weather/" + (showNextHour ? "today" : "tenday") +"/l/" + locationData.latitude + "," + locationData.longitude
+    const defaultUrl = "weather://"
     const settingUrl = showNextHour ? (weatherSettings.urlFuture || "") : (weatherSettings.urlForecast || "")
     if (settingUrl != "none") { futureWeatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl }
 
@@ -1338,7 +1343,7 @@ const weatherCal = {
 
     // Set up the container stack and overall spacing.
     const weatherStack = this.align(column)
-    const defaultUrl = "https://weather.com/" + this.locale + "/weather/" + (hourly ? "today" : "tenday") + "/l/" + locationData.latitude + "," + locationData.longitude
+    const defaultUrl = "weather://"
     const settingUrl = hourly ? (weatherSettings.urlFuture || "") : (weatherSettings.urlForecast || "")
     weatherStack.url = (settingUrl.length > 0) ? settingUrl : defaultUrl
     
@@ -1779,7 +1784,7 @@ const weatherCal = {
   },
 
   // Add formatted text to a container.
-  provideText(string, stack, format, standardize = false) {
+  provideText(string, stack, format, standardize = false, url) {
     let container = stack
     if (standardize) {
       container = this.align(stack)
@@ -1810,6 +1815,9 @@ const weatherCal = {
     const textSize = (format && format.size && parseInt(format.size)) ? format.size : this.format.defaultText.size
     textItem.font = this.provideFont(textFont, parseInt(textSize))
     textItem.textColor = this.provideColor(format)
+	if (url) {
+		textItem.url = url
+	}
 
     return textItem
   },
@@ -2131,7 +2139,12 @@ const weatherCal = {
         largeDateLineTwo: {
           val: "MMMM d",
           name: "Large date format, line 2",
-        }, 
+        },
+        url: {
+			val: "",
+			name: "URL to open when tapped",
+			description: "Optionally provide a URL to open when this item is tapped. Leave blank to open the built-in Calendar app.",
+		},		
       },
       events: {
         name: "Events",
@@ -2345,17 +2358,17 @@ const weatherCal = {
         urlCurrent: {
           val: "",
           name: "URL to open when current weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the weather app.",
         }, 
         urlFuture: {
           val: "",
           name: "URL to open when hourly weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the weather app.",
         }, 
         urlForecast: {
           val: "",
           name: "URL to open when daily weather is tapped",
-          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the default.",
+          description: "Optionally provide a URL to open when this item is tapped. Leave blank for the weather app.",
         }, 
       },
       covid: {
