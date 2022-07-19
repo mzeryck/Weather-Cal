@@ -1039,15 +1039,16 @@ const weatherCal = {
     if (!this.data.events) { await this.setupEvents() }
     const eventSettings = this.settings.events
 
+    const settingUrlExists = (eventSettings.url || "").length > 0
     if (this.data.events.length == 0) { 
-      if (eventSettings.noEventBehavior == "message" && this.localization.noEventMessage.length) { return this.provideText(this.localization.noEventMessage, column, this.format.noEvents, true) }
+      const secondsForToday = Math.floor(new Date().getTime() / 1000) - 978307200
+      if (eventSettings.noEventBehavior == "message" && this.localization.noEventMessage.length) { return this.provideText(this.localization.noEventMessage, column, this.format.noEvents, true, settingUrlExists ? eventSettings.url : "calshow:" + secondsForToday) }
       if (this[eventSettings.noEventBehavior]) { return await this[eventSettings.noEventBehavior](column) }
     }
 
     let currentStack
     let currentDiff = 0
     const numberOfEvents = this.data.events.length
-    const settingUrlExists = (eventSettings.url || "").length > 0
     const showCalendarColor = eventSettings.showCalendarColor
     const colorShape = showCalendarColor.includes("circle") ? "circle" : "rectangle"
     
