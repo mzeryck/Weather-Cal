@@ -756,7 +756,8 @@ const weatherCal = {
       if (event.title.startsWith("Canceled:")) { return false }
       if (event.isAllDay) { return eventSettings.showAllDay }
 
-      const minutesAfter = parseInt(eventSettings.minutesAfter) * 60000 || 0
+      // If they leave it blank, set minutes after to the duration of the event
+      const minutesAfter = parseInt(eventSettings.minutesAfter) >= 0 ? parseInt(eventSettings.minutesAfter) * 60000 : event.endDate - event.startDate
       return (event.startDate.getTime() + minutesAfter > this.now.getTime())
 
     }).slice(0,parseInt(eventSettings.numberOfEvents))
@@ -2155,7 +2156,7 @@ const weatherCal = {
         minutesAfter: {
           val: "5",
           name: "Minutes after event begins",
-          description: "Number of minutes after an event begins that it should still be shown.",
+          description: "Number of minutes after an event begins that it should still be shown. Leave blank for an event to show for its duration.",
         }, 
         showAllDay: {
           val: false,
