@@ -1642,6 +1642,7 @@ const weatherCal = {
   // Gets the cache.
   getCache(path, minAge = -1, maxAge) {
     if (!this.fm.fileExists(path)) return null
+    if (!this.fm.readString(path)) return null
     const cache = JSON.parse(this.fm.readString(path))
     const age = (this.now.getTime() - this.fm.modificationDate(path).getTime())/60000
     
