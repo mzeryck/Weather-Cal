@@ -847,28 +847,38 @@ const weatherCal = {
   // Set up the sun data object.
   async setupSunrise() {
     if (!this.data.location) { await this.setupLocation() }
-    const location = this.data.location
-    async function getSunData(date) { return await new Request("https://api.sunrise-sunset.org/json?lat=" + location.latitude + "&lng=" + location.longitude + "&formatted=0&date=" + date.getFullYear() + "-" + (date.getMonth()+1) + "-" + date.getDate()).loadJSON() }
+	
+	const sunPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-cache")
+	let sunData = this.getCache(sunPath, 60, 1440)
+	
+	const forcedLocale = this.settings.weather.locale || ""
+	let locale = forcedLocale.length ? forcedLocale : this.locale
+	
+	const safeLocales = this.getOpenWeatherLocaleCodes()
+	if (!forcedLocale.length && !safeLocales.includes(locale)) {
+		const languages = [locale, ...locale.split("_"), ...locale.split("-"), Device.locale(), ...Device.locale().split("_"), ...Device.locale().split("-")]
+		for (item of languages) {
+			if (safeLocales.includes(item)) {
+				locale = item
+				break
+			}
+		}
+	}
+	
+	if (!sunData || sunData.cacheExpired) {
+		try {
+			const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key")).replace(/\"/g,"")
+			const sunReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale + "&appid=" + apiKey
+			sunData = await new Request(sunReq).loadJSON()
+			if (sunData.cod) { sunData = null }
+			if (sunData) { this.fm.writeString(sunPath, JSON.stringify(sunData)) }
+		} catch {}
+	}
 
-    const sunPath = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-sunrise")
-    let sunData = this.getCache(sunPath, 60, 1440)
-
-    if (!sunData || sunData.cacheExpired || !sunData.results || sunData.results.length == 0) { 
-      try {
-        sunData = await getSunData(this.now)
-
-        const tomorrowDate = new Date()
-        tomorrowDate.setDate(this.now.getDate() + 1)
-        const tomorrowData = await getSunData(tomorrowDate)
-        sunData.results.tomorrow = tomorrowData.results.sunrise
-
-        this.fm.writeString(sunPath, JSON.stringify(sunData))
-      } catch {}
-    }
     this.data.sun = {}
-    this.data.sun.sunrise = sunData ? new Date(sunData.results.sunrise).getTime() : null
-    this.data.sun.sunset = sunData ? new Date(sunData.results.sunset).getTime() : null
-    this.data.sun.tomorrow = sunData ? new Date(sunData.results.tomorrow).getTime() : null
+    this.data.sun.sunrise = sunData ? sunData.daily[0].sunrise*1000 : null
+    this.data.sun.sunset = sunData ? sunData.daily[0].sunset*1000 : null
+    this.data.sun.tomorrow = sunData ? sunData.daily[1].sunrise*1000 : null
   },
 
   // Set up the weather data object.
