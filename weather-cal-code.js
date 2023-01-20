@@ -188,19 +188,47 @@ const weatherCal = {
     const returnVal = await this.promptForText("Paste your API key in the box below.",[""],["82c29fdbgd6aebbb595d402f8a65fabf"])
     const apiKey = returnVal.textFieldValue(0)
     if (!apiKey || apiKey == "" || apiKey == null) { return await this.generateAlert("No API key was entered. Try copying the key again and re-running this script.",["Exit"]) }
-
     this.writePreference("weather-cal-api-key", apiKey)
-    const req = new Request("https://api.openweathermap.org/data/2.5/onecall?lat=37.332280&lon=-122.010980&appid=" + apiKey)
-    try { val = await req.loadJSON() } catch { val = { current: false } }
-
-    if (!val.current) {
-      const message = firstRun ? "New OpenWeather API keys may take a few hours to activate. Your widget will start displaying weather information once it's active." : "The key you entered, " + apiKey + ", didn't work. If it's a new key, it may take a few hours to activate."
-      await this.generateAlert(message,[firstRun ? "Continue" : "OK"])
-
-    } else if (val.current && !firstRun) {
-      await this.generateAlert("The new key worked and was saved.")
+    
+    const apiResponse = await this.getWeatherApiPath(apiKey)
+    if (apiResponse && apiResponse.current) { 
+      await this.generateAlert("The API key worked and was saved.",[firstRun ? "Continue" : "OK"]) 
+    } else if (firstRun) {
+      await this.generateAlert("New OpenWeather API keys may take a few hours to activate. Your widget will start displaying weather information once it's active.",["Continue"]) 
+    } else {
+      return await this.generateAlert("The key you entered, " + apiKey + ", didn't work. If it's a new key, it may take a few hours to activate.")
     }
     return true
+  },
+  
+  // Get the API path, or the test response if a new API key is provided.
+  async getWeatherApiPath(newApiKey) {
+    const apiParameter = "?appid=" + (newApiKey || this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key")).replace(/\"/g,""))
+    const apiPathPreference = this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-path")
+    if (!newApiKey && this.fm.fileExists(apiPathPreference)) {
+      return this.fm.readString(apiPathPreference).replace(/\"/g,"") + apiParameter
+    }
+    
+    async function checkApiKey(path) {
+      const req = new Request(path + apiParameter + "&lat=37.332280&lon=-122.010980")
+      let response
+      try { response = await req.loadJSON() } catch { }
+      return response
+    }
+
+    let apiPath = "https://api.openweathermap.org/data/3.0/onecall"
+    let apiResponse = await checkApiKey(apiPath)
+    
+    if (apiResponse && apiResponse.cod) { 
+      apiPath = "https://api.openweathermap.org/data/2.5/onecall" 
+      apiResponse = await checkApiKey(apiPath)
+    }
+    
+    if (apiResponse && !apiResponse.cod) {
+      this.writePreference("weather-cal-api-path", apiPath)
+    }
+    
+    return newApiKey ? apiResponse : apiPath + apiParameter
   },
 
   // Set the background of the widget.
@@ -867,8 +895,8 @@ const weatherCal = {
 	
 	if (!sunData || sunData.cacheExpired) {
 		try {
-			const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key")).replace(/\"/g,"")
-			const sunReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale + "&appid=" + apiKey
+			const apiPath = await this.getWeatherApiPath()
+			const sunReq = apiPath + "&lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale
 			sunData = await new Request(sunReq).loadJSON()
 			if (sunData.cod) { sunData = null }
 			if (sunData) { this.fm.writeString(sunPath, JSON.stringify(sunData)) }
@@ -904,8 +932,8 @@ const weatherCal = {
 
     if (!weatherData || weatherData.cacheExpired) {
       try {
-        const apiKey = this.fm.readString(this.fm.joinPath(this.fm.libraryDirectory(), "weather-cal-api-key")).replace(/\"/g,"")
-        const weatherReq = "https://api.openweathermap.org/data/2.5/onecall?lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale + "&appid=" + apiKey
+        const apiPath = await this.getWeatherApiPath()
+        const weatherReq = apiPath + "&lat=" + this.data.location.latitude + "&lon=" + this.data.location.longitude + "&exclude=minutely,alerts&units=" + this.settings.widget.units + "&lang=" + locale
         weatherData = await new Request(weatherReq).loadJSON()
         if (weatherData.cod) { weatherData = null }
         if (weatherData) { this.fm.writeString(weatherPath, JSON.stringify(weatherData)) }
